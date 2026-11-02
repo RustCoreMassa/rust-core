@@ -8,6 +8,32 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+Works with the Launchpad contract **v1.4.0**; no contract change.
+
+### Added
+
+- Large collections (500 NFTs and more) are read through the read-only RustCore API
+  (`https://api.rustcoremassa.com`, mainnet): their NFTs and holders arrive page by page, with
+  the prices of their valid listings. The collection page says when the data was synced and
+  offers "Read from the chain"; the app reads the chain, as before, whenever the API is down,
+  stale, indexes another Launchpad or doesn't know the collection yet. Smaller collections are
+  read from the chain only.
+- My NFTs (`/me`) comes from one API request instead of one read per collection, and now lists
+  NFTs of imported collections without an owner index too; "Read from the chain" is there as
+  well.
+- Public API page (`/api`, in the footer): base URL, rules, rate limit, conventions,
+  pagination, errors, every endpoint with a live example, and a paging example in JavaScript.
+- A "Back to top" button in the bottom-right corner once a page is scrolled down.
+
+### Changed
+
+- A collection page shows its whole layout at once, with placeholders (NFT tiles included)
+  where data is still loading; coming from the collections list, its name, logo and banner
+  appear right away. The collection's state is read alongside its registry record.
+- The Core Keepers section on the home page is there from the first frame (name, logo and
+  description ship with the app; the chain's record replaces them once read); only the mint
+  progress, price, fees and discount show a loading effect. Its three reads run in parallel.
+
 ## [1.4.0] — 2026-10-24
 
 Works with the Launchpad contract **v1.4.0** (new: the holder discount). On older contracts

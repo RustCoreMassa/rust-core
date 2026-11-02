@@ -75,6 +75,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
   },
   {
+    path: 'api',
+    title: 'Public API · RustCore Launchpad',
+    loadComponent: () => import('./features/developers/api-page').then((m) => m.ApiPage),
+  },
+  {
     path: 'admin',
     title: 'Admin · RustCore Launchpad',
     loadComponent: () => import('./features/admin/admin-page').then((m) => m.AdminPage),

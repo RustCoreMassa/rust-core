@@ -6,9 +6,45 @@
   }
 
   @if (project() === undefined) {
-    <div class="card hero-card">
-      <span class="skeleton" style="width: 72px; height: 72px; border-radius: 50%"></span>
-      <span class="skeleton" style="width: 240px; height: 28px"></span>
+    <!-- The page's own layout from the first frame; each part fills in as it loads. -->
+    <div class="card hero-card" aria-busy="true">
+      <div class="identity">
+        <span class="skeleton" style="width: 72px; height: 72px; border-radius: 50%"></span>
+        <div class="names">
+          <span class="skeleton" style="width: 240px; height: 32px"></span>
+          <span class="skeleton" style="width: 140px"></span>
+        </div>
+      </div>
+      <span class="skeleton" style="width: 70%"></span>
+    </div>
+
+    <div class="stats">
+      @for (label of statLabels; track label) {
+        <div class="card stat">
+          <span class="muted">{{ label }}</span>
+          <strong><span class="skeleton"></span></strong>
+        </div>
+      }
+    </div>
+
+    <div class="columns">
+      <div class="main">
+        <h2>NFTs</h2>
+        <app-nft-grid [collection]="address()" [items]="null" />
+      </div>
+      <div class="side">
+        <div class="card">
+          <h2>Details</h2>
+          <dl class="rows">
+            @for (label of detailLabels; track label) {
+              <div>
+                <dt>{{ label }}</dt>
+                <dd><span class="skeleton" style="width: 90px"></span></dd>
+              </div>
+            }
+          </dl>
+        </div>
+      </div>
     </div>
   } @else if (project() === null) {
     <div class="card">
@@ -78,7 +114,7 @@
         <strong>
           @if (mint(); as m) {
             {{ m.minted }} / {{ m.maxSupply }}
-          } @else if (items(); as list) {
+          } @else if (itemsDone() && items(); as list) {
             {{ list.length }}
           } @else {
             <span class="skeleton"></span>
@@ -88,7 +124,7 @@
       <div class="card stat">
         <span class="muted">Holders</span>
         <strong>
-          @if (items()) {
+          @if (itemsDone()) {
             {{ holders() }}
           } @else {
             <span class="skeleton"></span>
@@ -128,16 +164,30 @@
     <div class="columns">
       <div class="main">
         <h2>NFTs</h2>
-        @if (items(); as list) {
-          <app-nft-grid
-            [collection]="p.address"
-            [items]="list"
-            [me]="wallet.address()"
-            [prices]="prices()"
-          />
-        } @else {
-          <div class="card"><span class="skeleton" style="width: 40%"></span></div>
+        @if (source(); as from) {
+          @if (from.kind === 'api') {
+            <p class="source-note muted">
+              A large collection: holders and prices come from the
+              <a routerLink="/api">RustCore API</a>
+              @if (from.syncedAt) {
+                (synced {{ from.syncedAt | date: 'HH:mm' }})
+              }
+              — mints, sales and transfers show up within about two minutes.
+              <button type="button" class="link-button" (click)="readFromChain()">
+                Read from the chain
+              </button>
+            </p>
+          }
+        } @else if (!itemsDone() && items()?.length) {
+          <p class="source-note muted">Loading the NFTs… {{ items()!.length }} so far.</p>
         }
+        <app-nft-grid
+          [collection]="p.address"
+          [items]="items()"
+          [me]="wallet.address()"
+          [prices]="prices()"
+          [reset]="gridEpoch()"
+        />
       </div>
 
       <div class="side">

@@ -8,8 +8,11 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Args } from '@massalabs/massa-web3';
+import { IndexerApi } from '../../core/indexer/indexer-api';
+import { ItemsSource } from '../../core/launchpad/collection-items';
 import { CollectionReader } from '../../core/launchpad/collection-reader';
 import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
 import { listingCanRevive } from '../../core/launchpad/listing-state';
@@ -67,7 +70,15 @@ interface MyNfts {
 /** The connected wallet's launches, imports and NFTs. */
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, ProjectLogo, ProjectBadges, ImportDialog, ConnectWalletDialog, MasPipe],
+  imports: [
+    DatePipe,
+    RouterLink,
+    ProjectLogo,
+    ProjectBadges,
+    ImportDialog,
+    ConnectWalletDialog,
+    MasPipe,
+  ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,6 +89,7 @@ export class DashboardPage {
   protected readonly network = inject(NetworkStore);
   private readonly tokens = inject(TokenReader);
   private readonly collections = inject(CollectionReader);
+  private readonly api = inject(IndexerApi);
   private readonly store = inject(ProjectStore);
   private readonly transactions = inject(Transactions);
 
@@ -87,6 +99,8 @@ export class DashboardPage {
   /** null while loading. */
   protected readonly nfts = signal<MyNfts[] | null>(null);
   protected readonly nftsScanned = signal(0);
+  /** Where the NFT list came from; null while loading. */
+  protected readonly nftsSource = signal<ItemsSource | null>(null);
   /** null while loading. */
   protected readonly presales = signal<MyPresale[] | null>(null);
   /** null while loading. */
@@ -218,11 +232,52 @@ export class DashboardPage {
     }
   }
 
-  /** NFTs held in each Launchpad collection that keeps the Enumerable owner index. */
-  private async loadNfts(address: string, run: number): Promise<void> {
+  /** Reads the NFTs from the chain instead of the RustCore API (it's up to ~2 minutes behind). */
+  protected readNftsFromChain(): void {
+    const address = this.wallet.address();
+    if (!address) return;
+    this.nfts.set(null);
+    void this.loadNfts(address, this.run, true);
+  }
+
+  /**
+   * NFTs the wallet holds in Launchpad collections: one request to the RustCore API when it's
+   * up, else from each collection that keeps the Enumerable owner index.
+   */
+  private async loadNfts(address: string, run: number, chainOnly = false): Promise<void> {
     try {
+      this.nftsSource.set(null);
       await this.store.load(KIND_COLLECTION);
       const collections = this.store.list(KIND_COLLECTION)().projects;
+      const status = chainOnly ? null : await this.api.ready();
+      if (status) {
+        try {
+          const held = await this.api.ownerNfts(address);
+          if (run !== this.run) return;
+          const byCollection = new Map<string, bigint[]>();
+          for (const nft of held) {
+            byCollection.set(nft.collection, [
+              ...(byCollection.get(nft.collection) ?? []),
+              nft.tokenId,
+            ]);
+          }
+          this.nfts.set(
+            collections
+              .filter((project) => byCollection.has(project.address))
+              .map((project) => ({
+                project,
+                ids: byCollection
+                  .get(project.address)!
+                  .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
+              })),
+          );
+          this.nftsSource.set({ kind: 'api', syncedAt: status.syncedAt });
+          return;
+        } catch (err) {
+          this.api.forget();
+          console.warn('[api] owner NFTs, reading the chain:', err);
+        }
+      }
       const found: MyNfts[] = [];
       this.nftsScanned.set(0);
       for (const project of collections) {
@@ -232,6 +287,7 @@ export class DashboardPage {
         this.nftsScanned.update((n) => n + 1);
       }
       this.nfts.set(found);
+      this.nftsSource.set({ kind: 'chain' });
     } catch (err) {
       if (run === this.run) this.error.set(toUserMessage(err));
     }

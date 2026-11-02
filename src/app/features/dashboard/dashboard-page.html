@@ -170,7 +170,12 @@
     } @else if (tab() === 'nfts') {
       @if (nfts() === null) {
         <div class="card row">
-          <span class="muted">Looking through the collections… {{ nftsScanned() }} checked</span>
+          <span class="muted">
+            Looking through the collections…
+            @if (nftsScanned()) {
+              {{ nftsScanned() }} checked
+            }
+          </span>
         </div>
       } @else if (nfts()!.length === 0) {
         <div class="card empty">
@@ -201,9 +206,25 @@
             </a>
           }
         </div>
-        <p class="hint">
-          Collections without an owner index (some imported ones) can't be listed here.
-        </p>
+        @if (nftsSource()?.kind === 'chain') {
+          <p class="hint">
+            Collections without an owner index (some imported ones) can't be listed here.
+          </p>
+        }
+      }
+      @if (nftsSource(); as from) {
+        @if (from.kind === 'api') {
+          <p class="hint">
+            From the <a routerLink="/api">RustCore API</a>
+            @if (from.syncedAt) {
+              (synced {{ from.syncedAt | date: 'HH:mm' }})
+            }
+            — a purchase or a transfer shows up within about two minutes.
+            <button type="button" class="link-button" (click)="readNftsFromChain()">
+              Read from the chain
+            </button>
+          </p>
+        }
       }
     } @else {
       @if (list() === null) {

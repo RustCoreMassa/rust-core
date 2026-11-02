@@ -34,7 +34,10 @@ your money. RustCore Launchpad is built on four principles:
   change your contract.
 - **No backend, no database.** Everything the app shows is read straight from the blockchain:
   one public Launchpad smart contract (the registry, the marketplace, the presales) and the
-  contracts it launched. There is no RustCore server to go down, censor or leak data.
+  contracts it launched. There is no RustCore server to go down, censor or leak data. Large
+  collections (500 NFTs and more) are read faster through the read-only
+  [RustCore API](#public-api), a cache of the chain — and from the chain again whenever it is
+  down or behind.
 - **Everything is verifiable.** Launches use versioned templates whose code is published here
   and whose hash is recorded on-chain. You can download the original code of any launch and
   rebuild it byte for byte. Imported or modified contracts are marked as such.
@@ -132,10 +135,11 @@ the Launchpad's development.
 | The DeWeb gateway you open the Launchpad from | Delivers the app itself. Gateways may add their own small "hosted on chain" label to the page, which loads a font from Google Fonts — that's the gateway, not the app. |
 | `mainnet.massa.net` / `buildnet.massa.net` | Massa's public nodes: every read, and the transactions you sign. |
 | Your wallet | Only after you click **Connect wallet**: the Bearby / MetaMask extensions inside your browser, and Massa Station's local server (`station.massa`, `localhost:8080`). Nothing connects on its own. |
+| `api.rustcoremassa.com` | The read-only RustCore API (mainnet): `/status`, the holders and listing prices of collections of 500 NFTs and more, and the NFTs your address holds (My NFTs). Public chain data only, no cookies; like any web server, it sees your IP address. The app falls back to the chain if it doesn't answer. |
 | `ipfs.io` | Public IPFS gateway for `ipfs://` images and NFT metadata. |
 | The `https://` addresses project owners chose | Their logos, banners, NFT metadata and images. Requested without a referrer or cookies. |
 
-That's all: no RustCore servers, no analytics, no tracking; fonts are bundled. Links to
+That's all: no analytics, no tracking, no cookies; fonts are bundled. Links to
 `explorer.massa.net` and to project websites open only when you click them. "Download original
 code" is built in your browser from files the app ships and the code stored on-chain.
 
@@ -167,6 +171,21 @@ Releases are [published on GitHub](https://github.com/RustCoreMassa/rust-core-la
 built in public from the source code, with checksums of the app and of the compiled contracts
 you can compare against a build of your own and against the code on-chain. See
 [how to verify a build](docs/RELEASING.md#verifying-a-build).
+
+## Public API
+
+Everything the Launchpad holds is also served by the **RustCore API**, free, read-only and
+without a key: the registry, every NFT of every registered collection with its holder, the
+marketplace's listings and sales, and the presales.
+
+- Base URL: `https://api.rustcoremassa.com/api/v1` (mainnet), `GET` only, CORS open.
+- Guide: the **Public API** page of the app (`/api`, linked in the footer) — conventions,
+  pagination, rate limit (10 requests/s per IP, bursts of 40), every endpoint with an example.
+- Reference: [Swagger UI](https://api.rustcoremassa.com/swagger-ui) and the OpenAPI 3.1
+  document at [`/v3/api-docs`](https://api.rustcoremassa.com/v3/api-docs).
+
+It is a cache of the chain's final state, up to about two minutes behind: anything that moves
+funds must be checked on chain before it is signed, as the app does.
 
 ## FAQ
 
@@ -211,7 +230,7 @@ the links. Pin your files so they stay online.
 - [ ] RustCore NFT collection: a discount on every Launchpad fee for its holders, 30% to start (v1.4.0)
 - [ ] Presale extras: whitelist, vesting, liquidity on Dusa
 - [ ] Token payments on the marketplace
-- [ ] An indexer for very large collections
+- [x] An indexer for very large collections, and a [public API](#public-api)
 - [ ] Independent security audit
 - [x] RustCore Wallet connection
 

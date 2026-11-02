@@ -38,11 +38,17 @@ export class NftGrid {
   private readonly loader = inject(NftMetadataLoader);
 
   readonly collection = input.required<string>();
-  readonly items = input.required<readonly NftItem[]>();
+  /** null while the list is loading: placeholder tiles in the grid's own layout. */
+  readonly items = input.required<readonly NftItem[] | null>();
   /** The connected wallet, for "Only mine". */
   readonly me = input<string | null>(null);
   /** Valid marketplace prices by token id (nanoMAS). */
   readonly prices = input<ReadonlyMap<bigint, bigint>>(new Map());
+  /**
+   * Bump it to start over (new data, e.g. after a mint or a settings change). A list that only
+   * grows (pages arriving) keeps the metadata, filters and scroll already there.
+   */
+  readonly reset = input(0);
 
   protected readonly metas = signal(new Map<bigint, MetaState>());
   protected readonly mineOnly = signal(false);
@@ -74,7 +80,7 @@ export class NftGrid {
     const selected = this.selected();
     const metas = this.metas();
     const prices = this.prices();
-    const result = this.items().filter((item) => {
+    const result = (this.items() ?? []).filter((item) => {
       if (this.mineOnly() && item.owner !== me) return false;
       if (this.listedOnly() && !prices.has(item.id)) return false;
       if (!selected.size) return true;
@@ -94,6 +100,7 @@ export class NftGrid {
     });
   });
   protected readonly visible = computed(() => this.filtered().slice(0, this.shown()));
+  protected readonly placeholders = Array.from({ length: 8 }, (_, i) => i);
 
   private queue: bigint[] = [];
   private running = 0;
@@ -102,7 +109,7 @@ export class NftGrid {
   constructor() {
     effect(() => {
       this.collection();
-      this.items();
+      this.reset();
       untracked(() => {
         this.generation++;
         this.queue = [];
@@ -130,11 +137,7 @@ export class NftGrid {
     });
     this.shown.set(STEP);
     // Filtering by trait needs every NFT's metadata.
-    this.request(
-      this.items()
-        .slice(0, MAX_FOR_TRAITS)
-        .map((item) => item.id),
-    );
+    this.request((this.items() ?? []).slice(0, MAX_FOR_TRAITS).map((item) => item.id));
   }
 
   protected toggleListed(): void {
