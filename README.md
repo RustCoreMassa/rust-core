@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.4.0" src="https://img.shields.io/badge/version-1.4.0-brightgreen" />
+  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.5.0-brightgreen" />
   <img alt="Network: Massa" src="https://img.shields.io/badge/network-Massa-red" />
   <img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" />
 </p>
@@ -45,11 +45,10 @@ your money. RustCore Launchpad is built on four principles:
   The Launchpad's own code can only change after a **72-hour public delay**, and its admin can
   never touch presale funds — only the fees collected.
 
-> **Version 1.4.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.3.1** is live
+> **Version 1.5.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
 > on Massa **mainnet** at `AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP`, upgraded in
-> place from v1.0.0 on 2026-10-17 after the 72-hour public delay; v1.4.0 (holder discount)
-> follows the same way. It has not had an independent security audit yet: start with small
-> amounts.
+> place (v1.0.0 → v1.3.1 on 2026-10-17, → v1.4.0 on 2026-10-27), each time after the 72-hour
+> public delay. It has not had an independent security audit yet: start with small amounts.
 
 ## What you can do
 
@@ -227,7 +226,7 @@ the links. Pin your files so they stay online.
 - [x] Tokenomics on token pages: the split the owner declares, as a chart, with live balances (v1.2.0)
 - [x] Fixes from the internal security audit: RC-Collection v2, royalty fixed in listings,
       presale rate cap, warnings on imports and inactive listings (v1.3.1)
-- [ ] RustCore NFT collection: a discount on every Launchpad fee for its holders, 30% to start (v1.4.0)
+- [x] RustCore NFT collection: a discount on every Launchpad fee for its holders, 30% to start (v1.4.0)
 - [ ] Presale extras: whitelist, vesting, liquidity on Dusa
 - [ ] Token payments on the marketplace
 - [x] An indexer for very large collections, and a [public API](#public-api)
