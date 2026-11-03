@@ -1,0 +1,216 @@
+<section class="page container">
+  <header class="page-head">
+    <span class="label">Developers</span>
+    <h1>Public API</h1>
+    <p>
+      Read everything the RustCore Launchpad holds — tokens, collections and every NFT holder,
+      marketplace listings and sales, presales — with plain HTTP requests. Free, read-only, no key
+      and no account.
+    </p>
+  </header>
+
+  <div class="layout">
+    <nav class="toc card" aria-label="On this page">
+      <a routerLink="/api" fragment="start">Getting started</a>
+      <a routerLink="/api" fragment="rules">Rules</a>
+      <a routerLink="/api" fragment="conventions">Conventions</a>
+      <a routerLink="/api" fragment="paging">Pagination</a>
+      <a routerLink="/api" fragment="errors">Errors</a>
+      @for (group of groups; track group.id) {
+        <a routerLink="/api" [fragment]="group.id">{{ group.title }}</a>
+      }
+      <a routerLink="/api" fragment="example">Example</a>
+    </nav>
+
+    <div class="content">
+      <section id="start" class="card block">
+        <h2>Getting started</h2>
+        <div class="status">
+          @if (status() === undefined) {
+            <span class="pill"><span class="skeleton" style="width: 120px"></span></span>
+          } @else if (status(); as s) {
+            <span class="pill">
+              <span class="dot"></span>
+              Live on mainnet · Launchpad v{{ s.version }}
+              @if (s.syncedAt) {
+                · synced {{ s.syncedAt | date: 'HH:mm' }}
+              }
+            </span>
+          } @else {
+            <span class="pill"><span class="dot dot-warn"></span> Unavailable right now</span>
+          }
+        </div>
+        <dl class="rows">
+          <div>
+            <dt>Base URL</dt>
+            <dd>
+              <code>{{ baseUrl }}</code>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="copyBase()">
+                {{ copied() ? 'Copied' : 'Copy' }}
+              </button>
+            </dd>
+          </div>
+          <div>
+            <dt>Network</dt>
+            <dd>Massa mainnet — the Launchpad at the address shown by <code>/status</code></dd>
+          </div>
+          <div>
+            <dt>Methods</dt>
+            <dd><code>GET</code> (and <code>HEAD</code>) only; CORS is open to every origin</dd>
+          </div>
+          <div>
+            <dt>Reference</dt>
+            <dd>
+              <a [href]="origin + '/swagger-ui'" target="_blank" rel="noopener noreferrer"
+                >Swagger UI</a
+              >
+              · OpenAPI 3.1 document at
+              <a [href]="origin + '/v3/api-docs'" target="_blank" rel="noopener noreferrer"
+                ><code>/v3/api-docs</code></a
+              >
+            </dd>
+          </div>
+        </dl>
+        <pre><code>curl {{ baseUrl }}/collections/AS125HSzXL9sphoniiqezuYKX3mGNuuS19yLQKvaJUGyEkfALpVTB/stats</code></pre>
+      </section>
+
+      <section id="rules" class="card block">
+        <h2>Rules</h2>
+        <ul>
+          <li>
+            <strong>The chain is the source of truth.</strong> The API is a cache of the chain’s
+            <em>final</em> state, refreshed every minute: up to about two minutes behind. Anything
+            that moves funds — a purchase, a contribution — must be checked on chain before it is
+            signed. The Launchpad app does exactly that.
+          </li>
+          <li>
+            <strong>Rate limit:</strong> 10 requests per second per IP address, with bursts of up to
+            40. Above it the answer is <code>429 Too Many Requests</code>: wait a second and try
+            again. Cache what you can — the data changes once a minute at most.
+          </li>
+          <li>
+            <strong>Hidden projects</strong> — the scams the Launchpad admin hid — are served
+            nowhere: a 404 by address, and left out of every list and figure.
+          </li>
+          <li>
+            <strong>Strings are returned as stored on chain.</strong> Imported contracts may hold
+            bidi or invisible characters: strip them before display, and never render them as HTML.
+          </li>
+          <li>
+            When <code>/status</code> says <code>"stale": true</code>, the indexer hasn’t read the
+            registry for three rounds: read the chain instead.
+          </li>
+        </ul>
+      </section>
+
+      <section id="conventions" class="card block">
+        <h2>Conventions</h2>
+        <dl class="rows">
+          <div>
+            <dt>Amounts</dt>
+            <dd>
+              nanoMAS (1 MAS = 10⁹ nanoMAS), sent as <strong>strings</strong>:
+              <code>"5000000000"</code> = 5 MAS.
+            </dd>
+          </div>
+          <div>
+            <dt>Big numbers</dt>
+            <dd>
+              Token ids (u256) and token units (<code>tokensForSale</code>, <code>rate</code>) are
+              strings too: they can exceed what a JavaScript number holds exactly (2⁵³). Small ids
+              (<code>id</code>, <code>listingId</code>, <code>collectionId</code>) are numbers.
+            </dd>
+          </div>
+          <div>
+            <dt>Times</dt>
+            <dd>ISO-8601 in UTC: <code>"2026-10-19T09:59:29Z"</code>.</dd>
+          </div>
+          <div>
+            <dt>Addresses</dt>
+            <dd>
+              As on chain: <code>AU…</code> for accounts, <code>AS…</code> for contracts. Anything
+              else is a 400.
+            </dd>
+          </div>
+          <div>
+            <dt>Enums</dt>
+            <dd>
+              Query values in any case: <code>price_asc</code>, <code>PRICE_ASC</code> and
+              <code>price-asc</code> are the same. Answers use lower case.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="paging" class="card block">
+        <h2>Pagination</h2>
+        <p>Lists answer one page and a cursor:</p>
+        <pre><code>{{ pageExample }}</code></pre>
+        <p>
+          Pass <code>nextCursor</code> back as <code>cursor</code>, with the same filters and sort,
+          for the next page; it is <code>null</code> on the last one. <code>limit</code> is 1–200,
+          50 by default. Cursors are opaque (keyset pagination): a page costs the same at any depth,
+          and items don’t shift or repeat when new ones arrive. Don’t build or edit them — a
+          malformed cursor is a 400.
+        </p>
+      </section>
+
+      <section id="errors" class="card block">
+        <h2>Errors</h2>
+        <p>
+          <a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener noreferrer"
+            >RFC 9457</a
+          >
+          problem details, as <code>application/problem+json</code>. <code>detail</code> names every
+          bad parameter.
+        </p>
+        <pre><code>{{ errorExample }}</code></pre>
+        <p>
+          400 for a bad parameter or cursor, 404 for an unknown address, id or path, 405 for
+          anything but <code>GET</code> / <code>HEAD</code>, 429 above the rate limit.
+        </p>
+      </section>
+
+      @for (group of groups; track group.id) {
+        <section [id]="group.id" class="card block">
+          <h2>{{ group.title }}</h2>
+          <p class="muted">{{ group.intro }}</p>
+          @for (endpoint of group.endpoints; track endpoint.path) {
+            <article class="endpoint">
+              <h3>
+                <span class="method">GET</span> <code>{{ endpoint.path }}</code>
+              </h3>
+              <p>{{ endpoint.summary }}</p>
+              @if (endpoint.params.length) {
+                <dl class="params">
+                  @for (param of endpoint.params; track param.name) {
+                    <div>
+                      <dt>
+                        <code>{{ param.name }}</code>
+                      </dt>
+                      <dd>{{ param.text }}</dd>
+                    </div>
+                  }
+                </dl>
+              }
+              <p class="returns"><span class="muted">Returns:</span> {{ endpoint.returns }}</p>
+              <a
+                class="try mono"
+                [href]="origin + endpoint.example"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Try it: {{ endpoint.example }} ↗</a
+              >
+            </article>
+          }
+        </section>
+      }
+
+      <section id="example" class="card block">
+        <h2>Example</h2>
+        <p>Every NFT of a collection with its holder, in the browser or Node 18+:</p>
+        <pre><code>{{ fetchExample }}</code></pre>
+      </section>
+    </div>
+  </div>
+</section>

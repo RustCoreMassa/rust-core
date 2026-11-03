@@ -1,4 +1,4 @@
-import { Injectable, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { WalletStore } from '../wallet/wallet-store';
 import { LaunchpadReader } from './launchpad-reader';
 import { HolderDiscount } from './records';
@@ -15,12 +15,16 @@ export class HolderDiscountStore {
 
   private readonly _program = signal<HolderDiscount | null>(null);
   private readonly _bps = signal(0);
+  /** The Launchpad whose program was read last. */
+  private readonly readFor = signal<string | null | undefined>(undefined);
   private run = 0;
 
   /** Null when there is no discount on this network (or it isn't known yet). */
   readonly program = this._program.asReadonly();
   /** The connected wallet's discount on the platform fees, basis points; 0 when none. */
   readonly bps = this._bps.asReadonly();
+  /** False until the program of the current Launchpad was read (null `program` is then final). */
+  readonly loaded = computed(() => this.readFor() === this.launchpad.address());
 
   constructor() {
     effect(() => {
@@ -33,6 +37,7 @@ export class HolderDiscountStore {
   async refresh(): Promise<void> {
     const run = ++this.run;
     const address = this.wallet.address();
+    const launchpad = this.launchpad.address();
     let program: HolderDiscount | null = null;
     let bps = 0;
     try {
@@ -44,5 +49,6 @@ export class HolderDiscountStore {
     if (run !== this.run) return;
     this._program.set(program);
     this._bps.set(bps);
+    this.readFor.set(launchpad);
   }
 }

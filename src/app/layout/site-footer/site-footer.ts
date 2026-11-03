@@ -13,7 +13,7 @@ import { RouterLink } from '@angular/router';
             <img class="brand-logo" src="assets/logo-light.png" alt="" width="40" height="34" />
             <span>RustCore Launchpad</span>
           </a>
-          <p>Launch tokens and NFTs on Massa. No backend — everything lives on-chain.</p>
+          <p>Launch tokens and NFTs on Massa. Everything lives on-chain; no backend needed.</p>
         </div>
         <div class="footer-cols">
           <div>
@@ -22,6 +22,7 @@ import { RouterLink } from '@angular/router';
             <a routerLink="/collections">Collections</a>
             <a routerLink="/marketplace">Marketplace</a>
             <a routerLink="/presales">Presales</a>
+            <a routerLink="/api">Public API</a>
           </div>
           <div>
             <h4>RustCore</h4>

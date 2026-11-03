@@ -39,16 +39,42 @@ export class MembershipSection {
 
   /** The collection the Launchpad discounts, else the one announced for this network. */
   protected readonly address = computed(
-    () => this.discount.program()?.collection ?? this.networks.config().membershipCollection,
+    () => this.discount.program()?.collection ?? this.networks.config().membership?.address ?? null,
   );
   /** The discount is live on this Launchpad for this collection. */
   protected readonly active = computed(() => {
     const program = this.discount.program();
     return !!program && program.collection === this.address();
   });
-  protected readonly project = signal<Project | null>(null);
-  protected readonly mint = signal<MintInfo | null>(null);
-  protected readonly config = signal<LaunchpadConfig | null>(null);
+  /** The registry record; undefined while it's read. */
+  protected readonly project = signal<Project | undefined>(undefined);
+  /** The collection's mint settings; undefined while read, null without mint info. */
+  protected readonly mint = signal<MintInfo | null | undefined>(undefined);
+  /** The Launchpad's fees; undefined while read, null when they can't be read. */
+  protected readonly config = signal<LaunchpadConfig | null | undefined>(undefined);
+  /** The address isn't a visible collection of this Launchpad: the section goes away. */
+  protected readonly rejected = signal(false);
+
+  /** Shown before the chain answers (the record replaces it); null for another collection. */
+  private readonly preview = computed(() => {
+    const preview = this.networks.config().membership;
+    return preview?.address === this.address() ? preview : null;
+  });
+  protected readonly shown = computed(
+    () => !!this.address() && !!this.launchpad.address() && !this.rejected(),
+  );
+  protected readonly name = computed(() => this.project()?.name ?? this.preview()?.name ?? '');
+  protected readonly symbol = computed(
+    () => this.project()?.symbol ?? this.preview()?.symbol ?? '',
+  );
+  protected readonly logoUrl = computed(
+    () => this.project()?.info.logoUrl ?? this.preview()?.logoUrl ?? '',
+  );
+  /** null while unknown (skeleton), '' when the collection has none. */
+  protected readonly description = computed(() => {
+    const project = this.project();
+    return project ? project.info.description : (this.preview()?.description ?? null);
+  });
 
   protected readonly progress = computed(() => {
     const mint = this.mint();
@@ -59,6 +85,9 @@ export class MembershipSection {
     const config = this.config();
     return this.active() && program && config ? feeSavings(config, program.bps) : [];
   });
+
+  protected readonly factLabels = ['Price', 'Left', 'Per wallet'];
+  protected readonly savingRows = [1, 2, 3];
 
   private run = 0;
 
@@ -77,24 +106,33 @@ export class MembershipSection {
     });
   }
 
+  /** The record, the mint state and the fees are read at once; each part fills in as it comes. */
   private async load(address: string | null): Promise<void> {
     const run = ++this.run;
-    this.project.set(null);
-    this.mint.set(null);
+    this.project.set(undefined);
+    this.mint.set(undefined);
+    this.config.set(undefined);
+    this.rejected.set(false);
     if (!address || !this.launchpad.address()) return;
-    try {
-      const project = await this.launchpad.projectByAddress(address);
-      if (run !== this.run || !project || project.kind !== KIND_COLLECTION || project.hidden)
-        return;
-      const state = await this.collections.state(address);
-      const config = await this.launchpad.config().catch(() => null);
-      if (run !== this.run) return;
-      this.project.set(project);
-      this.mint.set(state.mint);
-      this.config.set(config);
-    } catch {
-      // Not shown when it can't be read: the home page stays usable.
-    }
+    const current = () => run === this.run;
+    const record = this.launchpad.projectByAddress(address).then(
+      (project) => {
+        if (!current()) return;
+        if (!project || project.kind !== KIND_COLLECTION || project.hidden) this.rejected.set(true);
+        else this.project.set(project);
+      },
+      // Can't be read: the preview stays (or nothing, without one) and the home page goes on.
+      () => current() && !this.preview() && this.rejected.set(true),
+    );
+    const state = this.collections.state(address).then(
+      (state) => current() && this.mint.set(state.mint),
+      () => current() && this.mint.set(null),
+    );
+    const config = this.launchpad.config().then(
+      (config) => current() && this.config.set(config),
+      () => current() && this.config.set(null),
+    );
+    await Promise.all([record, state, config]);
   }
 
   private async refreshMint(address: string): Promise<void> {

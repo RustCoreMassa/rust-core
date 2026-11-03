@@ -415,6 +415,19 @@ textarea.input {
   font-size: 13px;
 }
 
+/* A button that reads as a link, inside a sentence. */
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--white);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 45, 66, 0.6);
+  text-underline-offset: 3px;
+}
+
 .error {
   color: #ff9aa5;
   font-size: 13px;

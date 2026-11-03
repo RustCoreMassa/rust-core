@@ -12,6 +12,7 @@ import {
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Args } from '@massalabs/massa-web3';
+import { CollectionItems, ItemsSource } from '../../core/launchpad/collection-items';
 import { CollectionReader, CollectionState, NftItem } from '../../core/launchpad/collection-reader';
 import { HolderDiscountStore } from '../../core/launchpad/holder-discount';
 import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
@@ -66,6 +67,7 @@ import { OwnerMintDialog } from './owner-mint-dialog';
 export class CollectionPage {
   private readonly launchpad = inject(LaunchpadReader);
   private readonly collections = inject(CollectionReader);
+  private readonly collectionItems = inject(CollectionItems);
   private readonly tokens = inject(TokenReader);
   private readonly store = inject(ProjectStore);
   private readonly originalCode = inject(OriginalCode);
@@ -83,6 +85,12 @@ export class CollectionPage {
   protected readonly removed = signal(false);
   protected readonly state = signal<CollectionState | null>(null);
   protected readonly items = signal<NftItem[] | null>(null);
+  /** False while pages of a large collection are still arriving from the RustCore API. */
+  protected readonly itemsDone = signal(false);
+  /** Where the NFT list came from; null while loading. */
+  protected readonly source = signal<ItemsSource | null>(null);
+  /** Bumped whenever the NFT list is read anew (resets the grid). */
+  protected readonly gridEpoch = signal(0);
   /** Valid marketplace prices by token id; empty until loaded. */
   protected readonly prices = signal<ReadonlyMap<bigint, bigint>>(new Map());
   protected readonly market = signal<MarketStats | null>(null);
@@ -113,6 +121,8 @@ export class CollectionPage {
   protected readonly downloading = signal(false);
   protected readonly downloadError = signal<string | null>(null);
 
+  protected readonly statLabels = ['Minted', 'Holders', 'Floor', 'Volume', 'Royalty', 'Owner'];
+  protected readonly detailLabels = ['Contract', 'Launched by', 'Date'];
   protected readonly keepOnlyOriginal = KEEP_ONLY_ORIGINAL;
   protected readonly launched = SOURCE_LAUNCHED;
 
@@ -229,16 +239,26 @@ export class CollectionPage {
 
   protected async refresh(): Promise<void> {
     const address = this.address();
-    const [project, state, items] = [
-      await this.launchpad.projectByAddress(address),
-      await this.collections.state(address),
-      await this.collections.items(address),
-    ];
+    const run = ++this.run;
+    const project = await this.launchpad.projectByAddress(address);
+    const state = await this.collections.state(address);
+    if (run !== this.run) return;
     if (project) this.onSaved(project);
     this.state.set(state);
-    this.items.set(items);
-    if (project) await this.loadMarket(project);
+    if (project) await this.loadItems(project, state, run);
     await this.loadMintedByMe(this.wallet.address(), state.mint !== null);
+  }
+
+  /** Reads the NFTs from the chain instead of the RustCore API (it's up to ~2 minutes behind). */
+  protected async readFromChain(): Promise<void> {
+    const project = this.project();
+    const state = this.state();
+    if (!project || !state) return;
+    try {
+      await this.loadItems(project, state, ++this.run, true);
+    } catch (err) {
+      this.error.set(toUserMessage(err));
+    }
   }
 
   protected async download(): Promise<void> {
@@ -263,7 +283,12 @@ export class CollectionPage {
 
   private async load(address: string): Promise<void> {
     const run = ++this.run;
-    this.project.set(undefined);
+    // Coming from the collections list, the record is already in memory: show it at once (the
+    // registry read below still replaces it).
+    const known = this.store
+      .list(KIND_COLLECTION)()
+      .projects.find((p) => p.address === address);
+    this.project.set(known);
     this.removed.set(false);
     this.state.set(null);
     this.items.set(null);
@@ -271,6 +296,10 @@ export class CollectionPage {
     this.market.set(null);
     this.codeHash.set(null);
     this.error.set(null);
+    // The collection's own state is read alongside the registry record (one round trip less);
+    // it's used only if the address turns out to be a collection.
+    const reads = Promise.all([this.collections.state(address), this.tokens.codeHash(address)]);
+    reads.catch(() => undefined);
     try {
       const project = await this.launchpad.projectByAddress(address);
       if (run !== this.run) return;
@@ -281,33 +310,54 @@ export class CollectionPage {
         if (run === this.run) this.removed.set(removed);
         return;
       }
-      const [state, codeHash] = await Promise.all([
-        this.collections.state(address),
-        this.tokens.codeHash(address),
-      ]);
+      const [state, codeHash] = await reads;
       if (run !== this.run) return;
       this.state.set(state);
       this.codeHash.set(codeHash);
-      const items = await this.collections.items(address);
-      if (run !== this.run) return;
-      this.items.set(items);
-      await this.loadMarket(project);
+      await this.loadItems(project, state, run);
     } catch (err) {
       if (run === this.run) this.error.set(toUserMessage(err));
     }
   }
 
+  /**
+   * The NFTs and their holders (from the RustCore API for a large collection, as its pages
+   * arrive), then the marketplace figures.
+   */
+  private async loadItems(
+    project: Project,
+    state: CollectionState,
+    run: number,
+    chainOnly = false,
+  ): Promise<void> {
+    this.gridEpoch.update((n) => n + 1);
+    this.itemsDone.set(false);
+    this.source.set(null);
+    const source = await this.collectionItems.items(
+      project.address,
+      state.mint?.totalSupply ?? null,
+      (items, done) => {
+        if (run !== this.run) return;
+        this.items.set(items);
+        this.itemsDone.set(done);
+      },
+      chainOnly,
+    );
+    if (run !== this.run) return;
+    this.source.set(source);
+    await this.loadMarket(project, source, run);
+  }
+
   /** Marketplace totals and the listings that can really be bought. */
-  private async loadMarket(project: Project): Promise<void> {
-    const launchpad = this.launchpad.address();
-    if (!launchpad) return;
+  private async loadMarket(project: Project, source: ItemsSource, run: number): Promise<void> {
     try {
-      this.market.set(await this.launchpad.stats(project.id));
-      const listings = await this.launchpad.allListings(project.id);
-      const valid = await this.collections.validListings(listings, launchpad);
-      this.prices.set(
-        new Map(listings.filter((l) => valid.has(l.id)).map((l) => [l.tokenId, l.price])),
-      );
+      const [market, prices] = await Promise.all([
+        this.launchpad.stats(project.id),
+        this.collectionItems.prices(project, source),
+      ]);
+      if (run !== this.run) return;
+      this.market.set(market);
+      this.prices.set(prices);
     } catch (err) {
       console.error('[market]', err);
     }
