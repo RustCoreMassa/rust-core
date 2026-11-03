@@ -201,6 +201,24 @@ export function escrowedKey(token: string): StaticArray<u8> {
   return ESCROWED.concat(stringToBytes(token + ':'));
 }
 
+// ---- presale whitelist and vesting (v1.6.0) -----------------------------------------------
+const WHITELIST = stringToBytes('wl:');
+const VEST_CLAIMED = stringToBytes('vc:');
+
+/** The whitelist of a presale: one empty entry per address. */
+export function whitelistPrefix(presaleId: u64): StaticArray<u8> {
+  return WHITELIST.concat(u64BE(presaleId));
+}
+
+export function whitelistKey(presaleId: u64, address: string): StaticArray<u8> {
+  return whitelistPrefix(presaleId).concat(stringToBytes(address));
+}
+
+/** Token units a contributor already claimed from a vesting presale (until the last claim). */
+export function vestClaimedKey(presaleId: u64, contributor: string): StaticArray<u8> {
+  return VEST_CLAIMED.concat(u64BE(presaleId)).concat(stringToBytes(contributor));
+}
+
 /** The standard MRC20 balance key of an address ('BALANCE' + address). */
 export function mrc20BalanceKey(address: string): StaticArray<u8> {
   return stringToBytes('BALANCE' + address);

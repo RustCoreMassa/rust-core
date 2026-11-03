@@ -11,25 +11,33 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Args } from '@massalabs/massa-web3';
-import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
+import { Args, ArrayTypes } from '@massalabs/massa-web3';
+import { LaunchpadReader, WHITELIST_BATCH } from '../../core/launchpad/launchpad-reader';
 import {
   CANCEL_COINS,
   CLAIM_COINS,
   CONTRIBUTE_MARGIN,
   FINALIZE_COINS,
   WITHDRAW_COINS,
+  whitelistCoins,
 } from '../../core/launchpad/presale-cost';
 import {
   PHASE_LABELS,
+  bpsPercent,
+  claimable,
   contributionError,
+  hasVesting,
+  nextUnlock,
+  vestingSchedule,
+  vestingSummary,
+  whitelistOnly,
   maxContribution,
   presaleCodeRisk,
   presalePhase,
   reachesSoftCap,
   timeLeft,
 } from '../../core/launchpad/presale-state';
-import { Presale, Project, tokensFor } from '../../core/launchpad/records';
+import { PRESALE_OPEN, Presale, Project, tokensFor } from '../../core/launchpad/records';
 import { TokenReader } from '../../core/launchpad/token-reader';
 import { Transactions } from '../../core/launchpad/transactions';
 import { NetworkStore } from '../../core/network/network-store';
@@ -43,8 +51,19 @@ import { PresaleProgress } from '../../shared/ui/presale-progress/presale-progre
 import { ProjectBadges } from '../../shared/ui/project-badges/project-badges';
 import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
 import { priceNano } from '../create/collection-draft';
+import { parseAddresses } from '../create/presale-draft';
 
-type Busy = 'contribute' | 'finalize' | 'claim' | 'refund' | 'withdraw' | 'cancel' | null;
+type Busy =
+  | 'contribute'
+  | 'finalize'
+  | 'claim'
+  | 'refund'
+  | 'withdraw'
+  | 'cancel'
+  | 'whitelist-add'
+  | 'whitelist-remove'
+  | 'whitelist-clear'
+  | null;
 
 /** One presale: terms, progress, and the action that fits its phase and the wallet. */
 @Component({
@@ -92,6 +111,16 @@ export class PresalePage {
   protected readonly error = signal<string | null>(null);
   protected readonly now = signal(Date.now());
   protected readonly labels = PHASE_LABELS;
+  protected readonly bpsPercent = bpsPercent;
+  /** The wallet is on the presale's whitelist; null when unknown or there is none. */
+  protected readonly listed = signal<boolean | null>(null);
+  /** Token units the wallet already claimed from a vesting presale. */
+  protected readonly claimed = signal(0n);
+  /** Addresses typed by the owner to add or remove. */
+  protected readonly listText = signal('');
+  /** Whitelist batches sent so far, and how many there are. */
+  protected readonly batch = signal({ done: 0, total: 0 });
+  protected readonly listNotice = signal<string | null>(null);
 
   protected readonly phase = computed(() => {
     const p = this.presale();
@@ -110,8 +139,46 @@ export class PresalePage {
     const amount = this.amountNano();
     if (!p || this.amount() === '') return null;
     if (amount === null) return 'Enter an amount in MAS.';
-    return contributionError(p, this.mine(), amount, this.now());
+    return contributionError(p, this.mine(), amount, this.now(), this.listed() ?? true);
   });
+  /** Before the public phase of a whitelist presale. */
+  protected readonly whitelistPhase = computed(() => {
+    const p = this.presale();
+    return !!p && whitelistOnly(p, this.now());
+  });
+  protected readonly vesting = computed(() => {
+    const p = this.presale();
+    return !!p && hasVesting(p);
+  });
+  protected readonly vestingText = computed(() => {
+    const p = this.presale();
+    return p ? vestingSummary(p) : '';
+  });
+  /** Every unlock, with whether it has come. */
+  protected readonly schedule = computed(() => {
+    const p = this.presale();
+    if (!p || !hasVesting(p)) return [];
+    const now = this.now();
+    return vestingSchedule(p).map((u) => ({ ...u, done: u.at <= now }));
+  });
+  /** Token units the wallet can claim now. */
+  protected readonly claimableNow = computed(() => {
+    const p = this.presale();
+    return p ? claimable(p, this.mine(), this.claimed(), this.now()) : 0n;
+  });
+  protected readonly claimableText = computed(() =>
+    formatUnits(this.claimableNow(), this.decimals()),
+  );
+  protected readonly next = computed(() => {
+    const p = this.presale();
+    return p ? nextUnlock(p, this.now()) : null;
+  });
+  /** The owner may still change the whitelist (open, before the public phase). */
+  protected readonly listEditable = computed(() => {
+    const p = this.presale();
+    return !!p && p.whitelist && p.status === PRESALE_OPEN && this.now() < p.publicFrom;
+  });
+  protected readonly listParsed = computed(() => parseAddresses(this.listText()));
   protected readonly maxNow = computed(() => {
     const p = this.presale();
     return p ? maxContribution(p, this.mine()) : 0n;
@@ -163,6 +230,49 @@ export class PresalePage {
     return (event.target as HTMLInputElement).value.trim();
   }
 
+  protected units(value: bigint): string {
+    return formatUnits(value, this.decimals());
+  }
+
+  /** ≈ storage held by a whitelist of `count` addresses, MAS (0.007 each). */
+  protected listStorage(count: number): string {
+    return Number(((count * 7) / 1000).toFixed(3)).toString();
+  }
+
+  protected batchLabel(): string {
+    const { done, total } = this.batch();
+    return total > 1
+      ? `${done + 1} of ${total}: confirm in your wallet…`
+      : 'Confirm in your wallet…';
+  }
+
+  protected area(event: Event): string {
+    return (event.target as HTMLTextAreaElement).value;
+  }
+
+  /** The owner adds the typed addresses (batches of 200, one signature each). */
+  protected addToList(): Promise<void> {
+    return this.sendList('whitelist-add', 'addToWhitelist', this.listParsed().addresses);
+  }
+
+  protected removeFromList(): Promise<void> {
+    return this.sendList('whitelist-remove', 'removeFromWhitelist', this.listParsed().addresses);
+  }
+
+  /** After the presale: takes every address off, which refunds their storage to the owner. */
+  protected async clearList(): Promise<void> {
+    const p = this.presale();
+    if (!p) return;
+    this.busy.set('whitelist-clear');
+    try {
+      const all = await this.launchpad.whitelist(p.id);
+      await this.sendList('whitelist-clear', 'removeFromWhitelist', all);
+    } catch (err) {
+      this.error.set(toUserMessage(err));
+      this.busy.set(null);
+    }
+  }
+
   protected useMax(): void {
     this.amount.set(formatUnits(this.maxNow(), 9).replace(/,/g, ''));
   }
@@ -206,6 +316,36 @@ export class PresalePage {
     return this.call('cancel', new Args().addU64(this.presaleId()), CANCEL_COINS, 'cancelPresale');
   }
 
+  private async sendList(busy: Busy, func: string, addresses: string[]): Promise<void> {
+    const target = this.launchpad.address();
+    if (!target || !addresses.length || (this.listParsed().invalid && busy !== 'whitelist-clear'))
+      return;
+    this.busy.set(busy);
+    this.error.set(null);
+    this.listNotice.set(null);
+    const total = Math.ceil(addresses.length / WHITELIST_BATCH);
+    try {
+      for (let i = 0; i < total; i++) {
+        this.batch.set({ done: i, total });
+        const part = addresses.slice(i * WHITELIST_BATCH, (i + 1) * WHITELIST_BATCH);
+        await this.transactions.send({
+          target,
+          func,
+          args: new Args().addU64(this.presaleId()).addArray(part, ArrayTypes.STRING),
+          coins: func === 'addToWhitelist' ? whitelistCoins(part.length) : CANCEL_COINS,
+        });
+      }
+      if (busy !== 'whitelist-clear') this.listText.set('');
+      this.listNotice.set(func === 'addToWhitelist' ? 'Added.' : 'Removed.');
+      await this.load(this.id(), this.wallet.address());
+    } catch (err) {
+      this.error.set(toUserMessage(err));
+      await this.load(this.id(), this.wallet.address());
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
   private presaleId(): bigint {
     return this.presale()?.id ?? 0n;
   }
@@ -243,7 +383,13 @@ export class PresalePage {
             symbol: await this.tokens.text(presale.token, 'symbol').catch(() => ''),
           };
       const mine = me ? await this.launchpad.contribution(presale.id, me) : 0n;
+      const listed =
+        me && presale.whitelist ? await this.launchpad.isWhitelisted(presale.id, me) : null;
+      const claimed =
+        me && mine && hasVesting(presale) ? await this.launchpad.claimed(presale.id, me) : 0n;
       if (run !== this.run) return;
+      this.listed.set(listed);
+      this.claimed.set(claimed);
       this.presale.set(presale);
       this.token.set(token);
       this.bare.set(bare);

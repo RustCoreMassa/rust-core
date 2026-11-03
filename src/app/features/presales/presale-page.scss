@@ -95,3 +95,21 @@ h2 {
     order: -1;
   }
 }
+
+h3 {
+  margin: 20px 0 8px;
+  font-size: 16px;
+}
+
+.schedule .done {
+  color: var(--gray-300);
+}
+
+.schedule .done dd {
+  color: var(--green);
+}
+
+.list-actions {
+  display: flex;
+  gap: 8px;
+}

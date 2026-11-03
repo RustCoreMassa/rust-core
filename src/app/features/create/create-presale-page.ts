@@ -10,12 +10,21 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Args } from '@massalabs/massa-web3';
+import { Args, ArrayTypes } from '@massalabs/massa-web3';
 import { lessDiscountBps } from '../../core/launchpad/discount';
 import { HolderDiscountStore } from '../../core/launchpad/holder-discount';
-import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
-import { ALLOWANCE_COINS, CREATE_PRESALE_COINS } from '../../core/launchpad/presale-cost';
-import { presaleCodeRisk } from '../../core/launchpad/presale-state';
+import { LaunchpadReader, WHITELIST_BATCH } from '../../core/launchpad/launchpad-reader';
+import {
+  ALLOWANCE_COINS,
+  CREATE_PRESALE_COINS,
+  whitelistCoins,
+} from '../../core/launchpad/presale-cost';
+import {
+  bpsPercent,
+  presaleCodeRisk,
+  vestingCycles,
+  vestingSummary,
+} from '../../core/launchpad/presale-state';
 import { KIND_TOKEN, Presale, Project } from '../../core/launchpad/records';
 import { TokenReader } from '../../core/launchpad/token-reader';
 import { Transactions, eventFields } from '../../core/launchpad/transactions';
@@ -34,7 +43,7 @@ import {
   presaleTerms,
 } from './presale-draft';
 
-type Busy = 'approve' | 'create' | null;
+type Busy = 'approve' | 'create' | 'whitelist' | null;
 
 /** Starts a presale for a token the wallet owns. */
 @Component({
@@ -74,6 +83,12 @@ export class CreatePresalePage {
   protected readonly touched = signal(false);
   protected readonly busy = signal<Busy>(null);
   protected readonly error = signal<string | null>(null);
+  /** The Launchpad takes a whitelist and vesting (v1.6.0+). */
+  protected readonly extras = signal(false);
+  /** The presale was created but its whitelist is still being added (or that stopped). */
+  protected readonly createdId = signal<string | null>(null);
+  /** Whitelist batches sent so far, and how many there are. */
+  protected readonly batch = signal({ done: 0, total: 0 });
 
   protected readonly decimals = computed(() => this.project()?.decimals ?? 0);
   protected readonly result = computed(() => presaleTerms(this.draft(), this.decimals()));
@@ -93,9 +108,24 @@ export class CreatePresalePage {
       this.isOwner() &&
       this.enoughTokens() &&
       !this.open() &&
+      !this.createdId() &&
       !this.wallet.networkMismatch() &&
       !this.busy(),
   );
+  protected readonly whitelistBatches = computed(() =>
+    Math.ceil((this.terms()?.addresses.length ?? 0) / WHITELIST_BATCH),
+  );
+  protected readonly whitelistCost = computed(() => {
+    const count = this.terms()?.addresses.length ?? 0;
+    return count ? whitelistCoins(count) : 0n;
+  });
+  protected readonly vestingText = computed(() => {
+    const t = this.terms();
+    if (!t || t.vestFirstBps >= 10_000) return 'All at the end';
+    const days = vestingCycles(t.vestFirstBps, t.vestCycleBps) * (t.vestCycleMs / 86_400_000);
+    return `${vestingSummary(t)} — everything ${days} days after the end`;
+  });
+  protected readonly bpsPercent = bpsPercent;
   protected readonly durations = [
     { label: '1 day', hours: 24 },
     { label: '3 days', hours: 72 },
@@ -123,6 +153,10 @@ export class CreatePresalePage {
 
   protected text(event: Event): string {
     return (event.target as HTMLInputElement).value.trim();
+  }
+
+  protected area(event: Event): string {
+    return (event.target as HTMLTextAreaElement).value;
   }
 
   protected units(value: bigint): string {
@@ -158,16 +192,42 @@ export class CreatePresalePage {
       const result = await this.transactions.send({
         target: launchpad,
         func: 'createPresale',
-        args: createPresaleArgs(token, fresh),
+        args: createPresaleArgs(token, fresh, this.extras()),
         coins: CREATE_PRESALE_COINS,
       });
       const [id] = eventFields(result.events, 'PRESALE_CREATED') ?? [];
+      if (id && this.extras() && fresh.whitelist && fresh.addresses.length) {
+        this.createdId.set(id);
+        await this.addWhitelist(launchpad, BigInt(id), fresh.addresses);
+      }
       await this.router.navigate(id ? ['/presales', id] : ['/tokens', token]);
     } catch (err) {
-      this.error.set(toUserMessage(err));
+      const created = this.createdId();
+      this.error.set(
+        created
+          ? `The presale is created, but adding its whitelist stopped (${toUserMessage(err)}). Add the rest on its page.`
+          : toUserMessage(err),
+      );
     } finally {
       this.busy.set(null);
     }
+  }
+
+  /** Sends the whitelist in batches of 200, one signature each. */
+  private async addWhitelist(launchpad: string, id: bigint, addresses: string[]): Promise<void> {
+    this.busy.set('whitelist');
+    const total = Math.ceil(addresses.length / WHITELIST_BATCH);
+    for (let i = 0; i < total; i++) {
+      this.batch.set({ done: i, total });
+      const part = addresses.slice(i * WHITELIST_BATCH, (i + 1) * WHITELIST_BATCH);
+      await this.transactions.send({
+        target: launchpad,
+        func: 'addToWhitelist',
+        args: new Args().addU64(id).addArray(part, ArrayTypes.STRING),
+        coins: whitelistCoins(part.length),
+      });
+    }
+    this.batch.set({ done: total, total });
   }
 
   private async load(token: string, me: string | null): Promise<void> {
@@ -184,12 +244,14 @@ export class CreatePresalePage {
       const state = await this.tokens.state(token);
       const open = await this.launchpad.presaleOf(token);
       const config = await this.launchpad.config();
+      const extras = await this.launchpad.supportsPresaleExtras();
       void this.discount.refresh();
       const balance = me ? await this.tokens.balanceOf(token, me) : null;
       if (run !== this.run) return;
       this.owner.set(state.owner);
       this.open.set(open);
       this.fullFeeBps.set(config.presaleFeeBps);
+      this.extras.set(extras);
       this.balance.set(balance);
     } catch (err) {
       if (run === this.run) this.error.set(toUserMessage(err));

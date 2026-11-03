@@ -10,3 +10,11 @@ export const FINALIZE_COINS = 50_000_000n;
 export const CLAIM_COINS = 50_000_000n;
 export const WITHDRAW_COINS = 20_000_000n;
 export const CANCEL_COINS = 50_000_000n;
+/** addToWhitelist: ≈ 0.007 MAS of storage per new address (key `wl:` + id + address). */
+export const WHITELIST_COINS_PER_ADDRESS = 10_000_000n; // 0.01 MAS
+export const WHITELIST_MARGIN = 50_000_000n;
+
+/** Coins for adding `count` addresses to a whitelist in one call. */
+export function whitelistCoins(count: number): bigint {
+  return BigInt(count) * WHITELIST_COINS_PER_ADDRESS + WHITELIST_MARGIN;
+}

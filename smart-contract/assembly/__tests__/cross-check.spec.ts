@@ -164,6 +164,13 @@ describe('app ↔ contract encoding', () => {
     presale.status = PRESALE_SUCCESS;
     presale.withdrawn = true;
     presale.feeBps = 250;
+    presale.whitelist = true;
+    presale.publicFrom = u64(1_760_043_200_000);
+    presale.whitelisted = 12;
+    presale.vestFirstBps = 2_500;
+    presale.vestCycleMs = u64(2_592_000_000);
+    presale.vestCycleBps = 1_500;
+    presale.finalizedAt = u64(1_760_090_000_000);
     log<string>('PRESALE_BYTES ' + presale.serialize().toString());
   });
 

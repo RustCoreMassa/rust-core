@@ -7,7 +7,16 @@ import {
   SOURCE_LAUNCHED,
 } from './records';
 import {
+  claimable,
   contributionError,
+  hasVesting,
+  nextUnlock,
+  share,
+  unlockedBps,
+  vestingSchedule,
+  vestingStart,
+  vestingSummary,
+  whitelistOnly,
   maxContribution,
   presaleCodeRisk,
   presalePhase,
@@ -35,6 +44,24 @@ const base: Presale = {
   status: PRESALE_OPEN,
   withdrawn: false,
   feeBps: 200,
+  whitelist: false,
+  publicFrom: 0,
+  whitelisted: 0,
+  vestFirstBps: 10_000,
+  vestCycleMs: 0,
+  vestCycleBps: 0,
+  finalizedAt: 0,
+};
+
+const DAY = 86_400_000;
+/** 25 % at the end (2 000), then 25 % every 30 days. */
+const vesting: Presale = {
+  ...base,
+  status: PRESALE_SUCCESS,
+  finalizedAt: 2_500,
+  vestFirstBps: 2_500,
+  vestCycleMs: 30 * DAY,
+  vestCycleBps: 2_500,
 };
 
 describe('presale state', () => {
@@ -94,5 +121,66 @@ describe('presale code risk', () => {
     expect(presaleCodeRisk({ source: SOURCE_IMPORTED, mutable: false })).toMatch(/imported/);
     expect(presaleCodeRisk({ source: SOURCE_LAUNCHED, mutable: true })).toMatch(/replaced/);
     expect(presaleCodeRisk({ source: SOURCE_LAUNCHED, mutable: false })).toBeNull();
+  });
+});
+
+describe('presale whitelist', () => {
+  const listed = { ...base, whitelist: true, publicFrom: 1_500 };
+
+  it('is whitelist only until the public phase', () => {
+    expect(whitelistOnly(listed, 1_499)).toBe(true);
+    expect(whitelistOnly(listed, 1_500)).toBe(false);
+    expect(whitelistOnly(base, 1_000)).toBe(false);
+  });
+
+  it('refuses an unlisted wallet before the public phase', () => {
+    expect(contributionError(listed, 0n, MAS, 1_200, false)).toBe(
+      'Only the whitelist can contribute for now.',
+    );
+    expect(contributionError(listed, 0n, MAS, 1_200, true)).toBeNull();
+    expect(contributionError(listed, 0n, MAS, 1_500, false)).toBeNull();
+  });
+});
+
+describe('presale vesting', () => {
+  it('counts from the end, or from an earlier finalize', () => {
+    expect(vestingStart(vesting)).toBe(2_000);
+    expect(vestingStart({ ...vesting, finalizedAt: 1_800 })).toBe(1_800);
+    expect(vestingStart({ ...vesting, finalizedAt: 0 })).toBe(2_000); // not finalized yet
+  });
+
+  it('unlocks the first release, then a share per cycle, up to 100 %', () => {
+    expect(hasVesting(vesting)).toBe(true);
+    expect(hasVesting(base)).toBe(false);
+    expect(unlockedBps(vesting, 2_000)).toBe(2_500);
+    expect(unlockedBps(vesting, 2_000 + 30 * DAY - 1)).toBe(2_500);
+    expect(unlockedBps(vesting, 2_000 + 30 * DAY)).toBe(5_000);
+    expect(unlockedBps(vesting, 2_000 + 300 * DAY)).toBe(10_000);
+    expect(unlockedBps(base, 0)).toBe(10_000);
+  });
+
+  it('lists every unlock, the last one capped', () => {
+    const schedule = vestingSchedule({ ...vesting, vestFirstBps: 1_000, vestCycleBps: 4_000 });
+    expect(schedule.map((u) => u.bps)).toEqual([1_000, 5_000, 9_000, 10_000]);
+    expect(schedule[3].at).toBe(2_000 + 90 * DAY);
+    expect(nextUnlock(vesting, 2_000)?.bps).toBe(5_000);
+    expect(nextUnlock(vesting, 2_000 + 90 * DAY)).toBeNull();
+    expect(vestingSchedule(base)).toEqual([{ at: 2_000, bps: 10_000 }]);
+  });
+
+  it('claims what is unlocked and not claimed yet, rounded down', () => {
+    // 40 MAS × 1 000 units per MAS = 40 000 units.
+    expect(claimable(vesting, 40n * MAS, 0n, 2_000)).toBe(10_000n);
+    expect(claimable(vesting, 40n * MAS, 10_000n, 2_000)).toBe(0n);
+    expect(claimable(vesting, 40n * MAS, 10_000n, 2_000 + 60 * DAY)).toBe(20_000n);
+    expect(share(7n, 3_333)).toBe(2n);
+  });
+
+  it('sums the schedule up in words', () => {
+    expect(vestingSummary(vesting)).toBe('25% at the end, then 25% every 30 days');
+    expect(
+      vestingSummary({ ...vesting, vestFirstBps: 0, vestCycleMs: DAY, vestCycleBps: 1_250 }),
+    ).toBe('12.5% every day');
+    expect(vestingSummary(base)).toBe('All at the end');
   });
 });

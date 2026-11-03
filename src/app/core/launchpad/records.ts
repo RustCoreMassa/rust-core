@@ -343,10 +343,31 @@ export interface Presale {
   withdrawn: boolean;
   /** Presale fee in basis points, fixed when the presale was created. */
   feeBps: number;
+  // ---- v1.6.0, fixed at creation; older presales read as none of them ----
+  /** Only whitelisted addresses may contribute until `publicFrom`. */
+  whitelist: boolean;
+  /** ms; with a whitelist, anyone may contribute from then on (= end: whitelist only). */
+  publicFrom: number;
+  /** Addresses on the whitelist now. */
+  whitelisted: number;
+  /** Share of the bought tokens claimable at once, bps; 10 000 = no vesting. */
+  vestFirstBps: number;
+  /** Then `vestCycleBps` more at the end of every cycle of `vestCycleMs`. */
+  vestCycleMs: number;
+  vestCycleBps: number;
+  /** ms; 0 while open. Vesting counts from min(finalizedAt, end). */
+  finalizedAt: number;
 }
 
-export function readPresale(args: Args): Presale {
-  return {
+/** 100 % in basis points. */
+export const BPS_ALL = 10_000;
+
+/**
+ * A Presale record. `extras`: the Launchpad is v1.6.0+, whose records always carry the
+ * whitelist and vesting fields (older ones end at feeBps: no whitelist, no vesting).
+ */
+export function readPresale(args: Args, extras = true): Presale {
+  const base = {
     id: args.nextU64(),
     tokenId: args.nextU64(),
     token: args.nextString(),
@@ -364,6 +385,28 @@ export function readPresale(args: Args): Presale {
     status: Number(args.nextU8()),
     withdrawn: args.nextBool(),
     feeBps: Number(args.nextU16()),
+  };
+  if (!extras) {
+    return {
+      ...base,
+      whitelist: false,
+      publicFrom: 0,
+      whitelisted: 0,
+      vestFirstBps: BPS_ALL,
+      vestCycleMs: 0,
+      vestCycleBps: 0,
+      finalizedAt: 0,
+    };
+  }
+  return {
+    ...base,
+    whitelist: args.nextBool(),
+    publicFrom: Number(args.nextU64()),
+    whitelisted: Number(args.nextU32()),
+    vestFirstBps: Number(args.nextU16()),
+    vestCycleMs: Number(args.nextU64()),
+    vestCycleBps: Number(args.nextU16()),
+    finalizedAt: Number(args.nextU64()),
   };
 }
 

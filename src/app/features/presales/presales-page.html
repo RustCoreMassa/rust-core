@@ -58,6 +58,18 @@
               }}</span>
             </div>
             <app-presale-progress [presale]="p" />
+            @if (p.whitelist || p.vestFirstBps < 10000) {
+              <div class="extras">
+                @if (p.whitelist) {
+                  <span class="extra">{{
+                    p.publicFrom >= p.end ? 'Whitelist only' : 'Whitelist first'
+                  }}</span>
+                }
+                @if (p.vestFirstBps < 10000) {
+                  <span class="extra">Vesting</span>
+                }
+              </div>
+            }
           </a>
         }
       </div>
