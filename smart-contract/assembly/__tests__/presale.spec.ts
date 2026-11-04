@@ -1,4 +1,4 @@
-import { Args, bytesToU64, stringToBytes, u256ToBytes } from '@massalabs/as-types';
+import { Args, bytesToU256, bytesToU64, stringToBytes, u256ToBytes } from '@massalabs/as-types';
 import {
   Address,
   Storage,
@@ -25,15 +25,23 @@ import {
   getContributionsOf,
   getPresale,
   getPresales,
+  getReclaimable,
   importToken,
   setHidden,
   presaleOf,
+  reclaimTokens,
   refund,
   setConfig,
   withdrawRaised,
   createPresale,
 } from '../contracts/launchpad';
-import { KIND_TOKEN, LOCK_KEY, STD_OWNER_KEY } from '../lib/launchpad/keys';
+import {
+  KIND_TOKEN,
+  LOCK_KEY,
+  STD_OWNER_KEY,
+  escrowedKey,
+  reclaimKey,
+} from '../lib/launchpad/keys';
 import { divU256ByU64 } from '../lib/launchpad/math';
 import {
   Config,
@@ -165,7 +173,6 @@ function runPresale(bob: u64, carol: u64): void {
 
 function finalizeNow(): void {
   pay(CAROL, MAS);
-  mockScCall([]); // tokens back to the owner
   finalize(idArgs());
   done();
 }
@@ -398,7 +405,6 @@ describe('Presale contributions', () => {
     create();
     mockTimestamp(START);
     pay(ADMIN, MAS);
-    mockScCall([]);
     cancelPresale(idArgs());
     contributeAs(BOB, 10 * MAS);
   });
@@ -567,7 +573,6 @@ describe('Presale cancel', () => {
     setup();
     create();
     pay(ALICE, MAS);
-    mockScCall([]);
     cancelPresale(idArgs());
     done();
     expect(presale().status).toBe(PRESALE_CANCELLED);
@@ -579,7 +584,6 @@ describe('Presale cancel', () => {
     create();
     mockTimestamp(START);
     pay(ALICE, MAS);
-    mockScCall([]);
     cancelPresale(idArgs());
   });
 
@@ -589,7 +593,6 @@ describe('Presale cancel', () => {
     mockTimestamp(START);
     contributeAs(BOB, 10 * MAS);
     pay(ADMIN, MAS);
-    mockScCall([]);
     cancelPresale(idArgs());
     done();
     pay(BOB, 0);
@@ -601,7 +604,148 @@ describe('Presale cancel', () => {
     setup();
     create();
     pay(BOB, MAS);
-    mockScCall([]);
     cancelPresale(idArgs());
+  });
+});
+
+// ---- tokens back to the owner (v1.8.0) ----
+
+/** Tokens sold for `mas` MAS at RATE. */
+function sold(mas: u64): u256 {
+  return divU256ByU64(u256.fromU64(mas) * RATE, MAS);
+}
+
+function reclaimable(): u256 {
+  return bytesToU256(getReclaimable(idArgs()));
+}
+
+function escrowed(): u256 {
+  return bytesToU256(Storage.get(escrowedKey(TOKEN)));
+}
+
+function reclaimAs(user: string): void {
+  pay(user, MAS);
+  mockScCall([]); // token transfer
+  reclaimTokens(idArgs());
+  done();
+}
+
+describe('Presale tokens back to the owner (v1.8.0)', () => {
+  // finalizeNow and the cancels push no mocked call: one to the token would fail.
+  test('a success moves no token; the unsold ones wait for the owner', () => {
+    setup();
+    runPresale(40 * MAS, 20 * MAS);
+    expect(reclaimable()).toBe(u256.Zero);
+    finalizeNow();
+    expect(reclaimable()).toBe(FOR_SALE - sold(60 * MAS));
+    expect(escrowed()).toBe(FOR_SALE);
+  });
+
+  test('a failure leaves all of them', () => {
+    setup();
+    runPresale(10 * MAS, 0);
+    finalizeNow();
+    expect(reclaimable()).toBe(FOR_SALE);
+  });
+
+  test('a cancel leaves all of them', () => {
+    setup();
+    create();
+    pay(ALICE, MAS);
+    cancelPresale(idArgs());
+    done();
+    expect(reclaimable()).toBe(FOR_SALE);
+  });
+
+  test('a sold-out presale leaves nothing to take back', () => {
+    setup();
+    create(presaleArgs(50 * MAS, 100 * MAS, MAS, 0));
+    mockTimestamp(START);
+    contributeAs(BOB, 100 * MAS);
+    finalizeNow();
+    expect(reclaimable()).toBe(u256.Zero);
+    expect(Storage.has(reclaimKey(1))).toBe(false);
+  });
+
+  test('the owner takes them back once; the escrow goes down by as much', () => {
+    setup();
+    runPresale(40 * MAS, 20 * MAS);
+    finalizeNow();
+    reclaimAs(ALICE);
+    expect(reclaimable()).toBe(u256.Zero);
+    expect(Storage.has(reclaimKey(1))).toBe(false);
+    expect(escrowed()).toBe(sold(60 * MAS));
+    expect(Storage.has(LOCK_KEY)).toBe(false);
+  });
+
+  test('contributors still claim after the owner took the rest', () => {
+    setup();
+    runPresale(40 * MAS, 20 * MAS);
+    finalizeNow();
+    reclaimAs(ALICE);
+    pay(BOB, MAS);
+    mockScCall([]);
+    claim(idArgs());
+    done();
+    expect(escrowed()).toBe(sold(20 * MAS));
+  });
+
+  throws('taking them back twice', () => {
+    setup();
+    runPresale(40 * MAS, 20 * MAS);
+    finalizeNow();
+    reclaimAs(ALICE);
+    reclaimAs(ALICE);
+  });
+
+  throws('someone else taking them', () => {
+    setup();
+    runPresale(10 * MAS, 0);
+    finalizeNow();
+    reclaimAs(BOB);
+  });
+
+  throws('the admin taking them', () => {
+    setup();
+    runPresale(10 * MAS, 0);
+    finalizeNow();
+    reclaimAs(ADMIN);
+  });
+
+  throws('taking them while the presale is open', () => {
+    setup();
+    create();
+    reclaimAs(ALICE);
+  });
+
+  throws('taking them while the Launchpad is busy', () => {
+    setup();
+    runPresale(10 * MAS, 0);
+    finalizeNow();
+    Storage.set(LOCK_KEY, [1]);
+    reclaimAs(ALICE);
+  });
+
+  test('a next presale of the token still counts the tokens owed', () => {
+    setup();
+    runPresale(10 * MAS, 0);
+    finalizeNow();
+    // The Launchpad holds the first presale's tokens (owed) and the new ones: enough.
+    escrowArrived(FOR_SALE + FOR_SALE);
+    pay(ALICE, MAS);
+    mockScCall([]); // transferFrom
+    createPresale(presaleArgs(50 * MAS, 100 * MAS, MAS, 40 * MAS, END + HOUR, END + 2 * HOUR));
+    done();
+    expect(escrowed()).toBe(FOR_SALE + FOR_SALE);
+  });
+
+  throws('a next presale whose tokens only cover the ones owed', () => {
+    setup();
+    runPresale(10 * MAS, 0);
+    finalizeNow();
+    escrowArrived(FOR_SALE);
+    pay(ALICE, MAS);
+    mockScCall([]);
+    createPresale(presaleArgs(50 * MAS, 100 * MAS, MAS, 40 * MAS, END + HOUR, END + 2 * HOUR));
   });
 });

@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.7.0" src="https://img.shields.io/badge/version-1.7.0-brightgreen" />
+  <img alt="Version 1.8.0" src="https://img.shields.io/badge/version-1.8.0-brightgreen" />
   <img alt="Network: Massa" src="https://img.shields.io/badge/network-Massa-red" />
   <img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" />
 </p>
@@ -45,11 +45,12 @@ your money. RustCore Launchpad is built on four principles:
   The Launchpad's own code can only change after a **72-hour public delay**, and its admin can
   never touch presale funds — only the fees collected.
 
-> **Version 1.7.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
+> **Version 1.8.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
 > on Massa **mainnet** at `AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP`, upgraded in
 > place (v1.0.0 → v1.3.1 on 2026-10-17, → v1.4.0 on 2026-10-27), each time after the 72-hour
-> public delay; v1.6.0 (presale whitelists and vesting) follows the same way. It has not had an
-> independent security audit yet: start with small amounts.
+> public delay; v1.8.0 (presale whitelists and vesting, presale tokens taken back by their
+> owner) follows the same way. It has not had an independent security audit yet: start with
+> small amounts.
 
 ## What you can do
 
@@ -171,8 +172,8 @@ code" is built in your browser from files the app ships and the code stored on-c
   **Mutable**. A mutable or imported contract can be changed by its owner.
 - **A presale is only as good as its token.** The Launchpad guarantees the escrow and the
   refunds; it can't guarantee the project. If the token's code can be changed (imported or
-  mutable), its owner could make transfers fail and block claims, and even refunds: the
-  presale page warns about it.
+  mutable), its owner could make transfers fail and block claims (on contracts before v1.8.0,
+  refunds too): the presale page warns about it.
 - **Check a Dusa pool's price before adding to it.** Anyone can create a token's pool at any
   price; the app warns when a pool is far from the presale's price or still empty.
 - The Launchpad hasn't had an independent audit yet (it's on the [roadmap](#roadmap)).
@@ -211,8 +212,9 @@ and then the Launchpad keeps only your original code: keep any new code yourself
 **What happens to my MAS in a presale?** It stays in the Launchpad contract until the presale
 ends. Soft cap reached: you claim your tokens — all at once, or share by share as they unlock
 if the presale has vesting — and the owner receives the MAS minus the fee. Not reached, or
-cancelled: you take your MAS back with **Refund**. A presale with a whitelist takes MAS only
-from the listed addresses until its public phase (if it has one).
+cancelled: you take your MAS back with **Refund**. The owner takes back the unsold tokens (all
+of them after a failure or a cancel) with **Take back**. A presale with a whitelist takes MAS
+only from the listed addresses until its public phase (if it has one).
 
 **Why do transactions send more MAS than the fee?** Massa charges for the storage a transaction
 creates (records, balances, the contract itself). The app sends a little more than needed; the
@@ -244,6 +246,8 @@ the links. Pin your files so they stay online.
 - [x] RustCore NFT collection: a discount on every Launchpad fee for its holders, 30% to start (v1.4.0)
 - [x] Presale whitelist and vesting, both optional (v1.6.0)
 - [x] Dusa: a token's pools and price on its page; create a pool and add liquidity (v1.7.0)
+- [x] Presale tokens go back to their owner in a separate step: a token's code can no longer
+      lock refunds (v1.8.0)
 - [ ] Presale liquidity on Dusa, added and locked by the Launchpad
 - [ ] Token payments on the marketplace
 - [x] An indexer for very large collections, and a [public API](#public-api)

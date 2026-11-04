@@ -81,10 +81,10 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
     id: 'buildnet',
     label: 'Buildnet',
     chainId: CHAIN_ID.Buildnet,
-    // smart-contract/deployments/buildnet-1.6.0.json (v1.6.0: presale whitelist and vesting).
-    // Older ones: buildnet-1.4.0.json, buildnet-1.2.0.json, and buildnet.json (upgraded in
-    // place to v1.1.0).
-    launchpadAddress: 'AS12TLJkNQinjSRdWdB6LxrHWzXwfgr9QGWjfsTa5UR9P1XCYT99d',
+    // smart-contract/deployments/buildnet-1.8.0.json (v1.8.0: presale tokens taken back by
+    // their owner). Older ones: buildnet-1.6.0.json, buildnet-1.4.0.json, buildnet-1.2.0.json,
+    // and buildnet.json (upgraded in place to v1.1.0).
+    launchpadAddress: 'AS12rFvAEoLamej3EM4FugHpXrsEyhDmpMkJPsUyCikH8AeGfPGTg',
     membership: null,
     // No public buildnet API. To try one locally: `cargo run` in rust-core-api with
     // RUSTCORE__API__BIND=127.0.0.1:8081 (Massa Station uses 8080), then 'http://localhost:8081'.

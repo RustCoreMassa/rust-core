@@ -138,7 +138,7 @@ storage).
 3. With the same `DEPLOYMENT`, run `npm run verify` and the e2e scripts **one at a time** (they
    measure the account's balance and the fees collected): `npx tsx src/e2e.ts`,
    `e2e-collections`, `e2e-marketplace`, `e2e-presale`, `e2e-presale-extras`, `e2e-tokenomics`,
-   `e2e-admin`, `e2e-removal`, `e2e-discount`. The whole set costs ≈ 180 test MAS.
+   `e2e-admin`, `e2e-removal`, `e2e-discount`, `e2e-dusa`. The whole set costs ≈ 200 test MAS.
 
 A fresh buildnet deployment starts with an empty registry; that's fine for the test network.
 

@@ -1,8 +1,10 @@
 // Token presales. The owner escrows the tokens for sale in the Launchpad; contributors send MAS.
 // At the end, success (raised ≥ soft cap): contributors claim their tokens, the owner withdraws
-// the MAS minus the presale fee and gets the unsold tokens back. Failure or cancel: contributors
+// the MAS minus the presale fee and takes the unsold tokens back. Failure or cancel: contributors
 // take their MAS back, the owner all the tokens.
-// Pull, never push: no call loops over contributors.
+// Pull, never push: no call loops over contributors, and closing a presale (finalize, cancel)
+// moves no token since v1.8.0 — the owner takes them back with `reclaimTokens`, so a token whose
+// transfers fail can block only its own transfers, never refunds.
 //
 // Optional extras (v1.6.0), chosen by the owner at creation: a whitelist (only listed addresses
 // contribute until `publicFrom`, then anyone) and vesting (a first share of the bought tokens at
@@ -31,14 +33,7 @@ import {
   validateAddress,
 } from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly';
-import {
-  _activeConfig,
-  _count,
-  _isAdmin,
-  _nextId,
-  _ownerOf,
-  _projectByAddress,
-} from './common';
+import { _activeConfig, _count, _isAdmin, _nextId, _ownerOf, _projectByAddress } from './common';
 import {
   COUNTER_PRESALE,
   KIND_TOKEN,
@@ -51,6 +46,7 @@ import {
   mrc20BalanceKey,
   presaleActiveKey,
   presaleKey,
+  reclaimKey,
   u64FromBE,
   vestClaimedKey,
   whitelistKey,
@@ -150,7 +146,10 @@ export function createPresale(binaryArgs: StaticArray<u8>): void {
   assert(tokensForSale > u256.Zero, 'Put some tokens up for sale');
   assert(_tokensFor(hardCap, rate) <= tokensForSale, 'Not enough tokens for the hard cap');
   if (whitelist) {
-    assert(publicFrom > start && publicFrom <= end, 'The public phase must begin after the start, by the end');
+    assert(
+      publicFrom > start && publicFrom <= end,
+      'The public phase must begin after the start, by the end',
+    );
   } else publicFrom = 0;
   assert(vestFirstBps <= BPS_ALL, 'The first release must be at most 100%');
   if (vestFirstBps < BPS_ALL) {
@@ -253,8 +252,8 @@ export function contribute(binaryArgs: StaticArray<u8>): void {
 
 /**
  * Closes a presale once it ended (or reached its hard cap). Anyone can call it. Success when
- * the soft cap is reached: the unsold tokens go back to the owner. Failure: all of them.
- * Args: presaleId (u64). Coins: ≈ 0.02 MAS.
+ * the soft cap is reached: the unsold tokens wait for the owner (`reclaimTokens`). Failure: all
+ * of them. Args: presaleId (u64). Coins: ≈ 0.01 MAS.
  */
 export function finalize(binaryArgs: StaticArray<u8>): void {
   const before = balance();
@@ -408,7 +407,8 @@ export function removeFromWhitelist(binaryArgs: StaticArray<u8>): void {
 
 /**
  * Cancels a presale: by its owner before it starts, by the admin until it is finalized. All
- * tokens go back to the owner; contributors (if any) take their MAS back with `refund`.
+ * tokens wait for the owner (`reclaimTokens`); contributors (if any) take their MAS back with
+ * `refund`.
  */
 export function cancelPresale(binaryArgs: StaticArray<u8>): void {
   const before = balance();
@@ -423,6 +423,26 @@ export function cancelPresale(binaryArgs: StaticArray<u8>): void {
   presale.status = PRESALE_CANCELLED;
   _close(presale, presale.tokensForSale);
   generateEvent(createEvent('PRESALE_CANCELLED', [presale.id.toString()]));
+  settle(before, 0);
+}
+
+/**
+ * The presale owner takes back the tokens a closed presale returns: the unsold ones after a
+ * success, all of them after a failure or a cancel. Args: presaleId (u64). Coins: ≈ 0.01 MAS
+ * (the entry's storage comes back).
+ */
+export function reclaimTokens(binaryArgs: StaticArray<u8>): void {
+  const before = balance();
+  _notLocked();
+  const presale = _load(new Args(binaryArgs).nextU64().expect('presaleId is missing or invalid'));
+  _onlyPresaleOwner(presale);
+  const key = reclaimKey(presale.id);
+  assert(Storage.has(key), 'No tokens to take back');
+  const tokens = bytesToU256(Storage.get(key));
+  Storage.del(key);
+  Storage.set(escrowedKey(presale.token), u256ToBytes(_escrowed(presale.token) - tokens));
+  _sendTokens(presale.token, presale.creator, tokens);
+  generateEvent(createEvent('TOKENS_RECLAIMED', [presale.id.toString(), tokens.toString()]));
   settle(before, 0);
 }
 
@@ -492,6 +512,15 @@ export function getClaimed(binaryArgs: StaticArray<u8>): StaticArray<u8> {
     args.nextU64().expect('presaleId is missing or invalid'),
     args.nextString().expect('contributor is missing or invalid'),
   );
+  return Storage.has(key) ? Storage.get(key) : u256ToBytes(u256.Zero);
+}
+
+/**
+ * Args: presaleId (u64). Returns u256: token units the presale's owner can take back with
+ * `reclaimTokens` (0 before it closes and after they took them).
+ */
+export function getReclaimable(binaryArgs: StaticArray<u8>): StaticArray<u8> {
+  const key = reclaimKey(new Args(binaryArgs).nextU64().expect('presaleId is missing or invalid'));
   return Storage.has(key) ? Storage.get(key) : u256ToBytes(u256.Zero);
 }
 
@@ -565,12 +594,14 @@ function _balanceIn(token: string, holder: string): u256 {
   return Storage.hasOf(contract, key) ? bytesToU256(Storage.getOf(contract, key)) : u256.Zero;
 }
 
-/** Ends an open presale and sends `back` tokens to its owner. */
+/**
+ * Ends an open presale; `back` tokens stay in escrow for its owner (`reclaimTokens`). No call to
+ * the token: closing can't be blocked by its code.
+ */
 function _close(presale: Presale, back: u256): void {
   Storage.set(presaleKey(presale.id), presale.serialize());
   Storage.del(presaleActiveKey(presale.token));
-  Storage.set(escrowedKey(presale.token), u256ToBytes(_escrowed(presale.token) - back));
-  if (back > u256.Zero) _sendTokens(presale.token, presale.creator, back);
+  if (back > u256.Zero) Storage.set(reclaimKey(presale.id), u256ToBytes(back));
 }
 
 /** Deletes the caller's contribution (its storage is refunded) and returns the amount. */

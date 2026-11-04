@@ -18,6 +18,7 @@ import {
   CLAIM_COINS,
   CONTRIBUTE_MARGIN,
   FINALIZE_COINS,
+  RECLAIM_COINS,
   WITHDRAW_COINS,
   whitelistCoins,
 } from '../../core/launchpad/presale-cost';
@@ -61,6 +62,7 @@ type Busy =
   | 'refund'
   | 'withdraw'
   | 'cancel'
+  | 'reclaim'
   | 'whitelist-add'
   | 'whitelist-remove'
   | 'whitelist-clear'
@@ -116,6 +118,16 @@ export class PresalePage {
   protected readonly bpsPercent = bpsPercent;
   /** The wallet is on the presale's whitelist; null when unknown or there is none. */
   protected readonly listed = signal<boolean | null>(null);
+  /**
+   * Closing the presale leaves its tokens for the owner to take back (Launchpad v1.8.0+), so the
+   * token's code can't block refunds. False on older versions, where finalize sends them.
+   */
+  protected readonly pulls = signal(false);
+  /** Token units the presale's owner (the wallet) can take back now. */
+  protected readonly reclaimable = signal(0n);
+  protected readonly reclaimableText = computed(() =>
+    formatUnits(this.reclaimable(), this.decimals()),
+  );
   /** Token units the wallet already claimed from a vesting presale. */
   protected readonly claimed = signal(0n);
   /** Addresses typed by the owner to add or remove. */
@@ -314,6 +326,15 @@ export class PresalePage {
     );
   }
 
+  protected reclaim(): Promise<void> {
+    return this.call(
+      'reclaim',
+      new Args().addU64(this.presaleId()),
+      RECLAIM_COINS,
+      'reclaimTokens',
+    );
+  }
+
   protected cancel(): Promise<void> {
     return this.call('cancel', new Args().addU64(this.presaleId()), CANCEL_COINS, 'cancelPresale');
   }
@@ -389,7 +410,14 @@ export class PresalePage {
         me && presale.whitelist ? await this.launchpad.isWhitelisted(presale.id, me) : null;
       const claimed =
         me && mine && hasVesting(presale) ? await this.launchpad.claimed(presale.id, me) : 0n;
+      const pulls = await this.launchpad.supportsReclaim();
+      const reclaimable =
+        pulls && me === presale.creator && presale.status !== PRESALE_OPEN
+          ? await this.launchpad.reclaimable(presale.id)
+          : 0n;
       if (run !== this.run) return;
+      this.pulls.set(pulls);
+      this.reclaimable.set(reclaimable);
       this.listed.set(listed);
       this.claimed.set(claimed);
       this.presale.set(presale);

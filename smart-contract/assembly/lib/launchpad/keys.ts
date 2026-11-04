@@ -219,6 +219,17 @@ export function vestClaimedKey(presaleId: u64, contributor: string): StaticArray
   return VEST_CLAIMED.concat(u64BE(presaleId)).concat(stringToBytes(contributor));
 }
 
+// ---- presale tokens back to the owner (v1.8.0) --------------------------------------------
+const RECLAIM = stringToBytes('rcl:');
+
+/**
+ * Token units a closed presale owes its owner (unsold after a success, all after a failure or a
+ * cancel), until `reclaimTokens` sends them.
+ */
+export function reclaimKey(presaleId: u64): StaticArray<u8> {
+  return RECLAIM.concat(u64BE(presaleId));
+}
+
 /** The standard MRC20 balance key of an address ('BALANCE' + address). */
 export function mrc20BalanceKey(address: string): StaticArray<u8> {
   return stringToBytes('BALANCE' + address);
