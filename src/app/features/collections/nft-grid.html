@@ -66,7 +66,13 @@
             @if (m === undefined) {
               <span class="skeleton fill"></span>
             } @else if (m?.image) {
-              <img [src]="m.image" alt="" loading="lazy" referrerpolicy="no-referrer" />
+              <img
+                [src]="m.image"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                referrerpolicy="no-referrer"
+              />
             } @else {
               <span class="no-image">#{{ item.id }}</span>
             }

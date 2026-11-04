@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.6.0" src="https://img.shields.io/badge/version-1.6.0-brightgreen" />
+  <img alt="Version 1.7.0" src="https://img.shields.io/badge/version-1.7.0-brightgreen" />
   <img alt="Network: Massa" src="https://img.shields.io/badge/network-Massa-red" />
   <img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" />
 </p>
@@ -45,7 +45,7 @@ your money. RustCore Launchpad is built on four principles:
   The Launchpad's own code can only change after a **72-hour public delay**, and its admin can
   never touch presale funds — only the fees collected.
 
-> **Version 1.6.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
+> **Version 1.7.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
 > on Massa **mainnet** at `AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP`, upgraded in
 > place (v1.0.0 → v1.3.1 on 2026-10-17, → v1.4.0 on 2026-10-27), each time after the 72-hour
 > public delay; v1.6.0 (presale whitelists and vesting) follows the same way. It has not had an
@@ -59,6 +59,7 @@ your money. RustCore Launchpad is built on four principles:
 | 🖼️ **Launch a collection** | An MRC721 NFT collection: metadata on IPFS, owner mint, optional public mint at your price, a per-wallet limit, and a royalty on every sale. |
 | 📥 **Import** | List a token or collection you already own and deployed elsewhere. |
 | 🛒 **Trade NFTs** | List, buy and cancel on the marketplace. No custody: the NFT stays in your wallet until it's sold. A small marketplace fee and the creator's royalty, nothing else. |
+| 💱 **Trade on Dusa** | Your token's pools on Dusa, Massa's exchange, with their price; create a pool and add liquidity from the token's page. |
 | 🚀 **Run a presale** | Sell your token for MAS with a soft and hard cap, optionally to a whitelist first and with vesting for the tokens. Success: contributors claim their tokens. Failure: they take their MAS back. Nobody can touch the MAS in between. |
 | 📊 **Tokenomics** | Show how your token's supply is split — team, liquidity, community… — as a chart on its page, with the live balance of each address you name. Declared at launch or anytime later; checked to add up to the supply. |
 | ✏️ **Edit & download** | Change your project's description, logo and links anytime, and download the original contract code as a zip. |
@@ -124,7 +125,9 @@ the Launchpad's development.
   keep working), **remove** offensive projects from the registry for good (their address can't
   be imported again; their contracts still keep working, and a removed token's presale still
   refunds or pays out), reserve well-known symbols and pause new launches and trading. Refunds,
-  claims and cancels keep working while paused.
+  claims and cancels keep working while paused. It can also cancel a presale that hasn't been
+  closed yet (contributors then take their MAS back) and add a new template version, used by
+  new launches from then on (the app launches only from templates whose source it ships).
 - A change of the Launchpad's code is announced on-chain and can run only 72 hours later, so
   anyone can see it coming — every page of the app shows a notice while an upgrade is pending.
 
@@ -132,15 +135,16 @@ the Launchpad's development.
 
 | Destination | Why |
 |---|---|
-| The DeWeb gateway you open the Launchpad from | Delivers the app itself. Gateways may add their own small "hosted on chain" label to the page, which loads a font from Google Fonts — that's the gateway, not the app. |
-| `mainnet.massa.net` / `buildnet.massa.net` | Massa's public nodes: every read, and the transactions you sign. |
+| The DeWeb gateway you open the Launchpad from | Delivers the app itself. Some gateways add their own "hosted on chain" label to the page; the app's security policy blocks its script, so it stays hidden. |
+| `mainnet.massa.net` / `buildnet.massa.net` | Massa's public nodes: every read (Dusa's pools included), and the transactions you sign. |
 | Your wallet | Only after you click **Connect wallet**: the Bearby / MetaMask extensions inside your browser, and Massa Station's local server (`station.massa`, `localhost:8080`). Nothing connects on its own. |
 | `api.rustcoremassa.com` | The read-only RustCore API (mainnet): `/status`, the holders and listing prices of collections of 500 NFTs and more, and the NFTs your address holds (My NFTs). Public chain data only, no cookies; like any web server, it sees your IP address. The app falls back to the chain if it doesn't answer. |
 | `ipfs.io` | Public IPFS gateway for `ipfs://` images and NFT metadata. |
 | The `https://` addresses project owners chose | Their logos, banners, NFT metadata and images. Requested without a referrer or cookies. |
 
 That's all: no analytics, no tracking, no cookies; fonts are bundled. Links to
-`explorer.massa.net` and to project websites open only when you click them. "Download original
+`explorer.massa.net`, to Dusa (`app.dusa.io`) and to project websites open only when you click
+them. "Download original
 code" is built in your browser from files the app ships and the code stored on-chain.
 
 **Built-in safeguards**
@@ -151,7 +155,11 @@ code" is built in your browser from files the app ships and the code stored on-c
 - A purchase carries the price you saw: if the seller changes it, the purchase is refused.
 - Launches go through only with templates whose source code the app ships (checked by hash).
 - Images and metadata are shown as images and plain text, never as HTML; only `https://` and
-  `ipfs://` links are accepted.
+  `ipfs://` links are accepted, never ones pointing at your computer or your local network.
+  Metadata files are read up to 256 KB.
+- A Content-Security-Policy lets only the app's own files run code, and the app refuses to run
+  inside another website's frame.
+- The NFT page tells whether its metadata and image can still change (IPFS and frozen, or not).
 
 **Good to know**
 
@@ -162,7 +170,11 @@ code" is built in your browser from files the app ships and the code stored on-c
   check the address, the **Verified** badge and whether the code is **Imported** or
   **Mutable**. A mutable or imported contract can be changed by its owner.
 - **A presale is only as good as its token.** The Launchpad guarantees the escrow and the
-  refunds; it can't guarantee the project.
+  refunds; it can't guarantee the project. If the token's code can be changed (imported or
+  mutable), its owner could make transfers fail and block claims, and even refunds: the
+  presale page warns about it.
+- **Check a Dusa pool's price before adding to it.** Anyone can create a token's pool at any
+  price; the app warns when a pool is far from the presale's price or still empty.
 - The Launchpad hasn't had an independent audit yet (it's on the [roadmap](#roadmap)).
 
 ### Verify it yourself
@@ -231,7 +243,8 @@ the links. Pin your files so they stay online.
       presale rate cap, warnings on imports and inactive listings (v1.3.1)
 - [x] RustCore NFT collection: a discount on every Launchpad fee for its holders, 30% to start (v1.4.0)
 - [x] Presale whitelist and vesting, both optional (v1.6.0)
-- [ ] Presale liquidity on Dusa
+- [x] Dusa: a token's pools and price on its page; create a pool and add liquidity (v1.7.0)
+- [ ] Presale liquidity on Dusa, added and locked by the Launchpad
 - [ ] Token payments on the marketplace
 - [x] An indexer for very large collections, and a [public API](#public-api)
 - [ ] Independent security audit

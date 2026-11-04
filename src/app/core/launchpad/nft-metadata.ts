@@ -14,10 +14,22 @@ export interface NftMetadata {
   description: string;
   /** https URL ('' when missing or unusable). */
   image: string;
+  /** Where the image link points: IPFS (content-addressed, can't change), a web server, or none. */
+  imageSource: LinkSource;
   attributes: NftAttribute[];
 }
 
+export type LinkSource = 'ipfs' | 'web' | '';
+
+/** IPFS for ipfs:// links (and a local node's gateway links while developing), else web. */
+export function linkSource(link: string): LinkSource {
+  if (!link) return '';
+  return link.startsWith('ipfs://') || localGatewayOf(link) ? 'ipfs' : 'web';
+}
+
 const MAX_TEXT = 2_000;
+/** Metadata JSON is a few KB; anything far bigger is refused before it can freeze the tab. */
+export const MAX_METADATA_BYTES = 256 * 1024;
 const MAX_ATTRIBUTES = 50;
 const TIMEOUT_MS = 15_000;
 
@@ -50,11 +62,50 @@ export class NftMetadataLoader {
         credentials: 'omit',
       });
       if (!response.ok) return null;
-      return parseMetadata(await response.json(), localGatewayOf(url) ?? undefined);
+      const text = await readLimited(response, MAX_METADATA_BYTES);
+      return text === null
+        ? null
+        : parseMetadata(JSON.parse(text), localGatewayOf(url) ?? undefined);
     } catch {
       return null;
     }
   }
+}
+
+/**
+ * The response's text, or null when it's bigger than `max` bytes: refused from its
+ * Content-Length when it gives one, else read as a stream and dropped as soon as it passes `max`.
+ */
+export async function readLimited(response: Response, max: number): Promise<string | null> {
+  const declared = Number(response.headers.get('content-length') ?? 0);
+  if (declared > max) {
+    void response.body?.cancel().catch(() => undefined);
+    return null;
+  }
+  if (!response.body) {
+    const text = await response.text();
+    return new TextEncoder().encode(text).length > max ? null : text;
+  }
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      void reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let at = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, at);
+    at += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
 }
 
 /** `gateway`: where the JSON's ipfs:// links resolve (default: the configured gateway). */
@@ -62,10 +113,12 @@ export function parseMetadata(json: unknown, gateway?: string): NftMetadata | nu
   if (!json || typeof json !== 'object' || Array.isArray(json)) return null;
   const data = json as Record<string, unknown>;
   const attributes = Array.isArray(data['attributes']) ? data['attributes'] : [];
+  const image = httpUrl(text(data['image']), gateway);
   return {
     name: text(data['name']),
     description: text(data['description']),
-    image: httpUrl(text(data['image']), gateway),
+    image,
+    imageSource: image ? linkSource(text(data['image'])) : '',
     attributes: attributes
       .slice(0, MAX_ATTRIBUTES)
       .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object')

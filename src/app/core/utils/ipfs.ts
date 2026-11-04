@@ -44,14 +44,53 @@ export function localGatewayOf(url: string): string | null {
 }
 
 /**
+ * A host a public link must not point at: this machine, the local network, or a `.massa` name
+ * (resolved by Massa Station on the user's own computer). Creators' links load in every
+ * visitor's browser, so these would make it call services on the visitor's machine or network.
+ * `host` as the URL parser gives it (lowercase, IPv4 normalized, IPv6 in brackets).
+ */
+export function isPrivateHost(host: string): boolean {
+  if (host === 'localhost' || /\.(localhost|local|internal|massa)$/.test(host)) return true;
+  if (host.startsWith('[')) return true; // IPv6 literals: no public content uses them
+  const ip = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(host);
+  if (!ip) return false;
+  const [a, b] = [Number(ip[1]), Number(ip[2])];
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    a >= 224 ||
+    (a === 100 && b >= 64 && b < 128) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b < 32) ||
+    (a === 192 && b === 168)
+  );
+}
+
+/**
  * A link the browser can load: ipfs://CID/path → gateway URL (`gateway`, else the configured
- * one); https stays; a local link stays only when local URLs are allowed (development);
+ * one), refused if its path climbs out of the gateway (`..`); https stays, unless it points at
+ * a private host; a local link stays only when local URLs are allowed (development);
  * anything else → ''.
  */
 export function httpUrl(url: string, gateway: string = settings.gateway): string {
-  if (url.startsWith('ipfs://'))
-    return gateway + url.slice('ipfs://'.length).replace(/^ipfs\//, '');
-  if (url.startsWith('https://')) return url;
+  if (url.startsWith('ipfs://')) {
+    const mapped = gateway + url.slice('ipfs://'.length).replace(/^ipfs\//, '');
+    const parsed = parse(mapped);
+    return parsed && parsed.href.startsWith(gateway) && !mapped.includes('\\') ? mapped : '';
+  }
   if (settings.allowLocal && isLocalUrl(url)) return url;
+  if (url.startsWith('https://')) {
+    const parsed = parse(url);
+    return parsed && !isPrivateHost(parsed.hostname) ? url : '';
+  }
   return '';
+}
+
+function parse(url: string): URL | null {
+  try {
+    return new URL(url);
+  } catch {
+    return null;
+  }
 }

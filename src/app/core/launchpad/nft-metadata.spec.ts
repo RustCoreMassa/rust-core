@@ -1,5 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { NftMetadataLoader, parseMetadata } from './nft-metadata';
+import {
+  MAX_METADATA_BYTES,
+  NftMetadataLoader,
+  linkSource,
+  parseMetadata,
+  readLimited,
+} from './nft-metadata';
 import { IPFS_GATEWAY, configureUrls } from '../utils/ipfs';
 import { readMintInfo, tokenIdFromKey } from './collection-reader';
 import { Args } from '@massalabs/massa-web3';
@@ -19,6 +25,7 @@ describe('parseMetadata', () => {
       name: 'Cat #1',
       description: 'A cat',
       image: 'https://ipfs.io/ipfs/bafyCat/1.png',
+      imageSource: 'ipfs',
       attributes: [
         { trait: 'Fur', value: 'Orange' },
         { trait: 'Level', value: '3' },
@@ -32,7 +39,13 @@ describe('parseMetadata', () => {
       image: 'javascript:alert(1)',
       attributes: [null, 'x', { trait_type: '', value: 'y' }, { trait_type: 'Ok', value: {} }],
     });
-    expect(meta).toEqual({ name: '', description: '', image: '', attributes: [] });
+    expect(meta).toEqual({
+      name: '',
+      description: '',
+      image: '',
+      imageSource: '',
+      attributes: [],
+    });
   });
 
   it('refuses anything that isn’t a JSON object', () => {
@@ -69,6 +82,48 @@ describe('NftMetadataLoader', () => {
     );
     const meta = await TestBed.inject(NftMetadataLoader).load('ipfs://bafyMeta/1.json');
     expect(meta?.image).toBe('https://ipfs.io/ipfs/bafyImg/1.png');
+  });
+});
+
+describe('linkSource', () => {
+  it('tells IPFS from a web server', () => {
+    expect(linkSource('ipfs://bafyA/1.json')).toBe('ipfs');
+    expect(linkSource('https://nft.example/1.json')).toBe('web');
+    expect(linkSource('')).toBe('');
+    expect(parseMetadata({ image: 'https://nft.example/1.png' })?.imageSource).toBe('web');
+  });
+});
+
+describe('readLimited', () => {
+  const stream = (chunks: number[]) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const size of chunks) controller.enqueue(new Uint8Array(size).fill(0x20));
+        controller.close();
+      },
+    });
+
+  it('reads a small body', async () => {
+    expect(await readLimited(new Response('{"name":"A"}'), 1000)).toBe('{"name":"A"}');
+  });
+
+  it('refuses a body announced too big without reading it', async () => {
+    const response = new Response(stream([10]), { headers: { 'content-length': '5000' } });
+    expect(await readLimited(response, 1000)).toBeNull();
+  });
+
+  it('stops reading as soon as a body without a length passes the limit', async () => {
+    expect(await readLimited(new Response(stream([600, 600, 600])), 1000)).toBeNull();
+    expect(await readLimited(new Response(stream([500, 500])), 1000)).toHaveLength(1000);
+  });
+
+  it('turns oversized metadata into "can\'t be loaded"', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(stream([MAX_METADATA_BYTES, 1]))),
+    );
+    expect(await TestBed.inject(NftMetadataLoader).load('ipfs://bafyHuge/1.json')).toBeNull();
+    vi.unstubAllGlobals();
   });
 });
 

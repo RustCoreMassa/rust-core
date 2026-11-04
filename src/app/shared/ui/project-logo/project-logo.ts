@@ -11,6 +11,7 @@ import { httpUrl } from '../../../core/utils/ipfs';
         [src]="src()"
         alt=""
         loading="lazy"
+        decoding="async"
         referrerpolicy="no-referrer"
         (error)="failed.set(true)"
       />

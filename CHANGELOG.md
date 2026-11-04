@@ -8,6 +8,37 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.7.0] — 2026-11-04
+
+Works with the Launchpad contract **v1.6.0**; no contract change.
+
+### Added
+
+- Dusa, Massa's exchange, on token pages (and on a presale's page once it succeeded): the
+  token's MAS pools with their price and what's in them, and "Open on Dusa". The token's owner
+  can create a pool at a starting price (a successful presale's price by default) and add token
+  and MAS to it, narrow or wide around the price, in up to three signatures; the position goes
+  to their wallet and can be removed on Dusa. The Launchpad contract isn't involved.
+- The NFT page says whether the NFT's metadata and image can still change: on IPFS and frozen,
+  changeable by the collection's owner, on a web server, or unknown (imported collections).
+
+### Security
+
+- A Content-Security-Policy in the published app: only its own files can run code, no plugins,
+  frames, forms or base changes (it also hides the label some DeWeb gateways add to the page).
+  The build keeps no inline script for it (`npm run smoke` checks).
+- The app refuses to run inside another site's frame (clickjacking) and offers its own tab.
+- NFT metadata is read up to 256 KB: a huge file can no longer freeze the page. Images decode
+  off the main thread.
+- Project and NFT links pointing at this computer, the local network or `.massa` names, and
+  `ipfs://` paths climbing out of the gateway, are no longer loaded; the forms refuse them.
+- Adding liquidity to a Dusa pool whose price is more than 10% away from the token's presale
+  price, or that nobody has added to yet, takes an explicit confirmation: anyone can create a
+  token's pool at any price. Empty pools are marked on the token page.
+- The presale warning for tokens whose code can change now says that refunds, not only
+  claims, could be blocked.
+- The release workflow's GitHub Actions are pinned by commit.
+
 ## [1.6.0] — 2026-11-04
 
 Works with the Launchpad contract **v1.6.0** (new: presale whitelists and vesting). On older
@@ -266,6 +297,8 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.7.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.7.0
+[1.6.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.6.0
 [1.5.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.5.0
 [1.4.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.4.0
 [1.3.2]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.3.2

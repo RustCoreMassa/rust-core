@@ -49,6 +49,7 @@ import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { MasPipe } from '../../shared/pipes/units-pipe';
 import { PresaleProgress } from '../../shared/ui/presale-progress/presale-progress';
 import { ProjectBadges } from '../../shared/ui/project-badges/project-badges';
+import { DusaCard } from '../tokens/dusa-card';
 import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
 import { priceNano } from '../create/collection-draft';
 import { parseAddresses } from '../create/presale-draft';
@@ -69,6 +70,7 @@ type Busy =
 @Component({
   selector: 'app-presale-page',
   imports: [
+    DusaCard,
     DatePipe,
     RouterLink,
     MasPipe,

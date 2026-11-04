@@ -67,7 +67,7 @@
     @let p = project()!;
     <div class="card hero-card" [class.with-banner]="banner()">
       @if (banner()) {
-        <img class="banner" [src]="banner()" alt="" referrerpolicy="no-referrer" />
+        <img class="banner" [src]="banner()" alt="" decoding="async" referrerpolicy="no-referrer" />
       }
       <div class="identity">
         <app-project-logo [url]="p.info.logoUrl" [symbol]="p.symbol" />

@@ -1,5 +1,5 @@
 import { toUnits } from '../utils/token-amount';
-import { allowsLocalUrls, isLocalUrl } from '../utils/ipfs';
+import { allowsLocalUrls, httpUrl, isLocalUrl } from '../utils/ipfs';
 import {
   COLLECTION_CATEGORIES,
   KIND_TOKEN,
@@ -110,7 +110,8 @@ export function descriptionError(text: string): string | null {
 }
 
 /**
- * Empty, or an https:// or ipfs:// link without spaces. While developing (environment
+ * Empty, or an https:// or ipfs:// link without spaces that the app can load (no private
+ * hosts). While developing (environment
  * allowLocalUrls), also http:// on this machine — the contract accepts those hosts too.
  */
 export function urlError(url: string): string | null {
@@ -120,6 +121,9 @@ export function urlError(url: string): string | null {
   if (!local && !url.startsWith('https://') && !url.startsWith('ipfs://'))
     return 'Start with https:// or ipfs://';
   if (/[\s\u0000-\u001f\u007f]/.test(url)) return 'Remove the spaces.';
+  // The app wouldn't load it (httpUrl): a path out of the IPFS gateway, or a private host.
+  if (!httpUrl(url))
+    return url.startsWith('ipfs://') ? 'Remove the ".." parts.' : 'Use a public address.';
   return null;
 }
 

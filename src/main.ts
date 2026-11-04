@@ -8,8 +8,10 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { configureUrls } from './app/core/utils/ipfs';
+import { isFramed, showFramedNotice } from './app/core/platform/framed';
 import { environment } from './environments/environment';
 
 configureUrls({ gateway: environment.ipfsGateway, allowLocal: environment.allowLocalUrls });
 
-bootstrapApplication(App, appConfig).catch((err) => console.error(err));
+if (isFramed()) showFramedNotice();
+else bootstrapApplication(App, appConfig).catch((err) => console.error(err));

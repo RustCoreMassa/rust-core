@@ -9,7 +9,8 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CollectionReader } from '../../core/launchpad/collection-reader';
+import { CollectionReader, CollectionState } from '../../core/launchpad/collection-reader';
+import { metadataStability } from '../../core/launchpad/metadata-stability';
 import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
 import { NftMetadata, NftMetadataLoader } from '../../core/launchpad/nft-metadata';
 import { KIND_COLLECTION, Project } from '../../core/launchpad/records';
@@ -49,7 +50,7 @@ import { MarketPanel } from '../marketplace/market-panel';
         <div class="layout">
           <div class="art card">
             @if (meta()?.image) {
-              <img [src]="meta()!.image" alt="" referrerpolicy="no-referrer" />
+              <img [src]="meta()!.image" alt="" decoding="async" referrerpolicy="no-referrer" />
             } @else {
               <span class="placeholder">#{{ tokenId() }}</span>
             }
@@ -95,6 +96,9 @@ import { MarketPanel } from '../marketplace/market-panel';
                   </div>
                 }
               </dl>
+              @if (stability(); as s) {
+                <p class="stability" [class]="s.level">{{ s.text }}</p>
+              }
             </div>
             @if (meta()?.attributes?.length) {
               <h2>Attributes</h2>
@@ -201,6 +205,29 @@ import { MarketPanel } from '../marketplace/market-panel';
       overflow-wrap: anywhere;
     }
 
+    .stability {
+      margin: 12px 0 0;
+      font-size: 13px;
+      color: var(--gray-300);
+    }
+
+    .stability::before {
+      content: '● ';
+    }
+
+    .stability.fixed::before {
+      color: var(--green);
+    }
+
+    .stability.owner::before,
+    .stability.unknown::before {
+      color: var(--yellow);
+    }
+
+    .stability.changeable::before {
+      color: var(--orange);
+    }
+
     @media (max-width: 860px) {
       .layout {
         grid-template-columns: 1fr;
@@ -228,6 +255,20 @@ export class NftPage {
   protected readonly meta = signal<NftMetadata | null | undefined>(undefined);
   protected readonly error = signal<string | null>(null);
   protected readonly uriLink = computed(() => httpUrl(this.uri()));
+  /** The collection's live state (frozen metadata, upgradable code); null until read. */
+  private readonly state = signal<CollectionState | null>(null);
+  /** Whether the metadata can change: shown once the metadata and the state are both read. */
+  protected readonly stability = computed(() => {
+    const meta = this.meta();
+    const state = this.state();
+    if (!meta || !state || !this.uri()) return null;
+    return metadataStability({
+      uri: this.uri(),
+      imageSource: meta.imageSource,
+      tokenId: this.id(),
+      state,
+    });
+  });
   protected readonly id = computed(() =>
     /^\d{1,77}$/.test(this.tokenId()) ? BigInt(this.tokenId()) : 0n,
   );
@@ -252,6 +293,7 @@ export class NftPage {
     this.owner.set(undefined);
     this.meta.set(undefined);
     this.uri.set('');
+    this.state.set(null);
     this.error.set(null);
     if (!/^\d{1,77}$/.test(tokenId)) {
       this.owner.set('');
@@ -268,6 +310,10 @@ export class NftPage {
       if (run !== this.run) return;
       this.owner.set(owner);
       if (!owner) return;
+      void this.collections
+        .state(address)
+        .then((state) => run === this.run && this.state.set(state))
+        .catch(() => undefined);
       const uri = await this.collections.uri(address, id);
       if (run !== this.run) return;
       this.uri.set(uri);

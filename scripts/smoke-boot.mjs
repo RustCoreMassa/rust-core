@@ -9,6 +9,21 @@ import { JSDOM } from 'jsdom';
 
 const dir = resolve(process.argv[2] ?? 'dist/rust-core-launchpad/browser');
 const html = readFileSync(join(dir, 'index.html'), 'utf8');
+
+// The Content-Security-Policy (index.html) allows only our own script files: the built page
+// must keep it and must not hold inline scripts or inline event handlers, which it would block.
+const csp = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)"/i.exec(html)?.[1];
+const inlineScript = /<script\b(?![^>]*\bsrc=)[^>]*>/i.exec(html)?.[0];
+const inlineHandler = /<[^>]+\son[a-z]+\s*=/i.exec(html)?.[0];
+if (!csp?.includes("script-src 'self'") || inlineScript || inlineHandler) {
+  console.log(
+    'BOOT FAILED: index.html ' +
+      (!csp
+        ? 'has no Content-Security-Policy'
+        : `has inline code: ${inlineScript ?? inlineHandler}`),
+  );
+  process.exit(1);
+}
 const dom = new JSDOM(html, { url: 'https://launchpad.test/', pretendToBeVisual: true });
 const win = dom.window;
 win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
