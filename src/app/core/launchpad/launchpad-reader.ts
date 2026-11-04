@@ -351,7 +351,10 @@ export class LaunchpadReader {
 
   /** Token units a contributor already claimed from a vesting presale (0 before and after). */
   async claimed(presaleId: bigint, contributor: string): Promise<bigint> {
-    const bytes = await this.read('getClaimed', new Args().addU64(presaleId).addString(contributor));
+    const bytes = await this.read(
+      'getClaimed',
+      new Args().addU64(presaleId).addString(contributor),
+    );
     return new Args(bytes).nextU256();
   }
 

@@ -144,7 +144,12 @@
               @case ('ok') {
                 <div class="preview">
                   @if (firstNft()?.image) {
-                    <img [src]="firstNft()!.image" alt="" referrerpolicy="no-referrer" />
+                    <img
+                      [src]="firstNft()!.image"
+                      alt=""
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                    />
                   }
                   <div class="found">
                     <span

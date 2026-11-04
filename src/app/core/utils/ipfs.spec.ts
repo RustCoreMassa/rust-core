@@ -1,4 +1,11 @@
-import { IPFS_GATEWAY, configureUrls, httpUrl, isLocalUrl, localGatewayOf } from './ipfs';
+import {
+  IPFS_GATEWAY,
+  configureUrls,
+  httpUrl,
+  isLocalUrl,
+  isPrivateHost,
+  localGatewayOf,
+} from './ipfs';
 
 describe('httpUrl', () => {
   afterEach(() => configureUrls({ gateway: IPFS_GATEWAY, allowLocal: false }));
@@ -25,8 +32,52 @@ describe('httpUrl', () => {
     expect(httpUrl('http://localhost.evil.example/a.png')).toBe('');
   });
 
+  it('refuses ipfs paths that climb out of the gateway', () => {
+    expect(httpUrl('ipfs://bafyA/../../evil')).toBe('');
+    expect(httpUrl('ipfs://%2e%2e/%2E%2E/evil')).toBe('');
+    expect(httpUrl('ipfs://bafyA\\..\\x')).toBe('');
+    // Inside the content itself, ".." stays on the gateway: harmless.
+    expect(httpUrl('ipfs://bafyA/x/../1.png')).toBe('https://ipfs.io/ipfs/bafyA/x/../1.png');
+  });
+
+  it('refuses https links to this machine or the local network', () => {
+    for (const url of [
+      'https://localhost/a.png',
+      'https://127.0.0.1/a.png',
+      'https://2130706433/a.png', // 127.0.0.1 written as a number
+      'https://0x7f.1/a.png',
+      'https://192.168.1.1/router',
+      'https://10.0.0.5/',
+      'https://172.20.0.1/',
+      'https://169.254.169.254/latest',
+      'https://[::1]/',
+      'https://station.massa/plugin/x',
+      'https://nas.local/a.png',
+    ])
+      expect(httpUrl(url), url).toBe('');
+    expect(httpUrl('https://172.32.0.1/a.png')).toBe('https://172.32.0.1/a.png');
+    expect(httpUrl('https://8.8.8.8/a.png')).toBe('https://8.8.8.8/a.png');
+    expect(httpUrl('https://massa.network/a.png')).toBe('https://massa.network/a.png');
+  });
+
   it('refuses a gateway without the final slash', () => {
     expect(() => configureUrls({ gateway: 'http://127.0.0.1:8080/ipfs' })).toThrow();
+  });
+});
+
+describe('isPrivateHost', () => {
+  it('knows private and local hosts', () => {
+    for (const host of [
+      'localhost',
+      'a.localhost',
+      'x.internal',
+      'deweb.massa',
+      '100.64.0.1',
+      '224.0.0.1',
+    ])
+      expect(isPrivateHost(host), host).toBe(true);
+    for (const host of ['example.com', '100.128.0.1', '11.0.0.1', 'massa.net'])
+      expect(isPrivateHost(host), host).toBe(false);
   });
 });
 

@@ -35,6 +35,7 @@ import { UnitsPipe } from '../../shared/pipes/units-pipe';
 import { ProjectBadges } from '../../shared/ui/project-badges/project-badges';
 import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
 import { EditInfoDialog } from '../../shared/ui/edit-info-dialog/edit-info-dialog';
+import { DusaCard } from './dusa-card';
 import { MintDialog } from './mint-dialog';
 import { TokenomicsCard } from './tokenomics-card';
 import { TokenomicsDialog } from './tokenomics-dialog';
@@ -43,6 +44,7 @@ import { TokenomicsDialog } from './tokenomics-dialog';
 @Component({
   selector: 'app-token-page',
   imports: [
+    DusaCard,
     DatePipe,
     RouterLink,
     ShortAddressPipe,

@@ -2,6 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!--
+      Content-Security-Policy (DeWeb can't send headers, so it lives here; development uses
+      index.development.html without it). Only our own files run code; NFT images, metadata and
+      project links come from any https host (the creators'), Massa Station from localhost:8080.
+      The build must stay free of inline scripts and inline event handlers: `npm run smoke`
+      checks it. Keep the rest of this file in sync with index.development.html.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https: http://localhost:8080; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'self'; base-uri 'self'; form-action 'none'"
+    />
     <title>RustCore Launchpad — Launch tokens and NFTs on Massa</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

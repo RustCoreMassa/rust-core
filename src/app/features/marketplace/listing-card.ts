@@ -26,7 +26,13 @@ import { MasPipe } from '../../shared/pipes/units-pipe';
         @if (meta() === undefined) {
           <span class="skeleton fill"></span>
         } @else if (meta()?.image) {
-          <img [src]="meta()!.image" alt="" loading="lazy" referrerpolicy="no-referrer" />
+          <img
+            [src]="meta()!.image"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            referrerpolicy="no-referrer"
+          />
         } @else {
           <span class="no-image">#{{ listing().tokenId }}</span>
         }

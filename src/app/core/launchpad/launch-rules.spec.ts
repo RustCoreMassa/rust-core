@@ -76,6 +76,12 @@ describe('launch rules (mirror of the Launchpad SC)', () => {
     expect(urlError('https://' + 'a'.repeat(250))).not.toBeNull();
   });
 
+  it('refuses links the app would not load: private hosts, paths out of IPFS', () => {
+    expect(urlError('https://192.168.1.1/logo.png')).toBe('Use a public address.');
+    expect(urlError('https://station.massa/x')).toBe('Use a public address.');
+    expect(urlError('ipfs://bafy/../../x')).toBe('Remove the ".." parts.');
+  });
+
   it('allows new lines in descriptions, not other control characters', () => {
     expect(descriptionError('Line one\nLine two')).toBeNull();
     expect(descriptionError('Bell\u0007')).not.toBeNull();

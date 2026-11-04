@@ -14,6 +14,18 @@ export interface MembershipPreview {
   readonly description: string;
 }
 
+/** Dusa, Massa's DEX (Liquidity Book, Core V2): docs.dusa.io/deployment-addresses. */
+export interface DusaConfig {
+  readonly factory: string;
+  readonly router: string;
+  /** Wrapped MAS: the quote token of every MAS pool. */
+  readonly wmas: string;
+  /** Bin steps open for new pools (the Factory's presets), smallest first. */
+  readonly binSteps: readonly number[];
+  /** Dusa's app, for links to a pool; null when it has none for this network. */
+  readonly appUrl: string | null;
+}
+
 export interface NetworkConfig {
   readonly id: NetworkId;
   readonly label: string;
@@ -30,6 +42,8 @@ export interface NetworkConfig {
    * collections from it, and the chain when it's null, down or behind.
    */
   readonly apiUrl: string | null;
+  /** Dusa on this network; null when it isn't deployed there. */
+  readonly dusa: DusaConfig | null;
 }
 
 export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
@@ -54,6 +68,14 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
         'supporter badge, not an investment.',
     },
     apiUrl: 'https://api.rustcoremassa.com',
+    // Bin steps checked with createLBPair simulations on 2026-11-04.
+    dusa: {
+      factory: 'AS127Lxdux4HCUkZL89SrRYR5kq2u8t64Jt3aYj786t6fBF1cZGcu',
+      router: 'AS1gUwVGA3A5Dnmev8c2BjBR2wC8y9hb7CFZXVzLb1iwASFHUZ1p',
+      wmas: 'AS12U4TZfNK7qoLyEERBBRDMu8nm5MKoRzPXDXans4v9wdATZedz9',
+      binSteps: [20, 25, 50, 100],
+      appUrl: 'https://app.dusa.io',
+    },
   },
   buildnet: {
     id: 'buildnet',
@@ -67,6 +89,13 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
     // No public buildnet API. To try one locally: `cargo run` in rust-core-api with
     // RUSTCORE__API__BIND=127.0.0.1:8081 (Massa Station uses 8080), then 'http://localhost:8081'.
     apiUrl: null,
+    dusa: {
+      factory: 'AS12w3vcEYn8VBX1utw1fSmFNbYv9vMvy5n8tqCJjoGz3vaQYEhfp',
+      router: 'AS1xed5qTFcsWR2Ce7VLaAEHde8bJiTrX8JHM35qkHjmnqH1GFU8',
+      wmas: 'AS12FW5Rs5YN2zdpEnqwj4iHUUPt9R4Eqjq2qtpJFNKW3mn33RuLU',
+      binSteps: [20],
+      appUrl: null,
+    },
   },
 };
 
