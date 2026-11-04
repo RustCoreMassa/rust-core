@@ -8,6 +8,8 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-11-04
+
 Works with the Launchpad contract **v1.6.0** (new: presale whitelists and vesting). On older
 contracts the app offers presales as before, without them.
 
