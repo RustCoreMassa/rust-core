@@ -173,7 +173,6 @@ function contributeAs(user: string, amount: u64): void {
 function finalizeAt(time: u64): void {
   mockTimestamp(time);
   pay(CAROL, MAS);
-  mockScCall([]); // unsold tokens back to the owner
   finalize(idArgs());
   done();
 }
@@ -358,7 +357,8 @@ describe('Presale whitelist', () => {
     setup();
     create(extrasArgs(true, PUBLIC));
     const batch: string[] = [];
-    for (let i = 0; i < 200; i++) batch.push('AU1Batch' + (10_000_000 + i).toString() + 'x'.repeat(35));
+    for (let i = 0; i < 200; i++)
+      batch.push('AU1Batch' + (10_000_000 + i).toString() + 'x'.repeat(35));
     addAs(ALICE, batch);
     expect(presale().whitelisted).toBe(200);
   });
@@ -367,7 +367,8 @@ describe('Presale whitelist', () => {
     setup();
     create(extrasArgs(true, PUBLIC));
     const batch: string[] = [];
-    for (let i = 0; i < 201; i++) batch.push('AU1Batch' + (10_000_000 + i).toString() + 'x'.repeat(35));
+    for (let i = 0; i < 201; i++)
+      batch.push('AU1Batch' + (10_000_000 + i).toString() + 'x'.repeat(35));
     addAs(ALICE, batch);
   });
 
@@ -414,7 +415,6 @@ describe('Presale whitelist', () => {
     setup();
     create(extrasArgs(true, PUBLIC));
     pay(ALICE, MAS);
-    mockScCall([]); // tokens back
     cancelPresale(idArgs());
     done();
     addAs(ALICE, [BOB]);
@@ -435,7 +435,6 @@ describe('Presale whitelist', () => {
     create(extrasArgs(true, PUBLIC));
     addAs(ALICE, [BOB, CAROL]);
     pay(ALICE, MAS);
-    mockScCall([]);
     cancelPresale(idArgs());
     done();
     removeAs(ALICE, [BOB, CAROL]);

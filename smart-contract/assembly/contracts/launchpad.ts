@@ -101,7 +101,7 @@ import {
 import { _feeFor } from '../lib/launchpad/discount';
 import { _storeTokenomics } from '../lib/launchpad/tokenomics';
 
-export const VERSION = '1.6.0';
+export const VERSION = '1.8.0';
 /** Delay between proposing and executing an upgrade of this contract: 72 hours. */
 export const UPGRADE_DELAY_MS: u64 = 72 * 60 * 60 * 1000;
 export const MAX_DECIMALS: u8 = 18;
@@ -678,6 +678,8 @@ export {
   refund,
   withdrawRaised,
   cancelPresale,
+  reclaimTokens,
+  getReclaimable,
   getPresale,
   getPresales,
   presaleOf,

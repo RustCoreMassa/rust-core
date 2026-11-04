@@ -85,6 +85,8 @@ export class CreatePresalePage {
   protected readonly error = signal<string | null>(null);
   /** The Launchpad takes a whitelist and vesting (v1.6.0+). */
   protected readonly extras = signal(false);
+  /** Closing the presale won't call the token (Launchpad v1.8.0+): refunds can't be blocked. */
+  protected readonly pulls = signal(false);
   /** The presale was created but its whitelist is still being added (or that stopped). */
   protected readonly createdId = signal<string | null>(null);
   /** Whitelist batches sent so far, and how many there are. */
@@ -245,6 +247,7 @@ export class CreatePresalePage {
       const open = await this.launchpad.presaleOf(token);
       const config = await this.launchpad.config();
       const extras = await this.launchpad.supportsPresaleExtras();
+      const pulls = await this.launchpad.supportsReclaim();
       void this.discount.refresh();
       const balance = me ? await this.tokens.balanceOf(token, me) : null;
       if (run !== this.run) return;
@@ -252,6 +255,7 @@ export class CreatePresalePage {
       this.open.set(open);
       this.fullFeeBps.set(config.presaleFeeBps);
       this.extras.set(extras);
+      this.pulls.set(pulls);
       this.balance.set(balance);
     } catch (err) {
       if (run === this.run) this.error.set(toUserMessage(err));

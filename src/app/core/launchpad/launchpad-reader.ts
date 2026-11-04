@@ -41,6 +41,12 @@ export const HOLDER_DISCOUNT_VERSION = '1.4.0';
 /** First Launchpad version with presale whitelists and vesting. */
 export const PRESALE_EXTRAS_VERSION = '1.6.0';
 
+/**
+ * First Launchpad version where closing a presale moves no token: its owner takes the unsold
+ * (or all) tokens back with reclaimTokens. Before, finalize / cancelPresale sent them at once.
+ */
+export const RECLAIM_VERSION = '1.8.0';
+
 /** Addresses one addToWhitelist / removeFromWhitelist call takes (the contract's limit). */
 export const WHITELIST_BATCH = 200;
 
@@ -347,6 +353,16 @@ export class LaunchpadReader {
       .getStorageKeys(this.requireAddress(), prefix, READ_FINAL);
     const decoder = new TextDecoder();
     return keys.map((key) => decoder.decode(key.slice(prefix.length)));
+  }
+
+  /** Whether a closed presale's tokens wait for its owner (reclaimTokens, v1.8.0+). */
+  async supportsReclaim(): Promise<boolean> {
+    return atLeast(await this.version(), RECLAIM_VERSION);
+  }
+
+  /** Token units a closed presale's owner can take back (0 before it closes and after). */
+  async reclaimable(presaleId: bigint): Promise<bigint> {
+    return new Args(await this.read('getReclaimable', new Args().addU64(presaleId))).nextU256();
   }
 
   /** Token units a contributor already claimed from a vesting presale (0 before and after). */

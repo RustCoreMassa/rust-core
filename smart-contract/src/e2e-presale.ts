@@ -1,5 +1,6 @@
 // End-to-end check of token presales on buildnet: create (escrow), contribute up to the hard
-// cap, finalize early, claim, withdraw with the fee, and cancel before the start.
+// cap, finalize early, claim, withdraw with the fee, and cancel before the start (from v1.8.0
+// the owner then takes the tokens back with reclaimTokens).
 //   npx tsx src/e2e-presale.ts
 // The owner is PRIVATE_KEY; a buyer is generated and funded from it (test MAS). Never on mainnet.
 // The failure path needs the end to pass (≥ 1 hour) — the unit tests cover it.
@@ -68,6 +69,10 @@ const extras = new TextDecoder().decode(await read(LAUNCHPAD, 'version')) >= '1.
 const presale = async (id: bigint) =>
   readPresale(new Args(await read(LAUNCHPAD, 'getPresale', new Args().addU64(id))), extras);
 const fees = async () => new Args(await read(LAUNCHPAD, 'fees')).nextU64();
+// From v1.8.0, closing a presale moves no token: the owner takes them back (reclaimTokens).
+const pulls = new TextDecoder().decode(await read(LAUNCHPAD, 'version')) >= '1.8.0';
+const reclaimable = async (id: bigint) =>
+  new Args(await read(LAUNCHPAD, 'getReclaimable', new Args().addU64(id))).nextU256();
 
 // ---- a token to sell: 1 000 000 units of 9 decimals ----------------------------------------
 await (await owner.transfer(BUYER, Mas.fromString('20'))).waitFinalExecution();
@@ -183,6 +188,7 @@ check('raised = hard cap', (await presale(id)).raised === HARD_CAP);
 // ---- finalize early (hard cap reached), claim, withdraw -------------------------------------
 await send(buyer, LAUNCHPAD, 'finalize', new Args().addU64(id), Mas.fromString('0.05'));
 check('finalized as a success', (await presale(id)).status === PRESALE_SUCCESS);
+if (pulls) check('sold out: nothing for the owner to take back', (await reclaimable(id)) === 0n);
 await send(buyer, LAUNCHPAD, 'claim', new Args().addU64(id), Mas.fromString('0.05'));
 const claimed = await tokenBalance(token, BUYER);
 check(
@@ -237,6 +243,35 @@ const secondId = BigInt((eventFields(second, 'PRESALE_CREATED') ?? ['0'])[0]);
 const ownerTokens = await tokenBalance(token, OWNER);
 await send(owner, LAUNCHPAD, 'cancelPresale', new Args().addU64(secondId), Mas.fromString('0.05'));
 check('cancelled', (await presale(secondId)).status === PRESALE_CANCELLED);
+if (pulls) {
+  check(
+    'cancelling moved no token: they wait for the owner',
+    (await tokenBalance(token, OWNER)) === ownerTokens &&
+      (await reclaimable(secondId)) === 1_000n * UNIT,
+  );
+  const stranger = await buyer.readSC({
+    target: LAUNCHPAD,
+    func: 'reclaimTokens',
+    parameter: new Args().addU64(secondId),
+    coins: Mas.fromString('0.05'),
+    caller: BUYER,
+  });
+  check(
+    'only the owner takes them back',
+    contractReason(stranger.info.error ?? '') === 'Only the presale owner can do this',
+  );
+  const ownerMas = await owner.balance(true);
+  await send(
+    owner,
+    LAUNCHPAD,
+    'reclaimTokens',
+    new Args().addU64(secondId),
+    Mas.fromString('0.05'),
+  );
+  const cost = ownerMas - (await owner.balance(true));
+  check('taking them back costs little', cost < Mas.fromString('0.02'), mas(cost));
+  check('nothing left to take back', (await reclaimable(secondId)) === 0n);
+}
 check(
   'tokens back to the owner',
   (await tokenBalance(token, OWNER)) === ownerTokens + 1_000n * UNIT,

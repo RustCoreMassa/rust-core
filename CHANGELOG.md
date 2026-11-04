@@ -8,6 +8,22 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+Works with the Launchpad contract **v1.8.0** (new: presale tokens go back to their owner in a
+separate step). On older contracts the app works as before.
+
+### Changed
+
+- Closing a presale (finalize, or a cancel) no longer sends tokens: the presale's owner takes
+  back the unsold ones after a success, or all of them after a failure or a cancel, with
+  **Take back** on the presale page (contract `reclaimTokens`, read `getReclaimable`). Until
+  then they stay in escrow, counted against the token's next presales.
+
+### Security
+
+- A token whose code makes transfers fail can no longer block a presale from closing, so it
+  can't lock contributors' refunds (finding #2 of the 2026-11-04 audit). It can still block
+  claims and the owner's take-back; the presale page's warning now says only that.
+
 ## [1.7.0] — 2026-11-04
 
 Works with the Launchpad contract **v1.6.0**; no contract change.

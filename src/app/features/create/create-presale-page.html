@@ -33,8 +33,9 @@
 
       @if (codeRisk(); as risk) {
         <div class="notice">
-          {{ risk }} Contributors will see a warning that a code change could stop their claims and
-          refunds.
+          {{ risk }} Contributors will see a warning that a code change could stop their claims{{
+            pulls() ? '' : ' and refunds'
+          }}.
         </div>
       }
 
@@ -363,11 +364,11 @@
             </div>
             <div>
               <dt>If the soft cap is reached</dt>
-              <dd>you withdraw the MAS; unsold tokens come back</dd>
+              <dd>you withdraw the MAS and take back the unsold tokens</dd>
             </div>
             <div>
               <dt>If not</dt>
-              <dd>contributors are refunded; all tokens come back</dd>
+              <dd>contributors are refunded; you take back all the tokens</dd>
             </div>
           </dl>
           <app-holder-discount-note />
