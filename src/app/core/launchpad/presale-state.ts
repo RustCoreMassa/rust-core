@@ -1,4 +1,5 @@
 import {
+  BPS_ALL,
   PRESALE_CANCELLED,
   PRESALE_FAILED,
   PRESALE_OPEN,
@@ -6,6 +7,7 @@ import {
   Presale,
   Project,
   SOURCE_IMPORTED,
+  tokensFor,
 } from './records';
 
 /**
@@ -63,14 +65,24 @@ export function maxContribution(p: Presale, contributed: bigint): bigint {
   return left < walletLeft ? left : walletLeft > 0n ? walletLeft : 0n;
 }
 
-/** Why `amount` can't be contributed now, or null — the contract's rules, for the form. */
+/** Only whitelisted addresses may contribute at `now` (before the public phase). */
+export function whitelistOnly(p: Presale, now = Date.now()): boolean {
+  return p.whitelist && now < p.publicFrom;
+}
+
+/**
+ * Why `amount` can't be contributed now, or null — the contract's rules, for the form.
+ * `listed`: the wallet is on the presale's whitelist (only read when it has one).
+ */
 export function contributionError(
   p: Presale,
   contributed: bigint,
   amount: bigint,
   now = Date.now(),
+  listed = true,
 ): string | null {
   if (presalePhase(p, now) !== 'live') return 'This presale is not live.';
+  if (whitelistOnly(p, now) && !listed) return 'Only the whitelist can contribute for now.';
   if (amount <= 0n) return 'Enter an amount.';
   const left = p.hardCap - p.raised;
   if (amount > left) return 'Above the amount left before the hard cap.';
@@ -87,4 +99,87 @@ export function timeLeft(target: number, now = Date.now()): string {
   if (days) return `${days}d ${hours}h`;
   if (hours) return `${hours}h ${minutes % 60}m`;
   return `${minutes}m`;
+}
+
+// ---- vesting (v1.6.0) ----------------------------------------------------------------------
+
+export function hasVesting(p: Presale): boolean {
+  return p.vestFirstBps < BPS_ALL;
+}
+
+/** When the cycles start counting: the finalize, or the end when it came later (or not yet). */
+export function vestingStart(p: Presale): number {
+  return p.finalizedAt && p.finalizedAt < p.end ? p.finalizedAt : p.end;
+}
+
+/** Share of the bought tokens unlocked at `now`, bps — the contract's rule. */
+export function unlockedBps(p: Presale, now = Date.now()): number {
+  if (!hasVesting(p)) return BPS_ALL;
+  const from = vestingStart(p);
+  const cycles = now > from ? Math.floor((now - from) / p.vestCycleMs) : 0;
+  return Math.min(BPS_ALL, p.vestFirstBps + cycles * p.vestCycleBps);
+}
+
+/** amount × bps / 10 000, rounded down. */
+export function share(amount: bigint, bps: number): bigint {
+  return (amount * BigInt(bps)) / BigInt(BPS_ALL);
+}
+
+/** Cycles after the first release until everything is unlocked. */
+export function vestingCycles(firstBps: number, cycleBps: number): number {
+  return cycleBps > 0 ? Math.ceil((BPS_ALL - firstBps) / cycleBps) : 0;
+}
+
+export interface Unlock {
+  /** ms */
+  at: number;
+  /** Unlocked by then, bps. */
+  bps: number;
+}
+
+/** Every unlock: the first release at the start of vesting, then one per cycle up to 100 %. */
+export function vestingSchedule(p: Presale): Unlock[] {
+  const from = vestingStart(p);
+  if (!hasVesting(p)) return [{ at: from, bps: BPS_ALL }];
+  const unlocks: Unlock[] = [{ at: from, bps: p.vestFirstBps }];
+  const cycles = vestingCycles(p.vestFirstBps, p.vestCycleBps);
+  for (let i = 1; i <= cycles; i++) {
+    unlocks.push({
+      at: from + i * p.vestCycleMs,
+      bps: Math.min(BPS_ALL, p.vestFirstBps + i * p.vestCycleBps),
+    });
+  }
+  return unlocks;
+}
+
+/** The next unlock after `now`, or null when everything is unlocked. */
+export function nextUnlock(p: Presale, now = Date.now()): Unlock | null {
+  return vestingSchedule(p).find((u) => u.at > now) ?? null;
+}
+
+/** Token units a contributor can claim at `now`: unlocked minus already claimed. */
+export function claimable(
+  p: Presale,
+  contribution: bigint,
+  claimed: bigint,
+  now = Date.now(),
+): bigint {
+  const unlocked = share(tokensFor(contribution, p.rate), unlockedBps(p, now));
+  return unlocked > claimed ? unlocked - claimed : 0n;
+}
+
+/** "25%", "12.5%" — basis points as a percentage. */
+export function bpsPercent(bps: number): string {
+  return `${Number((bps / 100).toFixed(2))}%`;
+}
+
+/** "25% at the end, then 15% every 30 days" — or "All at the end". */
+export function vestingSummary(
+  p: Pick<Presale, 'vestFirstBps' | 'vestCycleMs' | 'vestCycleBps'>,
+): string {
+  if (p.vestFirstBps >= BPS_ALL) return 'All at the end';
+  const days = Math.round(p.vestCycleMs / 86_400_000);
+  const every = days === 1 ? 'every day' : `every ${days} days`;
+  const first = p.vestFirstBps ? `${bpsPercent(p.vestFirstBps)} at the end, then ` : '';
+  return `${first}${bpsPercent(p.vestCycleBps)} ${every}`;
 }

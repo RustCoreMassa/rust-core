@@ -70,6 +70,23 @@
               <dd>{{ p.end | date: 'medium' }}</dd>
             </div>
             <div>
+              <dt>Who can contribute</dt>
+              <dd>
+                @if (!p.whitelist) {
+                  Anyone
+                } @else if (p.publicFrom >= p.end) {
+                  The whitelist only ({{ p.whitelisted }} addresses)
+                } @else {
+                  The whitelist ({{ p.whitelisted }} addresses) until
+                  {{ p.publicFrom | date: 'medium' }}, then anyone
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Tokens for contributors</dt>
+              <dd>{{ vestingText() }}</dd>
+            </div>
+            <div>
               <dt>Launchpad fee</dt>
               <dd>{{ p.feeBps / 100 }}% of the MAS raised, paid by the owner</dd>
             </div>
@@ -82,6 +99,29 @@
               <dd class="mono">{{ p.creator | shortAddress }}</dd>
             </div>
           </dl>
+          @if (vesting()) {
+            <h3>Vesting schedule</h3>
+            <dl class="rows schedule">
+              @for (u of schedule(); track u.at) {
+                <div [class.done]="u.done">
+                  <dt>
+                    @if (p.finalizedAt) {
+                      {{ u.at | date: 'mediumDate' }}
+                    } @else if ($first) {
+                      At the end
+                    } @else {
+                      {{ $index * (p.vestCycleMs / 86400000) }} days after the end
+                    }
+                  </dt>
+                  <dd>{{ bpsPercent(u.bps) }} unlocked {{ u.done ? '✓' : '' }}</dd>
+                </div>
+              }
+            </dl>
+            <p class="hint">
+              Counted from the end, or from the moment the hard cap closed it. Contributors claim
+              each share as it unlocks.
+            </p>
+          }
           @if (t) {
             <a class="btn btn-ghost btn-sm token-link" [routerLink]="['/tokens', p.token]"
               >About {{ symbol() }}</a
@@ -105,6 +145,15 @@
               <p class="muted">
                 Contributions open in {{ countdown().replace('Starts in ', '') }}.
               </p>
+              @if (p.whitelist && listed() !== null) {
+                <p class="muted">
+                  {{
+                    listed()
+                      ? 'Your address is on the whitelist.'
+                      : "Your address isn't on the whitelist."
+                  }}
+                </p>
+              }
               @if (isCreator()) {
                 <button
                   class="btn btn-ghost btn-sm"
@@ -123,6 +172,15 @@
                 <button class="btn btn-red btn-block" type="button" (click)="connect()">
                   Connect wallet
                 </button>
+              } @else if (whitelistPhase() && listed() === false) {
+                <p class="muted">
+                  @if (p.publicFrom >= p.end) {
+                    This presale is for its whitelist only, and your address isn't on it.
+                  } @else {
+                    Only the whitelist can contribute for now. Anyone can from
+                    {{ p.publicFrom | date: 'medium' }}.
+                  }
+                </p>
               } @else if (!maxNow()) {
                 <p class="muted">You reached the maximum per wallet.</p>
               } @else {
@@ -186,7 +244,31 @@
             }
             @case ('success') {
               <h2>Successful</h2>
-              @if (mine()) {
+              @if (mine() && vesting()) {
+                <p class="muted">
+                  Claimed so far: {{ claimed() ? units(claimed()) : '0' }} of {{ myTokens() }}
+                  {{ symbol() }}.
+                </p>
+                @if (claimableNow()) {
+                  <button
+                    class="btn btn-red btn-block"
+                    type="button"
+                    [disabled]="!!busy()"
+                    (click)="claim()"
+                  >
+                    {{
+                      busy() === 'claim'
+                        ? 'Confirm in your wallet…'
+                        : 'Claim ' + claimableText() + ' ' + symbol()
+                    }}
+                  </button>
+                }
+                @if (next(); as n) {
+                  <p class="hint">
+                    Next unlock: {{ n.at | date: 'medium' }} ({{ bpsPercent(n.bps) }} in all).
+                  </p>
+                }
+              } @else if (mine()) {
                 <button
                   class="btn btn-red btn-block"
                   type="button"
@@ -243,6 +325,72 @@
             <div class="notice notice-error" role="alert">{{ message }}</div>
           }
         </div>
+
+        @if (isCreator() && p.whitelist) {
+          <div class="card action">
+            <h2>Whitelist</h2>
+            <p class="muted">{{ p.whitelisted }} address{{ p.whitelisted === 1 ? '' : 'es' }}.</p>
+            @if (listEditable()) {
+              <label class="field">
+                <span>Addresses</span>
+                <textarea
+                  class="input"
+                  rows="4"
+                  placeholder="AU1… one per line"
+                  [value]="listText()"
+                  (input)="listText.set(area($event))"
+                ></textarea>
+                @if (listParsed().invalid; as bad) {
+                  <span class="error">Not a Massa address: {{ bad }}</span>
+                } @else if (listParsed().addresses.length; as count) {
+                  <span class="hint"
+                    >{{ count }} address{{ count === 1 ? '' : 'es' }}, 200 per signature.</span
+                  >
+                }
+              </label>
+              <div class="list-actions">
+                <button
+                  class="btn btn-red btn-sm"
+                  type="button"
+                  [disabled]="!!busy() || !listParsed().addresses.length || !!listParsed().invalid"
+                  (click)="addToList()"
+                >
+                  {{ busy() === 'whitelist-add' ? batchLabel() : 'Add' }}
+                </button>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  type="button"
+                  [disabled]="!!busy() || !listParsed().addresses.length || !!listParsed().invalid"
+                  (click)="removeFromList()"
+                >
+                  {{ busy() === 'whitelist-remove' ? batchLabel() : 'Remove' }}
+                </button>
+              </div>
+              <p class="hint">
+                Until {{ p.publicFrom | date: 'medium' }}. Each address costs ≈ 0.007 MAS of
+                storage, which comes back when it's removed.
+              </p>
+            } @else if (p.status !== 0 && p.whitelisted) {
+              <button
+                class="btn btn-ghost btn-sm"
+                type="button"
+                [disabled]="!!busy()"
+                (click)="clearList()"
+              >
+                {{ busy() === 'whitelist-clear' ? batchLabel() : 'Clear the whitelist' }}
+              </button>
+              <p class="hint">
+                The presale is over: clearing the list gives you back its storage (≈
+                {{ listStorage(p.whitelisted) }} MAS).
+              </p>
+            } @else {
+              <p class="hint">The whitelist can't change after the public phase begins.</p>
+            }
+            @if (listNotice(); as notice) {
+              <p class="hint">{{ notice }}</p>
+            }
+          </div>
+        }
       </div>
     </div>
   }

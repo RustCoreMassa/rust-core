@@ -182,6 +182,146 @@
           </div>
         </div>
 
+        @if (extras()) {
+          <div class="field">
+            <span class="field-label">Who can contribute</span>
+            <div class="chips">
+              <button
+                type="button"
+                class="chip"
+                [class.selected]="!d.whitelist"
+                (click)="set('whitelist', false)"
+              >
+                Anyone
+              </button>
+              <button
+                type="button"
+                class="chip"
+                [class.selected]="d.whitelist"
+                (click)="set('whitelist', true)"
+              >
+                A whitelist first
+              </button>
+            </div>
+          </div>
+          @if (d.whitelist) {
+            <label class="field">
+              <span>Whitelist phase (hours from the start)</span>
+              <input
+                class="input"
+                inputmode="numeric"
+                placeholder="empty = the whole presale"
+                [value]="d.whitelistHours"
+                (input)="set('whitelistHours', text($event))"
+              />
+              @if (touched() && e.whitelistHours) {
+                <span class="error">{{ e.whitelistHours }}</span>
+              } @else {
+                <span class="hint"
+                  >Only the addresses below can contribute until then; after it, anyone. Empty: the
+                  whitelist only, for the whole presale.</span
+                >
+              }
+            </label>
+            <label class="field">
+              <span>Whitelisted addresses</span>
+              <textarea
+                class="input"
+                rows="5"
+                placeholder="AU1… one per line (or separated by spaces or commas)"
+                [value]="d.whitelistAddresses"
+                (input)="set('whitelistAddresses', area($event))"
+              ></textarea>
+              @if (touched() && e.whitelistAddresses) {
+                <span class="error">{{ e.whitelistAddresses }}</span>
+              } @else {
+                <span class="hint">
+                  @if (terms()?.addresses?.length; as count) {
+                    {{ count }} address{{ count === 1 ? '' : 'es' }}: added right after the presale
+                    is created, in {{ whitelistBatches() }} signature{{
+                      whitelistBatches() === 1 ? '' : 's'
+                    }}
+                    (≈ {{ whitelistCost() | mas }} for storage, the unused part comes back; you get
+                    it all back when you clear the list after the presale).
+                  } @else {
+                    You can also add or remove addresses later, on the presale's page, until the
+                    public phase.
+                  }
+                </span>
+              }
+            </label>
+          }
+
+          <div class="field">
+            <span class="field-label">Tokens for contributors</span>
+            <div class="chips">
+              <button
+                type="button"
+                class="chip"
+                [class.selected]="!d.vesting"
+                (click)="set('vesting', false)"
+              >
+                All at the end
+              </button>
+              <button
+                type="button"
+                class="chip"
+                [class.selected]="d.vesting"
+                (click)="set('vesting', true)"
+              >
+                Vesting
+              </button>
+            </div>
+          </div>
+          @if (d.vesting) {
+            <div class="form-grid three">
+              <label class="field">
+                <span>First release (%)</span>
+                <input
+                  class="input"
+                  inputmode="decimal"
+                  placeholder="25"
+                  [value]="d.vestFirst"
+                  (input)="set('vestFirst', text($event))"
+                />
+                @if (touched() && e.vestFirst) {
+                  <span class="error">{{ e.vestFirst }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Then (%)</span>
+                <input
+                  class="input"
+                  inputmode="decimal"
+                  placeholder="25"
+                  [value]="d.vestCyclePercent"
+                  (input)="set('vestCyclePercent', text($event))"
+                />
+                @if (touched() && e.vestCyclePercent) {
+                  <span class="error">{{ e.vestCyclePercent }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Every (days)</span>
+                <input
+                  class="input"
+                  inputmode="numeric"
+                  placeholder="30"
+                  [value]="d.vestCycleDays"
+                  (input)="set('vestCycleDays', text($event))"
+                />
+                @if (touched() && e.vestCycleDays) {
+                  <span class="error">{{ e.vestCycleDays }}</span>
+                }
+              </label>
+            </div>
+            <p class="hint">
+              Contributors claim the first release when the presale ends, then each new share as it
+              unlocks. Fixed once the presale is created; at most two years in all.
+            </p>
+          }
+        }
+
         @if (terms(); as t) {
           <h3>Summary</h3>
           <dl class="rows">
@@ -193,6 +333,24 @@
               <dt>Raise</dt>
               <dd>{{ t.softCap | mas }} to {{ t.hardCap | mas }}</dd>
             </div>
+            @if (extras()) {
+              <div>
+                <dt>Who can contribute</dt>
+                <dd>
+                  @if (!t.whitelist) {
+                    Anyone
+                  } @else if (t.publicFrom >= t.end) {
+                    The whitelist only
+                  } @else {
+                    The whitelist for {{ d.whitelistHours }} h, then anyone
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>Tokens for contributors</dt>
+                <dd>{{ vestingText() }}</dd>
+              </div>
+            }
             <div>
               <dt>Presale fee (on the MAS raised, at withdrawal)</dt>
               <dd>
@@ -224,7 +382,12 @@
         }
 
         @if (error(); as message) {
-          <div class="notice notice-error" role="alert">{{ message }}</div>
+          <div class="notice notice-error" role="alert">
+            {{ message }}
+            @if (createdId(); as id) {
+              <a class="btn btn-ghost btn-sm" [routerLink]="['/presales', id]">Open the presale</a>
+            }
+          </div>
         }
         <div class="nav">
           <a class="btn btn-ghost" [routerLink]="['/tokens', p.address]">Cancel</a>
@@ -240,6 +403,9 @@
               }
               @case ('create') {
                 Confirm the presale in your wallet…
+              }
+              @case ('whitelist') {
+                Whitelist {{ batch().done + 1 }} of {{ batch().total }}: confirm in your wallet…
               }
               @default {
                 Start presale

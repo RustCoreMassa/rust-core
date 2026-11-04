@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.5.0-brightgreen" />
+  <img alt="Version 1.6.0" src="https://img.shields.io/badge/version-1.6.0-brightgreen" />
   <img alt="Network: Massa" src="https://img.shields.io/badge/network-Massa-red" />
   <img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" />
 </p>
@@ -45,10 +45,11 @@ your money. RustCore Launchpad is built on four principles:
   The Launchpad's own code can only change after a **72-hour public delay**, and its admin can
   never touch presale funds — only the fees collected.
 
-> **Version 1.5.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
+> **Version 1.6.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
 > on Massa **mainnet** at `AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP`, upgraded in
 > place (v1.0.0 → v1.3.1 on 2026-10-17, → v1.4.0 on 2026-10-27), each time after the 72-hour
-> public delay. It has not had an independent security audit yet: start with small amounts.
+> public delay; v1.6.0 (presale whitelists and vesting) follows the same way. It has not had an
+> independent security audit yet: start with small amounts.
 
 ## What you can do
 
@@ -58,7 +59,7 @@ your money. RustCore Launchpad is built on four principles:
 | 🖼️ **Launch a collection** | An MRC721 NFT collection: metadata on IPFS, owner mint, optional public mint at your price, a per-wallet limit, and a royalty on every sale. |
 | 📥 **Import** | List a token or collection you already own and deployed elsewhere. |
 | 🛒 **Trade NFTs** | List, buy and cancel on the marketplace. No custody: the NFT stays in your wallet until it's sold. A small marketplace fee and the creator's royalty, nothing else. |
-| 🚀 **Run a presale** | Sell your token for MAS with a soft and hard cap. Success: contributors claim their tokens. Failure: they take their MAS back. Nobody can touch the MAS in between. |
+| 🚀 **Run a presale** | Sell your token for MAS with a soft and hard cap, optionally to a whitelist first and with vesting for the tokens. Success: contributors claim their tokens. Failure: they take their MAS back. Nobody can touch the MAS in between. |
 | 📊 **Tokenomics** | Show how your token's supply is split — team, liquidity, community… — as a chart on its page, with the live balance of each address you name. Declared at launch or anytime later; checked to add up to the supply. |
 | ✏️ **Edit & download** | Change your project's description, logo and links anytime, and download the original contract code as a zip. |
 | 🔒 **Mutable or immutable** | Choose at launch whether you can ever upgrade your contract's code. Immutable means nobody — you included — can change it. |
@@ -196,8 +197,10 @@ anytime. Its name, symbol and decimals never. Its code only if you launched it a
 and then the Launchpad keeps only your original code: keep any new code yourself.
 
 **What happens to my MAS in a presale?** It stays in the Launchpad contract until the presale
-ends. Soft cap reached: you claim your tokens and the owner receives the MAS minus the fee. Not
-reached, or cancelled: you take your MAS back with **Refund**.
+ends. Soft cap reached: you claim your tokens — all at once, or share by share as they unlock
+if the presale has vesting — and the owner receives the MAS minus the fee. Not reached, or
+cancelled: you take your MAS back with **Refund**. A presale with a whitelist takes MAS only
+from the listed addresses until its public phase (if it has one).
 
 **Why do transactions send more MAS than the fee?** Massa charges for the storage a transaction
 creates (records, balances, the contract itself). The app sends a little more than needed; the
@@ -227,7 +230,8 @@ the links. Pin your files so they stay online.
 - [x] Fixes from the internal security audit: RC-Collection v2, royalty fixed in listings,
       presale rate cap, warnings on imports and inactive listings (v1.3.1)
 - [x] RustCore NFT collection: a discount on every Launchpad fee for its holders, 30% to start (v1.4.0)
-- [ ] Presale extras: whitelist, vesting, liquidity on Dusa
+- [x] Presale whitelist and vesting, both optional (v1.6.0)
+- [ ] Presale liquidity on Dusa
 - [ ] Token payments on the marketplace
 - [x] An indexer for very large collections, and a [public API](#public-api)
 - [ ] Independent security audit

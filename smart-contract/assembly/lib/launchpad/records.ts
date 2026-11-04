@@ -311,6 +311,9 @@ export class MarketStats implements Serializable {
   }
 }
 
+/** 100 % in basis points. */
+export const BPS_ALL: u16 = 10_000;
+
 export const PRESALE_OPEN: u8 = 0;
 export const PRESALE_SUCCESS: u8 = 1;
 export const PRESALE_FAILED: u8 = 2;
@@ -350,8 +353,26 @@ export class Presale implements Serializable {
     public withdrawn: bool = false,
     /** Presale fee in basis points, fixed when the presale is created. */
     public feeBps: u16 = 0,
+    // ---- v1.6.0, fixed at creation; a presale created before reads as none of them ----
+    /** Only whitelisted addresses may contribute until `publicFrom`. */
+    public whitelist: bool = false,
+    /** With a whitelist: anyone may contribute from then on (= end: whitelist only). */
+    public publicFrom: u64 = 0,
+    /** Addresses on the whitelist now. */
+    public whitelisted: u32 = 0,
+    /** Share of the bought tokens claimable at once, bps; 10 000 = no vesting. */
+    public vestFirstBps: u16 = BPS_ALL,
+    /** Then `vestCycleBps` more at the end of every cycle of `vestCycleMs`. */
+    public vestCycleMs: u64 = 0,
+    public vestCycleBps: u16 = 0,
+    /** When it was finalized (ms); 0 while open. Vesting counts from min(finalizedAt, end). */
+    public finalizedAt: u64 = 0,
   ) {}
 
+  /**
+   * Always the full format, so a page of presales reads the same whatever their age (a record
+   * stored before v1.6.0 gets the defaults above).
+   */
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.id)
@@ -371,6 +392,13 @@ export class Presale implements Serializable {
       .add(this.status)
       .add(this.withdrawn)
       .add(this.feeBps)
+      .add(this.whitelist)
+      .add(this.publicFrom)
+      .add(this.whitelisted)
+      .add(this.vestFirstBps)
+      .add(this.vestCycleMs)
+      .add(this.vestCycleBps)
+      .add(this.finalizedAt)
       .serialize();
   }
 
@@ -393,6 +421,16 @@ export class Presale implements Serializable {
     this.status = args.nextU8().expect('status');
     this.withdrawn = args.nextBool().expect('withdrawn');
     this.feeBps = args.nextU16().expect('feeBps');
+    const whitelist = args.nextBool();
+    if (whitelist.isOk()) {
+      this.whitelist = whitelist.unwrap();
+      this.publicFrom = args.nextU64().expect('publicFrom');
+      this.whitelisted = args.nextU32().expect('whitelisted');
+      this.vestFirstBps = args.nextU16().expect('vestFirstBps');
+      this.vestCycleMs = args.nextU64().expect('vestCycleMs');
+      this.vestCycleBps = args.nextU16().expect('vestCycleBps');
+      this.finalizedAt = args.nextU64().expect('finalizedAt');
+    }
     return new Result(args.offset);
   }
 }

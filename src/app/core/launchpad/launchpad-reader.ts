@@ -38,6 +38,12 @@ export const LISTING_ROYALTY_VERSION = '1.3.1';
 /** First Launchpad version that discounts the fees of holders of a chosen collection. */
 export const HOLDER_DISCOUNT_VERSION = '1.4.0';
 
+/** First Launchpad version with presale whitelists and vesting. */
+export const PRESALE_EXTRAS_VERSION = '1.6.0';
+
+/** Addresses one addToWhitelist / removeFromWhitelist call takes (the contract's limit). */
+export const WHITELIST_BATCH = 200;
+
 /** "1.10.0" ≥ "1.9.2": compares x.y.z numerically. */
 export function atLeast(version: string, minimum: string): boolean {
   const a = version.split('.').map(Number);
@@ -46,6 +52,14 @@ export function atLeast(version: string, minimum: string): boolean {
     if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
   }
   return true;
+}
+
+/** A storage key prefix of the Launchpad: `tag` + the presale id as 8 bytes big-endian. */
+export function presaleKeyPrefix(tag: string, presaleId: bigint): Uint8Array {
+  const prefix = new Uint8Array(tag.length + 8);
+  prefix.set(new TextEncoder().encode(tag));
+  new DataView(prefix.buffer).setBigUint64(tag.length, presaleId);
+  return prefix;
 }
 
 /** A symbol in the registry: free, kept aside by the admin, or used by a launched token. */
@@ -292,6 +306,7 @@ export class LaunchpadReader {
 
   /** Every presale, newest first (page after page). */
   async allPresales(max = 1_000): Promise<Presale[]> {
+    const extras = await this.supportsPresaleExtras();
     const all: Presale[] = [];
     for (;;) {
       const page = readPage(
@@ -299,7 +314,7 @@ export class LaunchpadReader {
           'getPresales',
           new Args().addU64(BigInt(all.length)).addU32(BigInt(PAGE_SIZE)),
         ),
-        readPresale,
+        (args) => readPresale(args, extras),
       );
       all.push(...page.items);
       if (!page.items.length || all.length >= Math.min(page.total, max)) return all;
@@ -307,7 +322,37 @@ export class LaunchpadReader {
   }
 
   async presale(id: bigint): Promise<Presale> {
-    return readPresale(new Args(await this.read('getPresale', new Args().addU64(id))));
+    const bytes = await this.read('getPresale', new Args().addU64(id));
+    return readPresale(new Args(bytes), await this.supportsPresaleExtras());
+  }
+
+  /**
+   * Whether presales can have a whitelist and vesting (v1.6.0+). Older versions ignore the
+   * extra createPresale arguments, so the app offers them only when this is true.
+   */
+  async supportsPresaleExtras(): Promise<boolean> {
+    return atLeast(await this.version(), PRESALE_EXTRAS_VERSION);
+  }
+
+  async isWhitelisted(presaleId: bigint, address: string): Promise<boolean> {
+    const bytes = await this.read('isWhitelisted', new Args().addU64(presaleId).addString(address));
+    return bytes[0] === 1;
+  }
+
+  /** Every address on a presale's whitelist (its storage keys, `wl:` + id + address). */
+  async whitelist(presaleId: bigint): Promise<string[]> {
+    const prefix = presaleKeyPrefix('wl:', presaleId);
+    const keys = await this.reader
+      .provider()
+      .getStorageKeys(this.requireAddress(), prefix, READ_FINAL);
+    const decoder = new TextDecoder();
+    return keys.map((key) => decoder.decode(key.slice(prefix.length)));
+  }
+
+  /** Token units a contributor already claimed from a vesting presale (0 before and after). */
+  async claimed(presaleId: bigint, contributor: string): Promise<bigint> {
+    const bytes = await this.read('getClaimed', new Args().addU64(presaleId).addString(contributor));
+    return new Args(bytes).nextU256();
   }
 
   /** The open presale of a token, or null. */

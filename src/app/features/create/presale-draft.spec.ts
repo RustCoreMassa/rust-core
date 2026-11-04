@@ -3,10 +3,15 @@ import {
   EMPTY_PRESALE_DRAFT,
   PresaleDraft,
   createPresaleArgs,
+  parseAddresses,
+  percentBps,
   presaleTerms,
+  vestingErrors,
 } from './presale-draft';
 
 const MAS = 1_000_000_000n;
+const DONATION = 'AU126s93ZxbT4QUJcZYqsAxyMc3wv8nkHJYKYCtgQyEnZ8VGRM99P';
+const CONTRACT = 'AS125HSzXL9sphoniiqezuYKX3mGNuuS19yLQKvaJUGyEkfALpVTB';
 const NOW = Date.UTC(2026, 9, 5, 12, 0);
 const valid: PresaleDraft = {
   ...EMPTY_PRESALE_DRAFT,
@@ -67,5 +72,86 @@ describe('presale draft', () => {
     expect(args.nextU64()).toBe(0n); // no maximum
     expect(args.nextU64()).toBe(0n); // start now
     expect(args.nextU64()).toBe(BigInt(terms!.end));
+  });
+
+  it('ends the whitelist phase after its hours, or at the end', () => {
+    const later = '2026-10-06T10:00';
+    const start = new Date(later).getTime();
+    const hours = presaleTerms(
+      { ...valid, start: later, whitelist: true, whitelistHours: '24' },
+      9,
+      NOW,
+    );
+    expect(hours.terms!.publicFrom).toBe(start + 24 * 3_600_000);
+    const only = presaleTerms(
+      { ...valid, start: later, whitelist: true, whitelistHours: '' },
+      9,
+      NOW,
+    );
+    expect(only.terms!.publicFrom).toBe(only.terms!.end);
+    expect(presaleTerms(valid, 9, NOW).terms!.publicFrom).toBe(0);
+    const long = presaleTerms({ ...valid, whitelist: true, whitelistHours: '72' }, 9, NOW);
+    expect(long.errors.whitelistHours).toMatch(/from 1 to 71/);
+  });
+
+  it('reads whitelist addresses, without repeats, and names an invalid one', () => {
+    expect(parseAddresses(`${DONATION}\n${DONATION}, ${CONTRACT};`)).toEqual({
+      addresses: [DONATION, CONTRACT],
+      invalid: null,
+    });
+    expect(parseAddresses(`${DONATION} AU1nope`).invalid).toBe('AU1nope');
+    const terms = presaleTerms({ ...valid, whitelist: true, whitelistAddresses: 'hello' }, 9, NOW);
+    expect(terms.errors.whitelistAddresses).toBe('Not a Massa address: hello');
+  });
+
+  it('reads percentages with up to two decimals', () => {
+    expect(percentBps('25')).toBe(2_500);
+    expect(percentBps('12.5')).toBe(1_250);
+    expect(percentBps('0.01')).toBe(1);
+    expect(percentBps('100')).toBe(10_000);
+    expect(percentBps('100.01')).toBeNull();
+    expect(percentBps('1.234')).toBeNull();
+    expect(percentBps('-5')).toBeNull();
+  });
+
+  it('checks the vesting schedule like the contract', () => {
+    expect(vestingErrors(2_500, 30, 2_500)).toEqual({});
+    expect(vestingErrors(10_000, 30, 2_500).vestFirst).toBeDefined();
+    expect(vestingErrors(2_500, 30, 0).vestCyclePercent).toBeDefined();
+    expect(vestingErrors(2_500, 0, 2_500).vestCycleDays).toBeDefined();
+    expect(vestingErrors(2_500, 1.5, 2_500).vestCycleDays).toBeDefined();
+    // 10 cycles of 10 %: 73 days each at most; 4 cycles of 30 % (the last one 10 %).
+    expect(vestingErrors(0, 73, 1_000)).toEqual({});
+    expect(vestingErrors(0, 74, 1_000).vestCycleDays).toMatch(/two years/);
+    expect(vestingErrors(0, 182, 3_000)).toEqual({});
+    expect(vestingErrors(0, 183, 3_000).vestCycleDays).toMatch(/two years/);
+  });
+
+  it('appends whitelist and vesting to createPresale args (v1.6.0)', () => {
+    const { terms } = presaleTerms(
+      { ...valid, whitelist: true, whitelistHours: '', vesting: true },
+      9,
+      NOW,
+    );
+    const plain = new Args(createPresaleArgs('AS1token', terms!).serialize()).serialize().length;
+    const full = new Args(createPresaleArgs('AS1token', terms!, true).serialize());
+    full.nextString();
+    full.nextU256();
+    full.nextU256();
+    for (let i = 0; i < 6; i++) full.nextU64();
+    expect(full.getOffset()).toBe(plain);
+    expect(full.nextBool()).toBe(true);
+    expect(full.nextU64()).toBe(BigInt(terms!.end)); // whitelist only
+    expect(full.nextU16()).toBe(2_500n);
+    expect(full.nextU64()).toBe(30n * 86_400_000n);
+    expect(full.nextU16()).toBe(2_500n);
+    expect(terms!.vestFirstBps).toBe(2_500);
+  });
+
+  it('sends no cycle terms without vesting', () => {
+    const { terms } = presaleTerms({ ...valid, vesting: false }, 9, NOW);
+    expect(terms!.vestFirstBps).toBe(10_000);
+    expect(terms!.vestCycleMs).toBe(0);
+    expect(terms!.vestCycleBps).toBe(0);
   });
 });

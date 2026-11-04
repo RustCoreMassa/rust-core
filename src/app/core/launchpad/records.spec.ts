@@ -71,6 +71,20 @@ const CONTRACT_PRESALE_BYTES = new Uint8Array([
   0, 0, 0, 0, 0, 0, 0, 232, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 228, 11, 84, 2, 0, 0, 0, 0, 116, 59, 164, 11, 0, 0, 0, 0, 225, 245, 5, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 44, 200, 153, 1, 0, 0, 0, 28, 83, 205, 153, 1, 0, 0, 0,
+  120, 65, 203, 2, 0, 0, 0, 4, 0, 0, 0, 1, 1, 250, 0, 1, 0, 238, 191, 202, 153, 1, 0, 0, 12, 0, 0,
+  0, 196, 9, 0, 200, 126, 154, 0, 0, 0, 0, 220, 5, 128, 10, 138, 205, 153, 1, 0, 0,
+]);
+/** A presale of a Launchpad before v1.6.0, without whitelist and vesting. */
+const CONTRACT_PRESALE_V1_BYTES = new Uint8Array([
+  7, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 65, 85, 49, 50, 66, 113, 90, 69, 81,
+  54, 115, 66, 121, 104, 82, 76, 121, 69, 117, 102, 48, 89, 98, 81, 109, 99, 70, 50, 80, 115, 68,
+  100, 107, 78, 78, 71, 49, 97, 107, 66, 74, 117, 57, 88, 99, 106, 90, 65, 49, 101, 56, 51, 0, 0, 0,
+  65, 85, 49, 50, 66, 113, 90, 69, 81, 54, 115, 66, 121, 104, 82, 76, 121, 69, 117, 102, 48, 89, 98,
+  81, 109, 99, 70, 50, 80, 115, 68, 100, 107, 78, 78, 71, 49, 97, 107, 66, 74, 117, 57, 88, 99, 106,
+  90, 65, 49, 101, 56, 64, 75, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 232, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 228, 11, 84, 2, 0, 0, 0, 0, 116, 59, 164, 11, 0, 0, 0, 0, 225, 245, 5, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 44, 200, 153, 1, 0, 0, 0, 28, 83, 205, 153, 1, 0, 0, 0,
   120, 65, 203, 2, 0, 0, 0, 4, 0, 0, 0, 1, 1, 250, 0,
 ]);
 
@@ -206,6 +220,21 @@ describe('Launchpad records', () => {
     expect(p.status).toBe(PRESALE_SUCCESS);
     expect(p.withdrawn).toBe(true);
     expect(p.feeBps).toBe(250);
+    expect(p.whitelist).toBe(true);
+    expect(p.publicFrom).toBe(1_760_043_200_000);
+    expect(p.whitelisted).toBe(12);
+    expect(p.vestFirstBps).toBe(2_500);
+    expect(p.vestCycleMs).toBe(2_592_000_000);
+    expect(p.vestCycleBps).toBe(1_500);
+    expect(p.finalizedAt).toBe(1_760_090_000_000);
+  });
+
+  it('decodes a presale of a Launchpad before v1.6.0 as without extras', () => {
+    const p = readPresale(new Args(CONTRACT_PRESALE_V1_BYTES), false);
+    expect(p.feeBps).toBe(250);
+    expect(p.whitelist).toBe(false);
+    expect(p.vestFirstBps).toBe(10_000);
+    expect(p.vestCycleMs).toBe(0);
   });
 
   it('decodes a record serialized by the contract', () => {

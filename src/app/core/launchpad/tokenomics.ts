@@ -14,7 +14,8 @@ export const PURPOSE_MAX = 40;
 export const ALLOCATION_DESCRIPTION_MAX = 140;
 export const FULL_BPS = 10_000;
 
-const ADDRESS = /^A[US][1-9A-HJ-NP-Za-km-z]{40,60}$/;
+/** A Massa address (user or contract), as the app accepts it. */
+export const ADDRESS = /^A[US][1-9A-HJ-NP-Za-km-z]{40,60}$/;
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
 /** Chart colours, in the order of the parts (checked for colour blindness on #111116). */

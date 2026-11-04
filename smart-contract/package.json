@@ -1,6 +1,6 @@
 {
   "name": "rust-core-launchpad-contracts",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "description": "RustCore Launchpad smart contracts (AssemblyScript, Massa)",
   "license": "SEE LICENSE IN ../LICENSE.md",

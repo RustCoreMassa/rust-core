@@ -130,12 +130,15 @@ storage).
 
 ### Buildnet
 
-1. Move the current `deployments/buildnet.json` to `deployments/history/buildnet-v<version>.json`.
-2. `npm run deploy`
-3. Put the new address in `NETWORKS.buildnet.launchpadAddress`
+1. `DEPLOYMENT=buildnet-<version> npm run deploy` writes `deployments/buildnet-<version>.json`
+   (an existing file is never overwritten; without `DEPLOYMENT` it writes
+   `deployments/buildnet.json`: move the old one to `deployments/history/` first).
+2. Put the new address in `NETWORKS.buildnet.launchpadAddress`
    (`src/app/core/network/networks.ts`).
-4. Run the e2e scripts (`npx tsx src/e2e.ts`, `e2e-collections`, `e2e-marketplace`,
-   `e2e-presale`, `e2e-admin`) and `npm run verify`.
+3. With the same `DEPLOYMENT`, run `npm run verify` and the e2e scripts **one at a time** (they
+   measure the account's balance and the fees collected): `npx tsx src/e2e.ts`,
+   `e2e-collections`, `e2e-marketplace`, `e2e-presale`, `e2e-presale-extras`, `e2e-tokenomics`,
+   `e2e-admin`, `e2e-removal`, `e2e-discount`. The whole set costs ≈ 180 test MAS.
 
 A fresh buildnet deployment starts with an empty registry; that's fine for the test network.
 

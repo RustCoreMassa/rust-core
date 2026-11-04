@@ -8,6 +8,25 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-11-04
+
+Works with the Launchpad contract **v1.6.0** (new: presale whitelists and vesting). On older
+contracts the app offers presales as before, without them.
+
+### Added
+
+- Presale whitelist, if the owner wants one: only the listed addresses can contribute, for the
+  whole presale or for its first hours (then anyone). The owner pastes the addresses when
+  creating the presale (sent 200 per signature, ≈ 0.007 MAS of storage each) and can add or
+  remove some on its page until the public phase; after the presale, clearing the list gives
+  its storage back.
+- Presale vesting, if the owner wants it: contributors get a first share of their tokens when
+  the presale ends, then a fixed share at the end of every cycle (whole days, two years at
+  most), claimed as they unlock. The presale page shows the schedule, what was claimed and the
+  next unlock.
+- Both are fixed when the presale is created; presales created before the upgrade keep working
+  exactly as before. Presale cards show "Whitelist" and "Vesting" labels.
+
 ## [1.5.0] — 2026-11-03
 
 Works with the Launchpad contract **v1.4.0**; no contract change.

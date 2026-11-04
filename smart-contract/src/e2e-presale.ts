@@ -63,8 +63,10 @@ async function send(who: JsonRpcProvider, target: string, func: string, args: Ar
 
 const tokenBalance = async (token: string, holder: string) =>
   new Args(await read(token, 'balanceOf', new Args().addString(holder))).nextU256();
+// Presale records carry the whitelist and vesting fields from Launchpad v1.6.0.
+const extras = new TextDecoder().decode(await read(LAUNCHPAD, 'version')) >= '1.6.0';
 const presale = async (id: bigint) =>
-  readPresale(new Args(await read(LAUNCHPAD, 'getPresale', new Args().addU64(id))));
+  readPresale(new Args(await read(LAUNCHPAD, 'getPresale', new Args().addU64(id))), extras);
 const fees = async () => new Args(await read(LAUNCHPAD, 'fees')).nextU64();
 
 // ---- a token to sell: 1 000 000 units of 9 decimals ----------------------------------------

@@ -74,3 +74,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+.extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.extra {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--gray-300);
+  font-size: 12px;
+  font-weight: 600;
+}

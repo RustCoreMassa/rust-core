@@ -488,8 +488,13 @@ textarea.input {
   gap: 16px;
 }
 
+.form-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 @media (max-width: 640px) {
-  .form-grid {
+  .form-grid,
+  .form-grid.three {
     grid-template-columns: 1fr;
   }
 }
