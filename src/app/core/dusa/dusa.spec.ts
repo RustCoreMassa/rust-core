@@ -6,10 +6,12 @@ import {
   addLiquidityStorage,
   baseFeeBps,
   createPairArgs,
+  feePercent,
   formatPrice,
   idFromPrice,
   idSlippage,
   lpFeeText,
+  maxFeeBps,
   minimum,
   poolPriceWarning,
   poolUrl,
@@ -214,19 +216,56 @@ describe('Dusa fees', () => {
   ]);
 
   it('reads a preset and a pair’s settings alike', () => {
-    expect(readFees(MAINNET_100)).toEqual({ baseFactor: 8_000, protocolShare: 10_000 });
-    expect(readFees(BUILDNET_PAIR_20)).toEqual({ baseFactor: 10_000, protocolShare: 0 });
+    expect(readFees(MAINNET_100)).toEqual({
+      baseFactor: 8_000,
+      variableFeeControl: 7_500,
+      protocolShare: 10_000,
+      maxVolatilityAccumulator: 150_000,
+    });
+    expect(readFees(BUILDNET_PAIR_20)).toEqual({
+      baseFactor: 10_000,
+      variableFeeControl: 20_000,
+      protocolShare: 0,
+      maxVolatilityAccumulator: 350_000,
+    });
   });
 
-  it('gives the base fee Dusa quotes: 0.8% for 1% bins, 0.4% for 0.5% bins', () => {
-    expect(baseFeeBps({ baseFactor: 8_000, protocolShare: 10_000 }, 100)).toBe(80);
-    expect(baseFeeBps({ baseFactor: 8_000, protocolShare: 10_000 }, 50)).toBe(40);
-    expect(baseFeeBps({ baseFactor: 10_000, protocolShare: 0 }, 25)).toBe(25);
+  // Mainnet presets as Dusa gave them (2026-11-06) and getPreset returns them.
+  const preset = (baseFactor: number, variableFeeControl: number, maxVolatility: number) => ({
+    baseFactor,
+    variableFeeControl,
+    protocolShare: 10_000,
+    maxVolatilityAccumulator: maxVolatility,
+  });
+  const P20 = preset(10_000, 20_000, 350_000);
+  const P25 = preset(10_000, 15_000, 350_000);
+  const P50 = preset(8_000, 10_000, 250_000);
+  const P100 = preset(8_000, 7_500, 150_000);
+
+  it('gives the base fee Dusa quotes: 0.2%, 0.25%, 0.4%, 0.8%', () => {
+    expect(baseFeeBps(P20, 20)).toBe(20);
+    expect(baseFeeBps(P25, 25)).toBe(25);
+    expect(baseFeeBps(P50, 50)).toBe(40);
+    expect(baseFeeBps(P100, 100)).toBe(80);
+  });
+
+  it('gives the highest fee Dusa quotes: 1.18% for 0.2% bins, 1.40% for 0.25% bins', () => {
+    expect(maxFeeBps(P20, 20)).toBe(118);
+    expect(maxFeeBps(P25, 25)).toBeCloseTo(139.84375, 6);
+    expect(feePercent(maxFeeBps(P25, 25))).toBe('1.4');
+    expect(feePercent(maxFeeBps(P50, 50))).toBe('1.96');
+    expect(feePercent(maxFeeBps(P100, 100))).toBe('2.49');
+  });
+
+  it('writes fees as percents', () => {
+    expect(feePercent(80)).toBe('0.8');
+    expect(feePercent(25)).toBe('0.25');
+    expect(feePercent(2)).toBe('0.02');
   });
 
   it('says whether liquidity providers earn trading fees', () => {
-    expect(lpFeeText({ baseFactor: 1, protocolShare: 10_000 })).toContain('earn none');
-    expect(lpFeeText({ baseFactor: 1, protocolShare: 0 })).toContain('keep 100%');
-    expect(lpFeeText({ baseFactor: 1, protocolShare: 2_500 })).toContain('keep 75%');
+    expect(lpFeeText(P100)).toContain('earn none');
+    expect(lpFeeText({ ...P20, protocolShare: 0 })).toContain('keep 100%');
+    expect(lpFeeText({ ...P20, protocolShare: 2_500 })).toContain('keep 75%');
   });
 });

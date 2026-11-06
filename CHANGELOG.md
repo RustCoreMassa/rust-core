@@ -8,8 +8,15 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.8.2] — 2026-11-06
+
+Works with the Launchpad contract **v1.8.0**; no contract change.
+
 ### Changed
 
+- Dusa: pools and the liquidity dialog show the whole trading fee range, from the base fee to
+  the highest one while the price moves fast (on mainnet 0.2–1.18% for 0.2% bins, 0.25–1.4%,
+  0.4–1.96% and 0.8–2.49%), computed from the pool's own settings as Dusa confirmed them.
 - The release workflow uses `actions/checkout` v7.0.1 and `actions/setup-node` v7.1.0 (Node.js
   24; GitHub retires Node.js 20 for actions), still pinned by commit, and leaves no git
   credentials on disk after the checkout.
@@ -336,6 +343,7 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.8.2]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.2
 [1.8.1]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.1
 [1.8.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.0
 [1.7.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.7.0

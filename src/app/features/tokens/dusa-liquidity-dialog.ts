@@ -21,6 +21,8 @@ import {
   addLiquidityStorage,
   baseFeeBps,
   createPairArgs,
+  feePercent,
+  maxFeeBps,
   formatPrice,
   idFromPrice,
   lpFeeText,
@@ -87,7 +89,7 @@ type Busy = 'pair' | 'approve' | 'add' | null;
             </span>
             @if (fees(); as f) {
               <span class="hint">
-                Trading fee from {{ feePercent(f) }}% (more while the price moves fast).
+                Trading fee {{ feeRange(f) }}%: the more the price moves, the higher.
                 {{ lpText(f) }}
               </span>
             }
@@ -372,8 +374,10 @@ export class DusaLiquidityDialog {
     return formatPrice(price);
   }
 
-  protected feePercent(fees: DusaFees): string {
-    return String(baseFeeBps(fees, this.binStep()) / 100);
+  /** "0.8 to 2.49": the base fee, and the fee with the most volatility. */
+  protected feeRange(fees: DusaFees): string {
+    const step = this.binStep();
+    return `${feePercent(baseFeeBps(fees, step))} to ${feePercent(maxFeeBps(fees, step))}`;
   }
 
   protected lpText(fees: DusaFees): string {

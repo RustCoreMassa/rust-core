@@ -9,7 +9,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { baseFeeBps, formatPrice, presalePrice } from '../../core/dusa/dusa';
+import { baseFeeBps, feePercent, formatPrice, maxFeeBps, presalePrice } from '../../core/dusa/dusa';
 import { DusaPool, DusaReader } from '../../core/dusa/dusa-reader';
 import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
 import { PRESALE_SUCCESS, Project } from '../../core/launchpad/records';
@@ -164,9 +164,11 @@ export class DusaCard {
     return formatPrice(price);
   }
 
-  /** The pool's base trading fee, percent. */
+  /** The pool's trading fee range, percent: "0.8–2.49" (base, and with the most volatility). */
   protected fee(pool: DusaPool): string {
-    return pool.fees ? String(baseFeeBps(pool.fees, pool.binStep) / 100) : '';
+    if (!pool.fees) return '';
+    const low = feePercent(baseFeeBps(pool.fees, pool.binStep));
+    return `${low}–${feePercent(maxFeeBps(pool.fees, pool.binStep))}`;
   }
 
   protected async copy(): Promise<void> {

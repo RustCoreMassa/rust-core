@@ -190,20 +190,28 @@ export function addLiquidityCall(p: AddLiquidity): { args: Args; coins: bigint }
 /** A pool's fee settings, from Factory.getPreset(binStep) or the pair's FEES_PARAMETERS. */
 export interface DusaFees {
   baseFactor: number;
+  variableFeeControl: number;
   /** Share of the trading fees Dusa keeps, out of 10 000 (all of them on mainnet presets). */
   protocolShare: number;
+  maxVolatilityAccumulator: number;
 }
 
 /**
  * Factory.getPreset and a pair's FEES_PARAMETERS entry start alike, u32 each: binStep,
- * baseFactor, filterPeriod, decayPeriod, reductionFactor, variableFeeControl, protocolShare…
+ * baseFactor, filterPeriod, decayPeriod, reductionFactor, variableFeeControl, protocolShare,
+ * maxVolatilityAccumulator…
  */
 export function readFees(bytes: Uint8Array): DusaFees {
   const args = new Args(bytes);
-  args.nextU32(); // binStep
-  const baseFactor = Number(args.nextU32());
-  for (let i = 0; i < 4; i++) args.nextU32();
-  return { baseFactor, protocolShare: Number(args.nextU32()) };
+  const next = () => Number(args.nextU32());
+  next(); // binStep
+  const baseFactor = next();
+  next(); // filterPeriod
+  next(); // decayPeriod
+  next(); // reductionFactor
+  const variableFeeControl = next();
+  const protocolShare = next();
+  return { baseFactor, variableFeeControl, protocolShare, maxVolatilityAccumulator: next() };
 }
 
 /**
@@ -212,6 +220,23 @@ export function readFees(bytes: Uint8Array): DusaFees {
  */
 export function baseFeeBps(fees: DusaFees, binStep: number): number {
   return (fees.baseFactor * binStep) / 10_000;
+}
+
+/**
+ * The highest trading fee, bps: the base fee plus the variable fee at its cap, which is
+ * (maxVolatilityAccumulator × binStep)² × variableFeeControl / 100 in 1e18 precision (Dusa's
+ * figures: 1.18% for 0.2% bins, 1.40% for 0.25% bins on mainnet).
+ */
+export function maxFeeBps(fees: DusaFees, binStep: number): number {
+  const product = BigInt(fees.maxVolatilityAccumulator) * BigInt(binStep);
+  // ÷ 100 for the formula, ÷ 1e18 for the precision, × 1e4 for bps.
+  const variable = Number(product * product * BigInt(fees.variableFeeControl)) / 1e16;
+  return baseFeeBps(fees, binStep) + variable;
+}
+
+/** A fee in bps as a percent for people, two decimals at most: 248.75 → "2.49". */
+export function feePercent(bps: number): string {
+  return String(Math.round(bps) / 100);
 }
 
 /** What liquidity providers get from a pool's trading fees. */
