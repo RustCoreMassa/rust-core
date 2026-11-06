@@ -4,17 +4,21 @@ import {
   ID_SHIFT,
   addLiquidityCall,
   addLiquidityStorage,
+  baseFeeBps,
   createPairArgs,
   formatPrice,
   idFromPrice,
   idSlippage,
+  lpFeeText,
   minimum,
   poolPriceWarning,
   poolUrl,
   presalePrice,
   priceFromId,
+  readFees,
   readPairList,
   readPairState,
+  storageEstimate,
   uniformDistribution,
 } from './dusa';
 
@@ -140,7 +144,8 @@ describe('Dusa liquidity', () => {
       slippageBps: 100,
     });
     const storage = addLiquidityStorage(11);
-    expect(storage).toBe(140_100_000n + 11n * 45_600_000n);
+    expect(storageEstimate(11)).toBe(140_100_000n + 11n * 45_600_000n);
+    expect(storage).toBe((storageEstimate(11) * 6n) / 5n); // 20 % over the SDK's estimate
     expect(coins).toBe(storage + 5_000_000_000n);
     // Read back the way Dusa's SDK decodes it (decodeLiquidityTx).
     const read = new Args(args.serialize());
@@ -193,5 +198,35 @@ describe('poolPriceWarning', () => {
   it('warns about an empty pool someone else may have priced', () => {
     expect(poolPriceWarning(pool(0.001, false), 0)).toContain('Nobody has added liquidity');
     expect(poolPriceWarning(pool(0.001, true), 0)).toBeNull();
+  });
+});
+
+describe('Dusa fees', () => {
+  // Factory.getPreset(100) on mainnet, read 2026-11-06 (9 × u32 LE).
+  const MAINNET_100 = new Uint8Array([
+    100, 0, 0, 0, 64, 31, 0, 0, 44, 1, 0, 0, 176, 4, 0, 0, 136, 19, 0, 0, 76, 29, 0, 0, 16, 39, 0,
+    0, 240, 73, 2, 0, 120, 0, 0, 0,
+  ]);
+  // A buildnet pair's FEES_PARAMETERS (bin step 20): the same start, then its live variables.
+  const BUILDNET_PAIR_20 = new Uint8Array([
+    20, 0, 0, 0, 16, 39, 0, 0, 30, 0, 0, 0, 88, 2, 0, 0, 136, 19, 0, 0, 32, 78, 0, 0, 0, 0, 0, 0,
+    48, 87, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 15, 123, 168, 161, 1, 0, 0,
+  ]);
+
+  it('reads a preset and a pair’s settings alike', () => {
+    expect(readFees(MAINNET_100)).toEqual({ baseFactor: 8_000, protocolShare: 10_000 });
+    expect(readFees(BUILDNET_PAIR_20)).toEqual({ baseFactor: 10_000, protocolShare: 0 });
+  });
+
+  it('gives the base fee Dusa quotes: 0.8% for 1% bins, 0.4% for 0.5% bins', () => {
+    expect(baseFeeBps({ baseFactor: 8_000, protocolShare: 10_000 }, 100)).toBe(80);
+    expect(baseFeeBps({ baseFactor: 8_000, protocolShare: 10_000 }, 50)).toBe(40);
+    expect(baseFeeBps({ baseFactor: 10_000, protocolShare: 0 }, 25)).toBe(25);
+  });
+
+  it('says whether liquidity providers earn trading fees', () => {
+    expect(lpFeeText({ baseFactor: 1, protocolShare: 10_000 })).toContain('earn none');
+    expect(lpFeeText({ baseFactor: 1, protocolShare: 0 })).toContain('keep 100%');
+    expect(lpFeeText({ baseFactor: 1, protocolShare: 2_500 })).toContain('keep 75%');
   });
 });

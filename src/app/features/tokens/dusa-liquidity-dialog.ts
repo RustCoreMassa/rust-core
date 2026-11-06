@@ -12,15 +12,18 @@ import { Args } from '@massalabs/massa-web3';
 import {
   CREATE_PAIR_COINS,
   DEADLINE_MS,
+  DusaFees,
   LiquidityShape,
   SHAPE_BINS,
   SLIPPAGE_BPS,
   WMAS_DECIMALS,
   addLiquidityCall,
   addLiquidityStorage,
+  baseFeeBps,
   createPairArgs,
   formatPrice,
   idFromPrice,
+  lpFeeText,
   poolPriceWarning,
   idSlippage,
   priceFromId,
@@ -78,7 +81,16 @@ type Busy = 'pair' | 'approve' | 'add' | null;
             <span class="hint">
               The price moves by this much from one bin to the next: wider bins suit young, volatile
               tokens.
+              @if (steps().includes(100)) {
+                For a new token Dusa suggests 1% bins, or 0.5% for lower trading fees.
+              }
             </span>
+            @if (fees(); as f) {
+              <span class="hint">
+                Trading fee from {{ feePercent(f) }}% (more while the price moves fast).
+                {{ lpText(f) }}
+              </span>
+            }
           </div>
 
           @if (pool(); as existing) {
@@ -180,7 +192,7 @@ type Busy = 'pair' | 'approve' | 'add' | null;
           <dl class="rows">
             <div>
               <dt>Storage on Dusa</dt>
-              <dd>≈ {{ storage() | mas }}</dd>
+              <dd>up to {{ storage() | mas }}, the unused part comes back</dd>
             </div>
             @if (!pool()) {
               <div>
@@ -243,6 +255,8 @@ export class DusaLiquidityDialog {
   protected readonly createCoins = CREATE_PAIR_COINS;
   protected readonly project = signal<Project | null>(null);
   private readonly pools = signal<readonly DusaPool[]>([]);
+  /** Fee settings a new pool gets, by bin step (read from Dusa's Factory when opening). */
+  private readonly presets = signal<ReadonlyMap<number, DusaFees | null>>(new Map());
   protected readonly binStep = signal(0);
   protected readonly price = signal('');
   protected readonly suggested = signal(false);
@@ -263,6 +277,11 @@ export class DusaLiquidityDialog {
     return [...new Set([...open, ...this.pools().map((p) => p.binStep)])].sort((a, b) => a - b);
   });
   protected readonly pool = computed(() => this.poolAt(this.binStep()));
+  /** The chosen pool's own fee settings, or those a new one would get. */
+  protected readonly fees = computed(() => {
+    const pool = this.pool();
+    return pool ? pool.fees : (this.presets().get(this.binStep()) ?? null);
+  });
   /** A second look before adding to a pool whose price may have been set by someone else. */
   protected readonly warning = computed(() => {
     const pool = this.pool();
@@ -325,6 +344,12 @@ export class DusaLiquidityDialog {
     this.masText.set('');
     this.error.set(null);
     this.tokenBalance.set(null);
+    this.presets.set(new Map());
+    void Promise.all(
+      this.steps().map(async (step) => [step, await this.dusa.preset(step)] as const),
+    )
+      .then((entries) => this.presets.set(new Map(entries)))
+      .catch(() => undefined);
     const me = this.wallet.address();
     if (me)
       void this.tokens
@@ -345,6 +370,14 @@ export class DusaLiquidityDialog {
 
   protected format(price: number): string {
     return formatPrice(price);
+  }
+
+  protected feePercent(fees: DusaFees): string {
+    return String(baseFeeBps(fees, this.binStep()) / 100);
+  }
+
+  protected lpText(fees: DusaFees): string {
+    return lpFeeText(fees);
   }
 
   protected close(): void {

@@ -8,6 +8,21 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.8.1] — 2026-11-06
+
+Works with the Launchpad contract **v1.8.0**; no contract change.
+
+### Changed
+
+- Dusa: the liquidity dialog shows the chosen pool's trading fee and says whether liquidity
+  providers earn any of it (on mainnet Dusa keeps all of it), plus Dusa's advice for a new
+  token (1% bins, or 0.5% for lower fees). The fees are read from the pool, or from Dusa's
+  Factory for a new one.
+- Dusa: each pool on a token's page shows its trading fee, and the card gives the token's
+  address to copy, since Dusa asks for tokens it doesn't list to be imported by address.
+- Dusa: adding liquidity sends 20% more than the SDK's storage estimate; the unused part comes
+  back. Wide ranges (51 bins) are now checked on buildnet too (`e2e-dusa`).
+
 ## [1.8.0] — 2026-11-04
 
 Works with the Launchpad contract **v1.8.0** (new: presale tokens go back to their owner in a
@@ -315,6 +330,7 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.8.1]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.1
 [1.8.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.0
 [1.7.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.7.0
 [1.6.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.6.0

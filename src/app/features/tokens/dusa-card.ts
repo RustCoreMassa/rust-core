@@ -9,12 +9,13 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { formatPrice, presalePrice } from '../../core/dusa/dusa';
+import { baseFeeBps, formatPrice, presalePrice } from '../../core/dusa/dusa';
 import { DusaPool, DusaReader } from '../../core/dusa/dusa-reader';
 import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
 import { PRESALE_SUCCESS, Project } from '../../core/launchpad/records';
 import { NetworkStore } from '../../core/network/network-store';
 import { WalletStore } from '../../core/wallet/wallet-store';
+import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { MasPipe, UnitsPipe } from '../../shared/pipes/units-pipe';
 import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
 
@@ -24,7 +25,7 @@ import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
  */
 @Component({
   selector: 'app-dusa-card',
-  imports: [MasPipe, UnitsPipe, DusaLiquidityDialog],
+  imports: [MasPipe, UnitsPipe, ShortAddressPipe, DusaLiquidityDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (enabled()) {
@@ -54,7 +55,11 @@ import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
               <li>
                 <div>
                   <strong>1 {{ project().symbol }} = {{ format(pool.price) }} MAS</strong>
-                  <span class="muted small"> · {{ pool.binStep / 100 }}% bins</span>
+                  <span class="muted small">
+                    · {{ pool.binStep / 100 }}% bins{{
+                      pool.fees ? ' · ' + fee(pool) + '% fee' : ''
+                    }}
+                  </span>
                 </div>
                 @if (pool.tokenReserve || pool.masReserve) {
                   <div class="muted small">
@@ -80,6 +85,10 @@ import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
           </ul>
           <p class="hint">
             Dusa is an independent exchange: prices there come from trades, not from the Launchpad.
+            If Dusa doesn't list {{ project().symbol }} yet, import it there by its address:
+            <button class="link mono" type="button" (click)="copy()" title="Copy the address">
+              {{ copied() ? 'Copied ✓' : (project().address | shortAddress) }}</button
+            >.
           </p>
         }
       </section>
@@ -128,6 +137,7 @@ export class DusaCard {
   protected readonly enabled = computed(() => this.dusa.config() !== null);
   /** undefined = loading, null = couldn't be read. */
   protected readonly pools = signal<DusaPool[] | null | undefined>(undefined);
+  protected readonly copied = signal(false);
   private run = 0;
 
   constructor() {
@@ -152,6 +162,17 @@ export class DusaCard {
 
   protected format(price: number): string {
     return formatPrice(price);
+  }
+
+  /** The pool's base trading fee, percent. */
+  protected fee(pool: DusaPool): string {
+    return pool.fees ? String(baseFeeBps(pool.fees, pool.binStep) / 100) : '';
+  }
+
+  protected async copy(): Promise<void> {
+    await navigator.clipboard?.writeText(this.project().address).catch(() => undefined);
+    this.copied.set(true);
+    setTimeout(() => this.copied.set(false), 1500);
   }
 
   protected async openDialog(): Promise<void> {

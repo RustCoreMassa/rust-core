@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.8.0" src="https://img.shields.io/badge/version-1.8.0-brightgreen" />
+  <img alt="Version 1.8.1" src="https://img.shields.io/badge/version-1.8.1-brightgreen" />
   <img alt="Network: Massa" src="https://img.shields.io/badge/network-Massa-red" />
   <img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" />
 </p>
@@ -45,7 +45,7 @@ your money. RustCore Launchpad is built on four principles:
   The Launchpad's own code can only change after a **72-hour public delay**, and its admin can
   never touch presale funds — only the fees collected.
 
-> **Version 1.8.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
+> **Version 1.8.1** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.4.0** is live
 > on Massa **mainnet** at `AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP`, upgraded in
 > place (v1.0.0 → v1.3.1 on 2026-10-17, → v1.4.0 on 2026-10-27), each time after the 72-hour
 > public delay; v1.8.0 (presale whitelists and vesting, presale tokens taken back by their
@@ -175,7 +175,8 @@ code" is built in your browser from files the app ships and the code stored on-c
   mutable), its owner could make transfers fail and block claims (on contracts before v1.8.0,
   refunds too): the presale page warns about it.
 - **Check a Dusa pool's price before adding to it.** Anyone can create a token's pool at any
-  price; the app warns when a pool is far from the presale's price or still empty.
+  price; the app warns when a pool is far from the presale's price or still empty. On mainnet,
+  Dusa keeps all of its pools' trading fees: liquidity providers earn none of them.
 - The Launchpad hasn't had an independent audit yet (it's on the [roadmap](#roadmap)).
 
 ### Verify it yourself

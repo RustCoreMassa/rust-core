@@ -11,9 +11,18 @@ export const WMAS_DECIMALS = 9;
 /** A liquidity distribution's shares add up to 1e18 per token. */
 export const DISTRIBUTION_ONE = 10n ** 18n;
 
-/** Storage the router charges for addLiquidity, as Dusa's SDK sends it: base + per bin. */
-export function addLiquidityStorage(bins: number): bigint {
+/** Dusa's SDK estimate of the storage addLiquidity creates: base + per bin. */
+export function storageEstimate(bins: number): bigint {
   return 140_100_000n + BigInt(bins) * 45_600_000n;
+}
+
+/**
+ * Storage sent with addLiquidity: the SDK's estimate + 20 %. Dusa says the SDK's figures are
+ * estimates, too little reverts the call, and what isn't used comes back to the caller.
+ */
+export function addLiquidityStorage(bins: number): bigint {
+  const estimate = storageEstimate(bins);
+  return estimate + estimate / 5n;
 }
 
 /**
@@ -176,6 +185,40 @@ export function addLiquidityCall(p: AddLiquidity): { args: Args; coins: bigint }
     .addU64(BigInt(p.deadline))
     .addU64(storage);
   return { args, coins: storage + p.masAmount };
+}
+
+/** A pool's fee settings, from Factory.getPreset(binStep) or the pair's FEES_PARAMETERS. */
+export interface DusaFees {
+  baseFactor: number;
+  /** Share of the trading fees Dusa keeps, out of 10 000 (all of them on mainnet presets). */
+  protocolShare: number;
+}
+
+/**
+ * Factory.getPreset and a pair's FEES_PARAMETERS entry start alike, u32 each: binStep,
+ * baseFactor, filterPeriod, decayPeriod, reductionFactor, variableFeeControl, protocolShare…
+ */
+export function readFees(bytes: Uint8Array): DusaFees {
+  const args = new Args(bytes);
+  args.nextU32(); // binStep
+  const baseFactor = Number(args.nextU32());
+  for (let i = 0; i < 4; i++) args.nextU32();
+  return { baseFactor, protocolShare: Number(args.nextU32()) };
+}
+
+/**
+ * The base trading fee in basis points: baseFactor × binStep / 10 000 (mainnet, 1% bins: 80 =
+ * 0.8%). A variable part adds to it while the price moves fast.
+ */
+export function baseFeeBps(fees: DusaFees, binStep: number): number {
+  return (fees.baseFactor * binStep) / 10_000;
+}
+
+/** What liquidity providers get from a pool's trading fees. */
+export function lpFeeText(fees: DusaFees): string {
+  if (fees.protocolShare >= 10_000)
+    return 'All its trading fees go to Dusa: liquidity providers earn none of them.';
+  return `Liquidity providers keep ${(10_000 - fees.protocolShare) / 100}% of its trading fees.`;
 }
 
 /** Dusa's page for a pool (its app route /pools/:token0/:token1/:binStep/:version). */

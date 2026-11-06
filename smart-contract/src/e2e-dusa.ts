@@ -1,7 +1,8 @@
 // End-to-end check of the app's Dusa code on buildnet (Dusa Core V2): launch a token through the
 // Launchpad, create its TOKEN/WMAS pool at a chosen price, add token + MAS with the app's
-// arguments, then read the pool back the way the app does. Measures what creating a pool costs
-// (CREATE_PAIR_COINS in src/app/core/dusa/dusa.ts).
+// arguments (narrow, then wide), then read the pool back the way the app does. Measures what
+// creating a pool and the storage of each add cost (CREATE_PAIR_COINS, addLiquidityStorage in
+// src/app/core/dusa/dusa.ts).
 //   DEPLOYMENT=buildnet-1.6.0 npx tsx src/e2e-dusa.ts
 // The account is PRIVATE_KEY (test MAS). Never on mainnet.
 import 'dotenv/config';
@@ -26,12 +27,15 @@ import {
   SLIPPAGE_BPS,
   WMAS_DECIMALS,
   addLiquidityCall,
+  baseFeeBps,
   createPairArgs,
   idFromPrice,
   idSlippage,
   priceFromId,
+  readFees,
   readPairList,
   readPairState,
+  storageEstimate,
   uniformDistribution,
 } from '../../src/app/core/dusa/dusa';
 import { deploymentFile } from './utils';
@@ -121,6 +125,18 @@ const [x] = await provider.readStorage(pair, [new TextEncoder().encode('TOKEN_X'
 check('the token is X, WMAS is Y', new TextDecoder().decode(x!) === token);
 const fresh = readPairState(await read(pair, 'getPairInformation'));
 check('it starts at the chosen bin', fresh.activeId === startId, `${fresh.activeId}`);
+const preset = readFees(await read(DUSA.factory, 'getPreset', new Args().addU32(BigInt(BIN_STEP))));
+const [feeBytes] = await provider.readStorage(
+  pair,
+  [new TextEncoder().encode('FEES_PARAMETERS')],
+  false,
+);
+const pairFees = readFees(feeBytes!);
+check(
+  'the pool has its preset’s fees, as the app reads them',
+  pairFees.baseFactor === preset.baseFactor && pairFees.protocolShare === preset.protocolShare,
+  `base fee ${baseFeeBps(pairFees, BIN_STEP) / 100}%, protocol share ${pairFees.protocolShare / 100}%`,
+);
 check(
   'a second pool at the same bin step is refused',
   (await refusal(
@@ -159,7 +175,8 @@ const addCost = beforeAdd - (await provider.balance(false));
 check(
   'liquidity added: MAS in + storage within what was sent',
   addCost >= MAS_IN && addCost <= call.coins,
-  `${mas(addCost)} spent (sent ${mas(call.coins)})`,
+  `${mas(addCost)} spent (sent ${mas(call.coins)}; storage used ${mas(addCost - MAS_IN)}, ` +
+    `SDK estimate ${mas(storageEstimate(2 * SHAPE_BINS.narrow + 1))})`,
 );
 const state = readPairState(await read(pair, 'getPairInformation'));
 // Each bin takes floor(amount × share / 1e18): at most one smallest unit per bin stays out, and
@@ -182,6 +199,47 @@ check(
   'the wallet kept the rest of its tokens',
   balance === 1_000_000n * 10n ** 9n - state.reserveX,
 );
+
+// ---- a second add, wide (51 bins, 40 of them new), as the dialog's default --------------------
+await send(
+  token,
+  'increaseAllowance',
+  new Args().addString(DUSA.router).addU256(TOKENS),
+  ALLOWANCE_COINS,
+);
+const wideBins = 2 * SHAPE_BINS.wide + 1;
+const wide = addLiquidityCall({
+  token,
+  wmas: DUSA.wmas,
+  binStep: BIN_STEP,
+  tokenAmount: TOKENS,
+  masAmount: MAS_IN,
+  activeId: state.activeId,
+  idSlippage: idSlippage(SLIPPAGE_BPS, BIN_STEP),
+  distribution: uniformDistribution(SHAPE_BINS.wide),
+  to: ME,
+  deadline: Date.now() + 20 * 60_000,
+  slippageBps: SLIPPAGE_BPS,
+});
+const beforeWide = await provider.balance(false);
+await send(DUSA.router, 'addLiquidityMAS', wide.args, wide.coins);
+const wideCost = beforeWide - (await provider.balance(false));
+check(
+  'wide liquidity added within what was sent',
+  wideCost >= MAS_IN && wideCost <= wide.coins,
+  `${mas(wideCost)} spent (sent ${mas(wide.coins)}; storage used ${mas(wideCost - MAS_IN)}, ` +
+    `SDK estimate ${mas(storageEstimate(wideBins))})`,
+);
+const after = readPairState(await read(pair, 'getPairInformation'));
+check(
+  'the pool holds both adds (less per-bin rounding)',
+  after.reserveX <= 2n * TOKENS &&
+    2n * TOKENS - after.reserveX <= bins + BigInt(wideBins) &&
+    after.reserveY <= 2n * MAS_IN &&
+    2n * MAS_IN - after.reserveY <= bins + BigInt(wideBins),
+  `${2n * TOKENS - after.reserveX} unit(s), ${2n * MAS_IN - after.reserveY} nanoMAS back`,
+);
+check('the price didn’t move', after.activeId === state.activeId);
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');
 process.exit(failures ? 1 : 0);
