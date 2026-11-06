@@ -8,6 +8,12 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+### Changed
+
+- The release workflow uses `actions/checkout` v7.0.1 and `actions/setup-node` v7.1.0 (Node.js
+  24; GitHub retires Node.js 20 for actions), still pinned by commit, and leaves no git
+  credentials on disk after the checkout.
+
 ## [1.8.1] — 2026-11-06
 
 Works with the Launchpad contract **v1.8.0**; no contract change.

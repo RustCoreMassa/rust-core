@@ -37,12 +37,15 @@ jobs:
 
     steps:
       - name: Check out the tagged commit
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0, pinned by commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, pinned by commit
         with:
           fetch-depth: 0 # all tags, to compare with earlier releases
+          # No git credentials left on disk while npm scripts run: `gh` gets the token from
+          # GH_TOKEN in the steps that need it.
+          persist-credentials: false
 
       - name: Set up Node.js (version pinned in .nvmrc)
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0, pinned by commit
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0, pinned by commit
         with:
           node-version-file: .nvmrc
           cache: npm
