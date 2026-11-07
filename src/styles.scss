@@ -1,7 +1,8 @@
 /*
- * RustCore Launchpad — global styles. Same design language as rustcore.massa and RustCore
- * Wallet: dark surfaces, Massa red accent with blue/orange glows, Inter + Space Grotesk
- * (bundled through @fontsource — the app loads no fonts from third parties).
+ * RustCore — global styles. Matte surfaces lit by an ember accent: graphite cards with a soft
+ * top bevel and a fine grain, red → orange glows (Massa red and RustCore orange, the brand's
+ * colors), Inter + Space Grotesk (bundled through @fontsource — the app loads no fonts from
+ * third parties).
  * Shared classes live here; single-component styles stay in that component, built on these
  * tokens.
  */
@@ -9,41 +10,61 @@
 :root {
   color-scheme: dark;
 
-  --bg: #07070a;
-  --bg-elevated: #111116;
-  --bg-elevated-2: #1b1b22;
+  /* ---- colors ---- */
+  --bg: #09090b;
+  --bg-elevated: #131317;
+  --bg-elevated-2: #1b1b20;
+  --bg-sunken: #0d0d10;
   --red: #ff2d42;
   --red-glow: rgba(255, 45, 66, 0.35);
+  --orange: #ff8a3d;
+  --ember: #ff5a36;
+  --ember-text: #ff9b6e;
+  --ember-glow: rgba(255, 90, 54, 0.45);
+  --ember-soft: rgba(255, 106, 61, 0.12);
+  --ember-line: rgba(255, 106, 61, 0.4);
   --blue: #4361ff;
   --blue-glow: rgba(67, 97, 255, 0.28);
-  --orange: #ff8a3d;
   --green: #33d17a;
   --yellow: #ffc94d;
   --white: #f6f6f8;
-  --gray-300: #c7c7cd;
-  --gray-500: #8a8a91;
-  --gray-700: #4c4c52;
-  --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --surface-glass: rgba(20, 20, 26, 0.62);
+  --gray-300: #c4c4cb;
+  --gray-500: #8a8a92;
+  --gray-700: #4a4a51;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --surface-glass: rgba(20, 20, 24, 0.72);
 
+  /* ---- matte materials ---- */
+  /* Fine grain over the matte surfaces (an SVG noise tile, white at 4%). */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --surface: linear-gradient(180deg, #1c1c21 0%, #151519 100%);
+  --surface-raised: linear-gradient(180deg, #26262c 0%, #1b1b20 100%);
+  --grad-ember: linear-gradient(180deg, #ff8650 0%, #ff5a36 52%, #ee3a37 100%);
+  --grad-text: linear-gradient(92deg, #ffb27c 0%, #ff6a3d 42%, #ff2d42 100%);
+  --bevel: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+  --sunken: inset 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+
+  /* ---- type ---- */
   --font-display: 'Space Grotesk Variable', 'Inter Variable', system-ui, sans-serif;
   --font-body: 'Inter Variable', system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
+  /* ---- shape ---- */
   --radius-sm: 10px;
   --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 26px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
 
-  --shadow-md: 0 10px 30px -12px rgba(0, 0, 0, 0.65);
-  --shadow-red: 0 10px 24px -10px rgba(255, 45, 66, 0.7);
-  --ring: 0 0 0 3px rgba(255, 45, 66, 0.35);
+  --shadow-md: 0 1px 0 rgba(0, 0, 0, 0.55), 0 22px 44px -22px rgba(0, 0, 0, 0.9);
+  --shadow-red: 0 10px 26px -10px rgba(255, 90, 54, 0.8);
+  --shadow-glow: 0 0 0 1px rgba(255, 106, 61, 0.14), 0 18px 46px -18px rgba(255, 90, 54, 0.45);
+  --ring: 0 0 0 3px rgba(255, 106, 61, 0.35);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  --container: 1120px;
+  --container: 1160px;
   --gutter: 16px;
-  --header-height: 64px;
+  --header-height: 76px;
 }
 
 /* ---------- base ---------- */
@@ -70,8 +91,10 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(255, 45, 66, 0.1), transparent 60%),
-    radial-gradient(900px 500px at 90% 40%, rgba(67, 97, 255, 0.06), transparent 60%), #040406;
+    var(--grain),
+    radial-gradient(1100px 560px at 50% -14%, rgba(255, 90, 54, 0.13), transparent 64%),
+    radial-gradient(760px 460px at 100% 36%, rgba(255, 45, 66, 0.05), transparent 62%),
+    radial-gradient(700px 420px at 0% 70%, rgba(255, 138, 61, 0.035), transparent 60%), var(--bg);
   background-attachment: fixed;
   color: var(--white);
   font-family: var(--font-body);
@@ -81,6 +104,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(255, 106, 61, 0.35);
+  color: #fff;
 }
 
 img {
@@ -105,6 +133,11 @@ h4 {
   letter-spacing: -0.02em;
   line-height: 1.12;
   margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 code,
@@ -141,6 +174,7 @@ code,
 
 /* ---------- buttons ---------- */
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -156,14 +190,26 @@ code,
   white-space: nowrap;
   transition:
     transform 0.2s var(--ease-out),
-    box-shadow 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.2s ease,
     opacity 0.2s ease;
 }
 
+.btn svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .btn:active:not(:disabled) {
-  transform: scale(0.97);
+  transform: translateY(1px) scale(0.985);
 }
 
 .btn:disabled {
@@ -171,30 +217,42 @@ code,
   cursor: not-allowed;
 }
 
-.btn-red {
+/* The main action: an ember block lit from inside. (Named btn-red since the first design.) */
+.btn-red,
+.btn-primary {
   color: #fff;
-  background: linear-gradient(180deg, #ff4a5c 0%, #e8192f 100%);
+  background: var(--grad-ember);
+  border-color: rgba(255, 170, 120, 0.35);
+  text-shadow: 0 1px 0 rgba(120, 20, 0, 0.35);
   box-shadow:
     var(--shadow-red),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -2px 0 rgba(120, 20, 0, 0.22);
 }
 
-.btn-red:hover:not(:disabled) {
+.btn-red:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
   box-shadow:
-    0 14px 34px -10px rgba(255, 45, 66, 0.85),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    0 14px 36px -10px rgba(255, 90, 54, 0.95),
+    0 0 0 4px rgba(255, 106, 61, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -2px 0 rgba(120, 20, 0, 0.22);
   transform: translateY(-1px);
 }
 
+/* Secondary: a raised matte block. */
 .btn-ghost {
   color: var(--white);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--grain), var(--surface-raised);
   border-color: var(--border-strong);
+  box-shadow:
+    var(--bevel),
+    0 6px 16px -10px rgba(0, 0, 0, 0.9);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--grain), linear-gradient(180deg, #2c2c33 0%, #1f1f25 100%);
 }
 
 .btn-sm {
@@ -208,6 +266,7 @@ code,
   height: 54px;
   padding: 0 28px;
   font-size: 16px;
+  border-radius: 16px;
 }
 
 .btn-block {
@@ -219,36 +278,61 @@ code,
   position: relative;
   padding: 24px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, rgba(27, 27, 34, 0.7), rgba(17, 17, 22, 0.7));
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-md);
+  background: var(--grain), var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--bevel), var(--shadow-md);
 }
 
 a.card,
 .card-link {
   text-decoration: none;
   transition:
-    transform 0.3s var(--ease-out),
-    border-color 0.3s ease;
+    transform 0.35s var(--ease-out),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 a.card:hover,
 .card-link:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 45, 66, 0.35);
+  border-color: var(--ember-line);
+  box-shadow: var(--bevel), var(--shadow-glow);
 }
 
+/* A sunken well inside a card: code, addresses, empty states. */
+.well {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-sunken);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: var(--sunken);
+}
+
+/* The section eyebrow: a matte pill with a glowing ember dot. */
 .label {
-  display: inline-block;
-  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 13px 6px 11px;
   border-radius: 999px;
-  background: rgba(255, 45, 66, 0.1);
-  border: 1px solid rgba(255, 45, 66, 0.25);
-  color: #ff8090;
+  background: var(--grain), var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--bevel);
+  color: var(--ember-text);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ember);
+  box-shadow: 0 0 8px 1px var(--ember-glow);
 }
 
 .pill {
@@ -257,8 +341,9 @@ a.card:hover,
   gap: 8px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: var(--surface-glass);
+  background: var(--grain), var(--surface-raised);
   border: 1px solid var(--border-strong);
+  box-shadow: var(--bevel);
   color: var(--gray-300);
   font-size: 13px;
   font-weight: 500;
@@ -267,6 +352,7 @@ a.card:hover,
 .dot {
   width: 7px;
   height: 7px;
+  flex: none;
   border-radius: 50%;
   background: var(--green);
   box-shadow: 0 0 10px rgba(51, 209, 122, 0.8);
@@ -278,7 +364,7 @@ a.card:hover,
 }
 
 .grad {
-  background: linear-gradient(90deg, #ff6a50 0%, var(--red) 45%, #ff8a3d 100%);
+  background: var(--grad-text);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -288,9 +374,141 @@ a.card:hover,
   color: var(--gray-500);
 }
 
+/* A matte tile holding an icon, its stroke lit in ember. */
+.icon-tile {
+  --tile: 48px;
+  display: grid;
+  place-items: center;
+  width: var(--tile);
+  height: var(--tile);
+  flex: none;
+  border-radius: calc(var(--tile) * 0.3);
+  background: var(--grain), var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  box-shadow:
+    var(--bevel),
+    0 8px 18px -10px rgba(0, 0, 0, 0.9);
+  color: var(--ember);
+}
+
+.icon-tile svg {
+  width: 50%;
+  height: 50%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(255, 90, 54, 0.55));
+}
+
+/* A glowing ember node, where lines meet. */
+.node {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffb27c, var(--ember) 60%);
+  box-shadow:
+    0 0 0 4px rgba(255, 106, 61, 0.12),
+    0 0 14px 2px var(--ember-glow);
+}
+
+/* An ember tick in a disc, as in a completed checklist; .tick-off is a step still to do. */
+.tick {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--grad-ember);
+  box-shadow:
+    0 0 10px -2px var(--ember-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.tick svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tick-off {
+  background: var(--bg-sunken);
+  border: 1.5px solid #3a3a41;
+  box-shadow: var(--sunken);
+}
+
+/* The three dots of a window bar (decorative). */
+.window-dots {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.window-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3a3a41;
+}
+
+.window-dots i:first-child {
+  background: var(--ember);
+  box-shadow: 0 0 6px var(--ember-glow);
+}
+
+/* Segmented progress, one ember segment per step done. */
+.segments {
+  display: flex;
+  gap: 4px;
+}
+
+.segments i {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.segments i.on {
+  background: linear-gradient(90deg, var(--ember), var(--orange));
+  box-shadow: 0 0 8px var(--ember-glow);
+}
+
+/* ---------- sections ---------- */
+.section {
+  padding-bottom: 104px;
+}
+
+.section-head {
+  max-width: 700px;
+  margin: 0 auto 44px;
+  text-align: center;
+}
+
+.section-head h2 {
+  margin-top: 18px;
+  font-size: clamp(28px, 4vw, 42px);
+}
+
+.section-head p {
+  margin: 14px 0 0;
+  color: var(--gray-300);
+  font-size: 17px;
+  text-wrap: balance;
+}
+
 /* ---------- page head ---------- */
+/* Vertical padding only: a .page is usually also a .container, which keeps its gutters. */
 .page {
-  padding: 48px 0 96px;
+  padding-top: 48px;
+  padding-bottom: 96px;
 }
 
 .page-head {
@@ -299,8 +517,8 @@ a.card:hover,
 }
 
 .page-head h1 {
-  margin-top: 14px;
-  font-size: clamp(30px, 4.4vw, 44px);
+  margin-top: 16px;
+  font-size: clamp(30px, 4.4vw, 46px);
   font-weight: 700;
 }
 
@@ -317,14 +535,15 @@ a.card:hover,
   align-items: flex-start;
   padding: 12px 14px;
   border-radius: var(--radius-md);
-  background: rgba(255, 201, 77, 0.08);
-  border: 1px solid rgba(255, 201, 77, 0.25);
+  background: linear-gradient(180deg, rgba(255, 201, 77, 0.09), rgba(255, 201, 77, 0.05));
+  border: 1px solid rgba(255, 201, 77, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: #ffe1a0;
   font-size: 14px;
 }
 
 .notice-error {
-  background: rgba(255, 45, 66, 0.08);
+  background: linear-gradient(180deg, rgba(255, 45, 66, 0.1), rgba(255, 45, 66, 0.05));
   border-color: rgba(255, 45, 66, 0.3);
   color: #ff9aa5;
 }
@@ -338,7 +557,7 @@ a.card:hover,
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.05) 25%,
-    rgba(255, 255, 255, 0.11) 50%,
+    rgba(255, 255, 255, 0.1) 50%,
     rgba(255, 255, 255, 0.05) 75%
   );
   background-size: 200% 100%;
@@ -356,16 +575,19 @@ dialog.sheet {
   width: min(520px, calc(100vw - 2 * var(--gutter)));
   max-height: calc(100vh - 48px);
   padding: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
+  background: var(--grain), linear-gradient(180deg, #1d1d22 0%, #131317 100%);
   color: var(--white);
-  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8);
+  box-shadow:
+    var(--bevel),
+    0 40px 90px -24px rgba(0, 0, 0, 0.9),
+    0 0 80px -30px rgba(255, 90, 54, 0.25);
 }
 
 dialog.sheet::backdrop {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(4, 4, 6, 0.66);
+  backdrop-filter: blur(6px);
 }
 
 /* ---------- forms ---------- */
@@ -381,13 +603,15 @@ dialog.sheet::backdrop {
   font-weight: 600;
 }
 
+/* Inputs are sunken wells; focus lights their edge in ember. */
 .input {
   width: 100%;
   min-height: 46px;
   padding: 11px 14px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong);
-  background: var(--bg-elevated-2);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--bg-sunken);
+  box-shadow: var(--sunken);
   color: var(--white);
   font: 16px/1.4 var(--font-body);
   transition:
@@ -395,14 +619,27 @@ dialog.sheet::backdrop {
     box-shadow 0.2s ease;
 }
 
+.input::placeholder {
+  color: var(--gray-700);
+}
+
 .input:focus {
   outline: none;
-  border-color: rgba(255, 45, 66, 0.55);
-  box-shadow: var(--ring);
+  border-color: rgba(255, 106, 61, 0.6);
+  box-shadow: var(--sunken), var(--ring);
 }
 
 .input.invalid {
   border-color: rgba(255, 45, 66, 0.6);
+}
+
+select.input {
+  appearance: none;
+  padding-right: 38px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23ff7a45' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      no-repeat right 14px center,
+    var(--bg-sunken);
 }
 
 textarea.input {
@@ -424,7 +661,7 @@ textarea.input {
   font: inherit;
   cursor: pointer;
   text-decoration: underline;
-  text-decoration-color: rgba(255, 45, 66, 0.6);
+  text-decoration-color: var(--ember-line);
   text-underline-offset: 3px;
 }
 
@@ -443,10 +680,15 @@ textarea.input {
   padding: 7px 13px;
   border-radius: 999px;
   border: 1px solid var(--border-strong);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--grain), var(--surface-raised);
+  box-shadow: var(--bevel);
   color: var(--gray-300);
   font-size: 14px;
   cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .chip:hover {
@@ -454,11 +696,15 @@ textarea.input {
 }
 
 .chip.selected {
-  border-color: rgba(255, 45, 66, 0.55);
-  background: rgba(255, 45, 66, 0.12);
+  border-color: var(--ember-line);
+  background: linear-gradient(180deg, rgba(255, 106, 61, 0.16), rgba(255, 106, 61, 0.06));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 14px -4px var(--ember-glow);
   color: var(--white);
 }
 
+/* A choice row (radio or checkbox in a card); the checked one gets an ember edge. */
 .toggle {
   display: flex;
   gap: 12px;
@@ -466,20 +712,41 @@ textarea.input {
   padding: 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--grain), linear-gradient(180deg, #19191d 0%, #141417 100%);
+  box-shadow: var(--bevel);
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.toggle:hover {
+  border-color: var(--border-strong);
+}
+
+.toggle:has(input:checked) {
+  border-color: var(--ember-line);
+  box-shadow:
+    var(--bevel),
+    0 0 0 1px rgba(255, 106, 61, 0.12),
+    0 0 22px -8px var(--ember-glow);
 }
 
 .toggle input {
   width: 18px;
   height: 18px;
   margin-top: 2px;
-  accent-color: var(--red);
+  accent-color: var(--ember);
 }
 
 .toggle strong {
   display: block;
   font-size: 15px;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--ember);
 }
 
 .form-grid {
@@ -538,7 +805,7 @@ textarea.input {
 .sheet-body {
   display: grid;
   gap: 16px;
-  padding: 24px;
+  padding: 26px;
 }
 
 .sheet-head {
@@ -558,8 +825,13 @@ textarea.input {
   flex: none;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--grain), var(--surface-raised);
+  box-shadow: var(--bevel);
   cursor: pointer;
+}
+
+.icon-btn:hover {
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .actions {

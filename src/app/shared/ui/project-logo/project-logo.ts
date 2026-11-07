@@ -28,8 +28,14 @@ import { httpUrl } from '../../../core/utils/ipfs';
       flex: none;
       overflow: hidden;
       border-radius: 50%;
-      background: linear-gradient(155deg, rgba(255, 45, 66, 0.25), rgba(67, 97, 255, 0.18));
+      background: linear-gradient(
+        155deg,
+        rgba(255, 106, 61, 0.28),
+        rgba(255, 45, 66, 0.1) 55%,
+        #18181c
+      );
       border: 1px solid var(--border-strong);
+      box-shadow: var(--bevel);
     }
 
     img {

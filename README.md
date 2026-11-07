@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="public/assets/logo-light.png" alt="RustCore Launchpad" width="120" />
+  <img src="public/assets/logo.svg" alt="RustCore" width="120" />
 </p>
 
-<h1 align="center">RustCore Launchpad</h1>
+<h1 align="center">RustCore</h1>
 
 <p align="center">
-  Launch tokens and NFT collections on the <a href="https://massa.net">Massa</a> blockchain,
-  trade NFTs and run token presales — with <b>no backend</b>. A product of the <b>RustCore</b>
-  team.
+  Self-custodial, verifiable tools for the <a href="https://massa.net">Massa</a> blockchain, in
+  one app: launch tokens and NFT collections, trade NFTs, run token presales, and find
+  RustCore Wallet, our roadmap and everything we ship — with <b>no backend</b>.
 </p>
 
 <p align="center">
@@ -18,16 +18,17 @@
 
 <p align="center">
   <b>Open it:</b>
-  <a href="https://lrustcore.massa.network"><b>lrustcore.massa</b></a>
+  <a href="https://rustcore.massa.network"><b>rustcore.massa</b></a>
   — live on DeWeb
 </p>
 
 ---
 
-## Why RustCore Launchpad
+## Why RustCore
 
 Launching a token or an NFT collection shouldn't mean trusting a company with your project or
-your money. RustCore Launchpad is built on four principles:
+your money. RustCore — this app, its Launchpad contract and the tools to come — is built on
+four principles:
 
 - **You own what you launch.** Your token or collection is deployed with **you** as its owner
   from the first block. The Launchpad keeps no rights over it: it can't mint, pause, freeze or
@@ -65,6 +66,7 @@ your money. RustCore Launchpad is built on four principles:
 | 📊 **Tokenomics** | Show how your token's supply is split — team, liquidity, community… — as a chart on its page, with the live balance of each address you name. Declared at launch or anytime later; checked to add up to the supply. |
 | ✏️ **Edit & download** | Change your project's description, logo and links anytime, and download the original contract code as a zip. |
 | 🔒 **Mutable or immutable** | Choose at launch whether you can ever upgrade your contract's code. Immutable means nobody — you included — can change it. |
+| 🏠 **RustCore, in one place** | The home page gathers what the RustCore site used to show: RustCore Wallet and where to get it, the Core Keepers membership NFT, the fees, what shipped, the roadmap and the FAQ. New tools join this app as they ship. |
 
 ## Getting started
 
@@ -74,15 +76,15 @@ your money. RustCore Launchpad is built on four principles:
 2. **Have some MAS** on Massa mainnet for the fees and storage, and keep your wallet on
    mainnet. (Developers can run the app locally against buildnet, the test network — see
    [CONTRIBUTING.md](CONTRIBUTING.md).)
-3. **Open the Launchpad** at **`lrustcore.massa`** — click
-   [lrustcore.massa.network](https://lrustcore.massa.network) (Massa's official gateway) or open
-   `lrustcore.massa` through any DeWeb gateway or [Massa Station](https://station.massa.net/) —
+3. **Open RustCore** at **`rustcore.massa`** — click
+   [rustcore.massa.network](https://rustcore.massa.network) (Massa's official gateway) or open
+   `rustcore.massa` through any DeWeb gateway or [Massa Station](https://station.massa.net/) —
    then click **Connect wallet** and pick your wallet.
 4. **Create** a token or a collection from the menu, or browse **Tokens**, **Collections**,
    **Marketplace** and **Presales**. Your launches, NFTs and contributions are under
    **My dashboard**.
 
-The Launchpad is hosted on [DeWeb](https://docs.massa.net/docs/deweb/home), Massa's
+RustCore is hosted on [DeWeb](https://docs.massa.net/docs/deweb/home), Massa's
 decentralized web: its files are stored on-chain, so there is no RustCore web server to take
 down or tamper with.
 
@@ -136,7 +138,7 @@ the Launchpad's development.
 
 | Destination | Why |
 |---|---|
-| The DeWeb gateway you open the Launchpad from | Delivers the app itself. Some gateways add their own "hosted on chain" label to the page; the app's security policy blocks its script, so it stays hidden. |
+| The DeWeb gateway you open RustCore from | Delivers the app itself. Some gateways add their own "hosted on chain" label to the page; the app's security policy blocks its script, so it stays hidden. |
 | `mainnet.massa.net` / `buildnet.massa.net` | Massa's public nodes: every read (Dusa's pools included), and the transactions you sign. |
 | Your wallet | Only after you click **Connect wallet**: the Bearby / MetaMask extensions inside your browser, and Massa Station's local server (`station.massa`, `localhost:8080`). Nothing connects on its own. |
 | `api.rustcoremassa.com` | The read-only RustCore API (mainnet): `/status`, the holders and listing prices of collections of 500 NFTs and more, and the NFTs your address holds (My NFTs). Public chain data only, no cookies; like any web server, it sees your IP address. The app falls back to the chain if it doesn't answer. |
@@ -164,9 +166,9 @@ code" is built in your browser from files the app ships and the code stored on-c
 
 **Good to know**
 
-- **`lrustcore.massa` is the only official address of the Launchpad.** A copy on any other
-  address could ask you to sign something else — check the address before connecting your
-  wallet. (`rustcore.massa` is the RustCore website, `wrustcore.massa` the RustCore Wallet.)
+- **`rustcore.massa` is the only official address of RustCore and its Launchpad.** A copy on
+  any other address could ask you to sign something else — check the address before connecting
+  your wallet. (`wrustcore.massa` is RustCore Wallet.)
 - **Anyone can launch or import anything.** A token named after a famous project may be a copy:
   check the address, the **Verified** badge and whether the code is **Imported** or
   **Mutable**. A mutable or imported contract can be changed by its owner.
@@ -182,7 +184,7 @@ code" is built in your browser from files the app ships and the code stored on-c
 
 ### Verify it yourself
 
-Releases are [published on GitHub](https://github.com/RustCoreMassa/rust-core-launchpad/releases),
+Releases are [published on GitHub](https://github.com/RustCoreMassa/rust-core/releases),
 built in public from the source code, with checksums of the app and of the compiled contracts
 you can compare against a build of your own and against the code on-chain. See
 [how to verify a build](docs/RELEASING.md#verifying-a-build).
@@ -256,6 +258,12 @@ the links. Pin your files so they stay online.
 - [ ] Independent security audit
 - [x] RustCore Wallet connection
 
+**Phase 3 — RustCore, one app** *(in progress)*
+- [x] The Launchpad becomes RustCore: the website's content (wallet, membership NFT, timeline,
+      roadmap, FAQ, donations) moves to the app's home page
+- [x] A new matte design and logo
+- [ ] More tools for the Massa ecosystem, in this app
+
 ## Community
 
 Questions, ideas, or want to follow what's next? Join the RustCore community on Telegram:
@@ -264,7 +272,7 @@ never ask for your private key — anyone who does is a scammer.
 
 ## Support the project
 
-RustCore Launchpad is built in the open. If it's useful to you and you'd like to help fund its
+RustCore is built in the open. If it's useful to you and you'd like to help fund its
 development (an independent audit first), you can send a voluntary donation in MAS or any
 Massa token to:
 
@@ -295,7 +303,7 @@ make contract issues the most urgent.
 
 ## License
 
-RustCore Launchpad is **source-available** under the
+RustCore is **source-available** under the
 [Functional Source License, Version 1.1, ALv2 Future License](LICENSE.md) (FSL-1.1-ALv2).
 
 In plain words (the [license text](LICENSE.md) is what legally applies):
@@ -305,7 +313,7 @@ In plain words (the [license text](LICENSE.md) is what legally applies):
 - ✅ The tokens and collections you launch are **yours**: running, keeping, rebuilding and
   (if you chose mutable code) upgrading your own contract is a permitted use.
 - ❌ You **may not** use it to offer a **competing product or service**: a launchpad,
-  marketplace or presale platform that substitutes for RustCore Launchpad or offers
+  marketplace or presale platform that substitutes for RustCore or offers
   substantially the same functionality.
 - ⏳ **Each release becomes open source under Apache-2.0 two years after it is published.**
 
@@ -316,7 +324,7 @@ Copyright © 2026 Whisky098. All rights reserved except as granted by the licens
 
 ## Disclaimer
 
-RustCore Launchpad is provided "as is", without warranty of any kind. Blockchain transactions
+RustCore is provided "as is", without warranty of any kind. Blockchain transactions
 are irreversible. Projects launched or imported through the Launchpad are made by their owners,
 not by RustCore: a listing, a presale or a **Verified** badge is not investment advice or an
 endorsement, and you are solely responsible for what you buy, sell or fund. RustCore is not

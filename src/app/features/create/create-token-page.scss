@@ -12,42 +12,79 @@
 }
 
 .stepper button {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--grain), var(--surface);
+  box-shadow: var(--bevel);
   color: var(--gray-500);
   font-size: 14px;
   font-weight: 600;
   text-align: left;
+  overflow: hidden;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    color 0.25s ease;
+}
+
+/* A lit segment under each step done or under way, as in a progress bar. */
+.stepper button::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .stepper button:not(:disabled) {
   cursor: pointer;
 }
 
+.stepper button:not(:disabled):hover {
+  border-color: var(--border-strong);
+}
+
 .num {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   flex: none;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-sunken);
+  box-shadow: var(--sunken);
   font-size: 12px;
 }
 
 .current button {
-  border-color: rgba(255, 45, 66, 0.5);
+  border-color: var(--ember-line);
+  box-shadow:
+    var(--bevel),
+    0 0 22px -8px var(--ember-glow);
   color: var(--white);
 }
 
 .current .num {
-  background: var(--red);
+  background: var(--grad-ember);
+  box-shadow:
+    0 0 10px -2px var(--ember-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.current button::after,
+.done button::after {
+  background: linear-gradient(90deg, var(--ember), var(--orange));
+  box-shadow: 0 0 8px var(--ember-glow);
 }
 
 .done button {
@@ -55,7 +92,9 @@
 }
 
 .done .num {
-  background: rgba(51, 209, 122, 0.25);
+  background: rgba(255, 106, 61, 0.14);
+  box-shadow: inset 0 0 0 1px var(--ember-line);
+  color: var(--ember-text);
 }
 
 .step {

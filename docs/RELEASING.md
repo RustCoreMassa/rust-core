@@ -1,4 +1,4 @@
-# Releasing RustCore Launchpad
+# Releasing RustCore
 
 How versions are published, how anyone can verify a build and the contracts on-chain, how the
 contracts are deployed and upgraded, and how the app is deployed to DeWeb. For day-to-day
@@ -69,10 +69,10 @@ Actions. It builds from exactly the tagged commit, in public, and:
   — if a test fails or the app doesn't render, nothing is published;
 - builds the contracts, runs their tests, and refuses templates whose hash isn't the one the app
   launches from (`KNOWN_TEMPLATES` in `src/app/core/launchpad/templates.ts`);
-- publishes a [GitHub Release](https://github.com/RustCoreMassa/rust-core-launchpad/releases)
-  with the changelog notes, the app as `rust-core-launchpad-vX.Y.Z.zip` with `SHA256SUMS`, and
+- publishes a [GitHub Release](https://github.com/RustCoreMassa/rust-core/releases)
+  with the changelog notes, the app as `rust-core-vX.Y.Z.zip` with `SHA256SUMS`, and
   the compiled contracts (`launchpad.wasm`, `rc-token.wasm`, `rc-collection.wasm`) as
-  `rust-core-launchpad-contracts-vX.Y.Z.zip` with `SHA256SUMS-contracts`.
+  `rust-core-contracts-vX.Y.Z.zip` with `SHA256SUMS-contracts`.
 
 A version bump without a tag publishes nothing. A release never deploys a contract: deploys and
 upgrades are separate, deliberate steps (below).
@@ -89,7 +89,7 @@ release's `SHA256SUMS`:
 git checkout v1.0.1
 npm ci
 npm run build
-cd dist/rust-core-launchpad/browser
+cd dist/rust-core/browser
 find . -type f | sort | xargs shasum -a 256
 ```
 
@@ -192,21 +192,22 @@ versions as its v1), so the app links a template to its source by hash, never by
 
 ## Deploying to DeWeb
 
-The Launchpad is hosted on [DeWeb](https://docs.massa.net/docs/deweb/home), Massa's
-decentralized web, as **`lrustcore.massa`** (Massa's official gateway:
-https://lrustcore.massa.network). Each release replaces the site's files there. What gets uploaded is the **folder** with
+RustCore is hosted on [DeWeb](https://docs.massa.net/docs/deweb/home), Massa's
+decentralized web, as **`rustcore.massa`** (Massa's official gateway:
+https://rustcore.massa.network). Each release replaces the site's files there. What gets uploaded is the **folder** with
 the built app — `index.html` at its root plus the scripts, styles, assets and template sources
 next to it.
 
 A GitHub Release can only hold files, so the release carries that folder as
-`rust-core-launchpad-vX.Y.Z.zip`. Unzip it and upload the resulting folder; it's identical to
-`dist/rust-core-launchpad/browser` from a local `npm run build`.
+`rust-core-vX.Y.Z.zip`. Unzip it and upload the resulting folder; it's identical to
+`dist/rust-core/browser` from a local `npm run build`. (Releases up to v1.8.2 were named
+`rust-core-launchpad-vX.Y.Z.zip`.)
 
 Before uploading, check every file against the release's `SHA256SUMS`, from inside the folder:
 
 ```bash
-unzip rust-core-launchpad-v1.0.1.zip -d rust-core-launchpad-v1.0.1
-cd rust-core-launchpad-v1.0.1
+unzip rust-core-v1.9.0.zip -d rust-core-v1.9.0
+cd rust-core-v1.9.0
 shasum -a 256 -c ../SHA256SUMS --ignore-missing   # Linux: sha256sum -c ../SHA256SUMS --ignore-missing
 ```
 

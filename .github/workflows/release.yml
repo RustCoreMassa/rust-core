@@ -154,8 +154,8 @@ jobs:
 
       - name: Package the app and checksums
         run: |
-          BUILD=dist/rust-core-launchpad/browser
-          WEB_ZIP="rust-core-launchpad-$TAG.zip"
+          BUILD=dist/rust-core/browser
+          WEB_ZIP="rust-core-$TAG.zip"
           (cd "$BUILD" && find . -type f | sort | xargs sha256sum) > SHA256SUMS
           (cd "$BUILD" && zip -qr "$GITHUB_WORKSPACE/$WEB_ZIP" .)
           sha256sum "$WEB_ZIP" >> SHA256SUMS
@@ -166,7 +166,7 @@ jobs:
 
       - name: Package the contracts and checksums
         run: |
-          CONTRACTS_ZIP="rust-core-launchpad-contracts-$TAG.zip"
+          CONTRACTS_ZIP="rust-core-contracts-$TAG.zip"
           (cd smart-contract/build && sha256sum launchpad.wasm rc-token.wasm rc-collection.wasm) > SHA256SUMS-contracts
           (cd smart-contract/build && zip -q "$GITHUB_WORKSPACE/$CONTRACTS_ZIP" launchpad.wasm rc-token.wasm rc-collection.wasm)
           sha256sum "$CONTRACTS_ZIP" >> SHA256SUMS-contracts
@@ -180,6 +180,6 @@ jobs:
           printf '\n---\n\nLaunchpad contract: v%s (check it on-chain with `npm run verify`, see docs/RELEASING.md).\n' \
             "$CONTRACT_VERSION" >> release-notes.md
           gh release create "$TAG" "$WEB_ZIP" SHA256SUMS "$CONTRACTS_ZIP" SHA256SUMS-contracts \
-            --title "RustCore Launchpad $TAG" \
+            --title "RustCore $TAG" \
             --notes-file release-notes.md \
             --verify-tag

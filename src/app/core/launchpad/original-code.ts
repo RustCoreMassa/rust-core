@@ -34,7 +34,7 @@ const TEMPLATE_FILES: Record<string, string[]> = {
 };
 
 export const KEEP_ONLY_ORIGINAL =
-  'We keep only the original code. If you upgrade your contract, RustCore Launchpad does not ' +
+  'We keep only the original code. If you upgrade your contract, the Launchpad does not ' +
   'store the new code — keep it yourself.';
 
 /**

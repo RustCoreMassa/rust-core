@@ -84,7 +84,7 @@ h2 {
 }
 
 .owner {
-  border-color: rgba(255, 45, 66, 0.35);
+  border-color: var(--ember-line);
 }
 
 .link {
@@ -94,7 +94,7 @@ h2 {
   color: var(--white);
   cursor: pointer;
   text-decoration: underline;
-  text-decoration-color: rgba(255, 45, 66, 0.6);
+  text-decoration-color: var(--ember-line);
   text-underline-offset: 3px;
 }
 

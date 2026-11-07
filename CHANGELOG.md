@@ -1,12 +1,35 @@
 # Changelog
 
-All notable changes to RustCore Launchpad are documented in this file.
+All notable changes to RustCore (named RustCore Launchpad up to 1.8.2) are documented in this
+file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Each release names the
 Launchpad contract version it works with.
 
 ## [Unreleased]
+
+Works with the Launchpad contract **v1.8.0**; no contract change.
+
+### Changed
+
+- **RustCore Launchpad becomes RustCore**, one app for every RustCore tool: the Launchpad (tokens,
+  collections, marketplace, presales) and the tools to come. The repository, the build and the
+  release files follow (`rust-core-vX.Y.Z.zip`, `rust-core-contracts-vX.Y.Z.zip`); the Launchpad
+  contract keeps its name and address.
+- The home page now holds what the RustCore website showed: who we are, every tool of the app,
+  RustCore Wallet (with links to the web wallet, the Chrome Web Store and its releases), the Core
+  Keepers membership NFT, the Launchpad's rules with its current fees read from the contract,
+  what shipped, the roadmap, the FAQ and the donation address.
+- A new design: matte graphite surfaces with a fine grain and a soft bevel, lit by an ember
+  (red → orange) accent — glowing buttons, nodes and progress segments, ember orbits behind the
+  home page's title. A new logo: a matte R with a glowing core, also the tab icon.
+- The header is a floating bar with a Home link and a link to RustCore Wallet; the footer links
+  to X, Telegram and GitHub.
+
+### Fixed
+
+- Pages keep their side margins on phones (their content touched the screen's edges).
 
 ## [1.8.2] — 2026-11-06
 

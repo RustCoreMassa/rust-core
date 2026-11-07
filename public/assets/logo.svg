@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="RustCore">
+  <!-- RustCore mark: a matte R on a matte graphite tile, lit from inside by its ember core. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2b32" />
+      <stop offset="0.5" stop-color="#19191e" />
+      <stop offset="1" stop-color="#101013" />
+    </linearGradient>
+    <linearGradient id="bevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.24" />
+      <stop offset="0.3" stop-color="#ffffff" stop-opacity="0.05" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+    <radialGradient id="underglow" cx="0.5" cy="1.05" r="0.6">
+      <stop offset="0" stop-color="#ff5a36" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#ff5a36" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#f3f3f6" />
+      <stop offset="0.55" stop-color="#d3d3da" />
+      <stop offset="1" stop-color="#a5a5af" />
+    </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e6e78" />
+      <stop offset="1" stop-color="#3c3c44" />
+    </linearGradient>
+    <radialGradient id="glow" cx="64" cy="51" r="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff8a3d" stop-opacity="0.95" />
+      <stop offset="0.45" stop-color="#ff4d2e" stop-opacity="0.45" />
+      <stop offset="1" stop-color="#ff2d42" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="rim" cx="64" cy="51" r="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0.4" stop-color="#ff7a3d" stop-opacity="0.9" />
+      <stop offset="1" stop-color="#ff7a3d" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="cubetop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe0bf" />
+      <stop offset="1" stop-color="#ffa262" />
+    </linearGradient>
+    <filter id="bloom" x="-1" y="-1" width="3" height="3">
+      <feGaussianBlur stdDeviation="3.5" />
+    </filter>
+    <filter id="shadow" x="-0.3" y="-0.3" width="1.6" height="1.6">
+      <feGaussianBlur stdDeviation="3" />
+    </filter>
+    <clipPath id="tileclip">
+      <rect x="6" y="6" width="116" height="116" rx="30" />
+    </clipPath>
+    <!-- The R in three machined parts: a chevron, the stem with its bowl, and the leg. -->
+    <path id="r" fill-rule="evenodd"
+      d="M34 42 L46 30 H53 L34 49 Z
+         M34 54 L58 30 H80 L92 42 V60 L80 72 H48 V98 H34 Z M48 42 H76 L80 46 V56 L76 60 H48 Z
+         M60 75 H76 L94 98 H78 Z" />
+    <clipPath id="rclip">
+      <use href="#r" />
+    </clipPath>
+    <clipPath id="bowl">
+      <path d="M48 42 H76 L80 46 V56 L76 60 H48 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- tile -->
+  <rect x="6" y="6" width="116" height="116" rx="30" fill="url(#tile)" />
+  <g clip-path="url(#tileclip)">
+    <rect x="6" y="6" width="116" height="116" fill="url(#underglow)" />
+    <use href="#r" x="1" y="7" fill="#000" opacity="0.65" filter="url(#shadow)" />
+  </g>
+  <rect x="6.5" y="6.5" width="115" height="115" rx="29.5" fill="none" stroke="url(#bevel)" />
+
+  <!-- R: a short extrusion under a matte face -->
+  <use href="#r" y="3" fill="url(#side)" />
+  <use href="#r" fill="url(#face)" />
+  <g clip-path="url(#rclip)">
+    <circle cx="64" cy="51" r="22" fill="url(#rim)" opacity="0.45" />
+    <rect x="30" y="29.6" width="66" height="1.2" fill="#ffffff" opacity="0.8" />
+  </g>
+
+  <!-- the ember core in the bowl -->
+  <g clip-path="url(#bowl)">
+    <path d="M48 42 H76 L80 46 V56 L76 60 H48 Z" fill="#0d0d10" />
+    <path d="M48 42 H76 L80 46 V48 H48 Z" fill="#000" opacity="0.5" />
+    <circle cx="64" cy="51" r="20" fill="url(#glow)" />
+  </g>
+  <path d="M64 43.5 L70.5 47.25 V54.75 L64 58.5 L57.5 54.75 V47.25 Z" fill="#ff5a2c" filter="url(#bloom)" />
+  <path d="M64 43.5 L70.5 47.25 L64 51 L57.5 47.25 Z" fill="url(#cubetop)" />
+  <path d="M57.5 47.25 L64 51 V58.5 L57.5 54.75 Z" fill="#ff6a33" />
+  <path d="M64 51 L70.5 47.25 V54.75 L64 58.5 Z" fill="#d9362a" />
+</svg>

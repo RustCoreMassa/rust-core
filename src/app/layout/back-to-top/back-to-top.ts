@@ -37,9 +37,9 @@ const SHOW_AFTER = 600;
       padding: 0;
       border-radius: 50%;
       border: 1px solid var(--border-strong);
-      background: var(--bg-elevated-2);
+      background: var(--grain), var(--surface-raised);
       color: var(--white);
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--bevel), var(--shadow-md);
       cursor: pointer;
       animation: appear 0.2s var(--ease-out);
       transition:
@@ -48,7 +48,7 @@ const SHOW_AFTER = 600;
     }
 
     .top:hover {
-      border-color: rgba(255, 45, 66, 0.5);
+      border-color: var(--ember-line);
       transform: translateY(-2px);
     }
 

@@ -1,7 +1,7 @@
 .market {
   display: grid;
   gap: 12px;
-  border-color: rgba(255, 45, 66, 0.35);
+  border-color: var(--ember-line);
 }
 
 .price-row {
