@@ -9,6 +9,8 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-11-08
+
 Works with the Launchpad contract **v1.8.0**; no contract change.
 
 ### Changed
@@ -374,6 +376,7 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.9.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.0
 [1.8.2]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.2
 [1.8.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.1
 [1.8.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.0
