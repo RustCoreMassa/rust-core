@@ -17,15 +17,20 @@ Works with the Launchpad contract **v1.8.0**; no contract change.
   collections, marketplace, presales) and the tools to come. The repository, the build and the
   release files follow (`rust-core-vX.Y.Z.zip`, `rust-core-contracts-vX.Y.Z.zip`); the Launchpad
   contract keeps its name and address.
-- The home page now holds what the RustCore website showed: who we are, every tool of the app,
-  RustCore Wallet (with links to the web wallet, the Chrome Web Store and its releases), the Core
-  Keepers membership NFT, the Launchpad's rules with its current fees read from the contract,
-  what shipped, the roadmap, the FAQ and the donation address.
+- RustCore is published at `rustcore.massa` (https://rustcore.massa.network), in place of the
+  former RustCore website, whose content moves into the app.
+- The home page now holds what the RustCore website showed: its hero with the lattice of
+  on-chain blocks, every tool of the app with the principles they follow, how a launch works,
+  RustCore Wallet as the website presented it (links to the web wallet, the Chrome Web Store and
+  its releases), the Core Keepers membership NFT, the Launchpad's rules with its current fees
+  read from the contract, what shipped (newest first along one line, the latest 10, then
+  "See all"), the roadmap, the FAQ and the donation address.
 - A new design: matte graphite surfaces with a fine grain and a soft bevel, lit by an ember
-  (red → orange) accent — glowing buttons, nodes and progress segments, ember orbits behind the
-  home page's title. A new logo: a matte R with a glowing core, also the tab icon.
-- The header is a floating bar with a Home link and a link to RustCore Wallet; the footer links
-  to X, Telegram and GitHub.
+  (red → orange) accent — glowing buttons, rings and progress segments, ember orbits around the
+  hero's blocks, small widely spaced capitals over the titles. A new logo: a matte R with a
+  glowing core, also the tab icon.
+- The header is a floating bar, almost as wide as the window, with a Home link and a link to
+  RustCore Wallet, over a blurred strip; the footer links to X, Telegram and GitHub.
 
 ### Fixed
 
@@ -369,15 +374,15 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
-[1.8.2]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.2
-[1.8.1]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.1
-[1.8.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.8.0
-[1.7.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.7.0
-[1.6.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.6.0
-[1.5.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.5.0
-[1.4.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.4.0
-[1.3.2]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.3.2
-[1.3.1]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.3.1
-[1.2.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.2.0
-[1.0.1]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.0.1
-[1.0.0]: https://github.com/RustCoreMassa/rust-core-launchpad/releases/tag/v1.0.0
+[1.8.2]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.2
+[1.8.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.1
+[1.8.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.0
+[1.7.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.7.0
+[1.6.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.6.0
+[1.5.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.5.0
+[1.4.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.4.0
+[1.3.2]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.3.2
+[1.3.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.3.1
+[1.2.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.2.0
+[1.0.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.0.1
+[1.0.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.0.0

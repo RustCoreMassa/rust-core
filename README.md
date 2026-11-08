@@ -146,8 +146,8 @@ the Launchpad's development.
 | The `https://` addresses project owners chose | Their logos, banners, NFT metadata and images. Requested without a referrer or cookies. |
 
 That's all: no analytics, no tracking, no cookies; fonts are bundled. Links to
-`explorer.massa.net`, to Dusa (`app.dusa.io`) and to project websites open only when you click
-them. "Download original
+`explorer.massa.net`, to Dusa (`app.dusa.io`), to project websites and to RustCore's own places
+(the wallet, the Chrome Web Store, GitHub, Telegram, X) open only when you click them. "Download original
 code" is built in your browser from files the app ships and the code stored on-chain.
 
 **Built-in safeguards**

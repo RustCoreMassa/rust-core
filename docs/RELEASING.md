@@ -50,7 +50,8 @@ release's `SHA256SUMS-contracts` was checked against the chain afterwards and ma
 1. Bump the version of both packages: `npm version 1.1.0 --no-git-tag-version`, the same in
    `smart-contract/` — and `VERSION` in `launchpad.ts` only if the contract's code changed.
 2. In `CHANGELOG.md`, rename the `## [Unreleased]` section (where changes collect between
-   releases) to `## [1.1.0] — <date>` and add its link at the bottom.
+   releases) to `## [1.1.0] — <date>` and add its link at the bottom. Check that the home page's
+   milestones and roadmap (`src/app/features/home/home-content.ts`) say what this release ships.
 3. Commit, then push a matching tag:
 
 ```bash
@@ -214,8 +215,8 @@ shasum -a 256 -c ../SHA256SUMS --ignore-missing   # Linux: sha256sum -c ../SHA25
 Every line must say `OK` (`--ignore-missing` only skips the zip's own line, since the zip isn't
 inside the folder). Then upload this folder to the site.
 
-After uploading, open the site, check that the home page loads with the latest launches, and
-connect a wallet.
+After uploading, open the site, check that the home page loads with its live figures (Core
+Keepers, the fees), that **Tokens** lists the latest launches, and connect a wallet.
 
 Comparing the live site with `SHA256SUMS` through a gateway: every file matches except
 `index.html`, because gateways inject their own "hosted on chain" label (a style, a small box and
