@@ -1,4 +1,4 @@
-# Contributing to RustCore Launchpad
+# Contributing to RustCore
 
 Thanks for helping! Bug reports, ideas and pull requests are all welcome. This guide covers
 running the app and the contracts locally, how the code is organized, and the rules that keep
@@ -26,7 +26,7 @@ For releases and deployment, see [docs/RELEASING.md](docs/RELEASING.md).
 
 ### Contributor License Agreement
 
-Because RustCore Launchpad is distributed under its [license](LICENSE.md) and its contracts are
+Because RustCore is distributed under its [license](LICENSE.md) and its contracts are
 deployed on-chain, contributors are asked to sign a **Contributor License Agreement (CLA)**
 before their first pull request is merged. You keep the copyright on your contribution; the CLA
 lets the project distribute and deploy it.
@@ -37,8 +37,8 @@ lets the project distribute and deploy it.
 Angular also accepts `^22.22.3` and `>=26`) — and npm.
 
 ```bash
-git clone https://github.com/RustCoreMassa/rust-core-launchpad.git
-cd rust-core-launchpad
+git clone https://github.com/RustCoreMassa/rust-core.git
+cd rust-core
 npm ci
 npm start            # http://localhost:4200
 ```
@@ -112,6 +112,7 @@ never test by sending real transactions.
 ```
 src/app/
 ├── core/
+│   ├── links.ts     RustCore's official links and the donation address
 │   ├── launchpad/   Reads of the Launchpad, tokens and collections; records (TS mirror of the
 │   │                contract's), costs, rules (mirror of rules.ts), transactions, templates
 │   ├── massa/       Public RPC provider per network
@@ -119,10 +120,12 @@ src/app/
 │   ├── platform/    Storage tokens
 │   ├── utils/       Exact amounts, IPFS links, errors for users, zip, sha256
 │   └── wallet/      WalletStore: connection, accounts, signing provider
-├── features/        Pages: home, explore, token, collection, NFT, marketplace, presales,
-│                    create wizards, dashboard, admin
+├── features/        Pages: home (hero with the lattice, tools, how a launch works, wallet,
+│                    membership, fees, shipped timeline, roadmap, FAQ, support — milestones
+│                    and roadmap in home/home-content.ts), explore, token, collection, NFT,
+│                    marketplace, presales, create wizards, dashboard, admin
 ├── layout/          Header, footer, connect-wallet dialog
-└── shared/          Pipes and UI pieces (info form, badges, logo, presale progress)
+└── shared/          Pipes and UI pieces (icons, info form, badges, logo, presale progress)
 src/environments/    Production and development settings (local links, IPFS gateway)
 public/templates/    Frozen source of every template version (for "Download original code")
 smart-contract/
@@ -152,6 +155,13 @@ smart-contract/
   a skeleton, never a fake 0.
 - **No third parties.** Fonts are bundled; the app calls nothing beyond the README's list. New
   CommonJS dependencies are reviewed before joining `allowedCommonJsDependencies`.
+- **One look.** Colors, matte surfaces and shared pieces (`.card`, `.btn-red`, `.label`,
+  `.icon-tile`, `.node`, `.tick`, `.well`…) live in `src/styles.scss`; a component builds on
+  them and keeps its own styles under the 4 kB budget (split it when it grows). External links
+  come from `core/links.ts`.
+- **The home page follows the products.** When the app or RustCore Wallet ships something users
+  notice, add it to `MILESTONES` (newest first) and tick the `ROADMAP` in
+  `features/home/home-content.ts`, in the same pull request as the CHANGELOG entry.
 
 ### Templates
 

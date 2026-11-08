@@ -1,44 +1,94 @@
-<section class="hero">
-  <div class="hero-grid" aria-hidden="true"></div>
-  <div class="container hero-inner">
-    <span class="pill"><span class="dot"></span>Built on Massa · no backend</span>
-    <h1>Launch tokens and NFTs <span class="grad">on Massa</span></h1>
-    <p class="lead">
-      Create an MRC20 token or an NFT collection in one transaction, trade NFTs and run token
-      presales. Every listing, sale and presale lives in one public smart contract.
-    </p>
-    <div class="hero-actions">
-      <a class="btn btn-red btn-lg" routerLink="/create/token">Create a token</a>
-      <a class="btn btn-ghost btn-lg" routerLink="/create/collection">Create a collection</a>
-    </div>
+<app-home-hero />
+
+<section class="container section" id="tools" aria-labelledby="tools-title">
+  <div class="section-head">
+    <span class="label">What we do</span>
+    <h2 id="tools-title">Everything you do on Massa, in one app</h2>
+    <p>Built by a small, independent team — in the open.</p>
   </div>
-</section>
-
-<app-membership-section />
-
-<section class="container section">
-  <div class="cards">
-    @for (feature of features; track feature.path) {
-      <a class="card" [routerLink]="feature.path">
-        <h3>{{ feature.title }}</h3>
-        <p>{{ feature.text }}</p>
-      </a>
+  <div class="tools">
+    @for (tool of tools; track tool.title) {
+      @if (tool.href) {
+        <a class="card tool" [href]="tool.href" target="_blank" rel="noopener noreferrer">
+          <ng-container *ngTemplateOutlet="toolBody; context: { $implicit: tool }" />
+        </a>
+      } @else {
+        <a class="card tool" [routerLink]="tool.path" [fragment]="tool.fragment">
+          <ng-container *ngTemplateOutlet="toolBody; context: { $implicit: tool }" />
+        </a>
+      }
     }
   </div>
+  <ul class="principles">
+    @for (p of principles; track p.title) {
+      <li>
+        <span class="icon-tile"><app-icon [name]="p.icon" /></span>
+        <span>
+          <strong>{{ p.title }}</strong>
+          <span class="muted">{{ p.text }}</span>
+        </span>
+      </li>
+    }
+  </ul>
 </section>
 
-<section class="container section">
+<ng-template #toolBody let-tool>
+  <span class="icon-tile"><app-icon [name]="tool.icon" /></span>
+  <h3>{{ tool.title }}</h3>
+  <p>{{ tool.text }}</p>
+  <span class="go">
+    {{ tool.action }}
+    @if (tool.href) {
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 16L16 8M9 8h7v7" /></svg>
+      <span class="visually-hidden">(opens in a new tab)</span>
+    } @else {
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    }
+  </span>
+</ng-template>
+
+<section class="container section" id="how" aria-labelledby="how-title">
   <div class="section-head">
-    <span class="label">How it works</span>
-    <h2>Three steps, one signature</h2>
+    <span class="label">How a launch works</span>
+    <h2 id="how-title">Three steps, one signature</h2>
   </div>
-  <ol class="steps">
+  <ol class="flow">
     @for (step of steps; track step.title; let i = $index) {
-      <li class="card">
-        <span class="step-num">{{ i + 1 }}</span>
-        <h3>{{ step.title }}</h3>
-        <p>{{ step.text }}</p>
+      <li class="flow-step">
+        <span class="node" aria-hidden="true"></span>
+        <div class="card window">
+          <div class="window-bar" aria-hidden="true">
+            <span class="window-dots"><i></i><i></i><i></i></span>
+            <span class="segments">
+              @for (s of steps; track s.title; let j = $index) {
+                <i [class.on]="j <= i"></i>
+              }
+            </span>
+          </div>
+          <div class="window-body">
+            <span class="icon-tile"><app-icon [name]="step.icon" /></span>
+            <div>
+              <span class="step-num">Step {{ i + 1 }}</span>
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.text }}</p>
+            </div>
+          </div>
+        </div>
       </li>
     }
   </ol>
 </section>
+
+<app-wallet-section />
+
+<app-membership-section />
+
+<app-fees-section />
+
+<app-shipped-section />
+
+<app-roadmap-section />
+
+<app-faq-section />
+
+<app-support-section />

@@ -18,8 +18,10 @@ import { WalletStore } from '../../core/wallet/wallet-store';
 import { AmountPipe } from '../../shared/pipes/amount-pipe';
 import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { ConnectWalletDialog } from '../connect-wallet-dialog/connect-wallet-dialog';
+import { LINKS } from '../../core/links';
 
 export const NAV_LINKS = [
+  { path: '/', label: 'Home' },
   { path: '/tokens', label: 'Tokens' },
   { path: '/collections', label: 'Collections' },
   { path: '/marketplace', label: 'Marketplace' },
@@ -44,6 +46,7 @@ export class SiteHeader {
   protected readonly wallet = inject(WalletStore);
   protected readonly networks = inject(NetworkStore);
   protected readonly links = NAV_LINKS;
+  protected readonly walletUrl = LINKS.wallet;
   protected readonly networkList = this.networks.available;
   /** The wallet is the Launchpad admin (or was offered the role): show the Admin link. */
   protected readonly showAdmin = signal(false);

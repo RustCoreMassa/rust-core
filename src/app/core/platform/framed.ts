@@ -17,7 +17,7 @@ export function showFramedNotice(doc: Document = document): void {
   box.style.cssText =
     'max-width:480px;margin:15vh auto;padding:24px;font:16px/1.6 system-ui,sans-serif;color:#f6f6f8';
   const title = doc.createElement('h1');
-  title.textContent = 'RustCore Launchpad';
+  title.textContent = 'RustCore';
   const text = doc.createElement('p');
   text.textContent =
     "For your safety, the Launchpad doesn't run inside another website. Open it in its own tab:";
@@ -25,7 +25,7 @@ export function showFramedNotice(doc: Document = document): void {
   link.href = doc.URL;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.textContent = 'Open RustCore Launchpad';
+  link.textContent = 'Open RustCore';
   link.style.color = '#ff2d42';
   box.append(title, text, link);
   doc.body.replaceChildren(box);

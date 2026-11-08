@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 
-const dir = resolve(process.argv[2] ?? 'dist/rust-core-launchpad/browser');
+const dir = resolve(process.argv[2] ?? 'dist/rust-core/browser');
 const html = readFileSync(join(dir, 'index.html'), 'utf8');
 
 // The Content-Security-Policy (index.html) allows only our own script files: the built page
@@ -24,7 +24,7 @@ if (!csp?.includes("script-src 'self'") || inlineScript || inlineHandler) {
   );
   process.exit(1);
 }
-const dom = new JSDOM(html, { url: 'https://launchpad.test/', pretendToBeVisual: true });
+const dom = new JSDOM(html, { url: 'https://rustcore.test/', pretendToBeVisual: true });
 const win = dom.window;
 win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
 for (const key of Object.getOwnPropertyNames(win)) {
@@ -69,7 +69,7 @@ if (fatal.length) {
 // The app must actually have rendered the home page.
 const rendered =
   win.document.querySelector('app-root')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-if (!rendered.includes('Launch tokens and NFTs')) {
+if (!rendered.includes('Nothing in between')) {
   console.log(`BOOT FAILED: the home page did not render (app-root: "${rendered.slice(0, 80)}")`);
   process.exit(1);
 }

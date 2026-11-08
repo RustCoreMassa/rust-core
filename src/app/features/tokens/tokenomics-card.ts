@@ -148,7 +148,7 @@ interface Holding {
       margin-bottom: 16px;
       background:
         radial-gradient(420px 220px at 0% 0%, var(--blue-glow), transparent 70%),
-        radial-gradient(420px 220px at 100% 100%, rgba(255, 45, 66, 0.16), transparent 70%),
+        radial-gradient(420px 220px at 100% 100%, rgba(255, 90, 54, 0.16), transparent 70%),
         var(--surface-glass);
       border: 1px solid var(--border);
       border-radius: var(--radius-xl);

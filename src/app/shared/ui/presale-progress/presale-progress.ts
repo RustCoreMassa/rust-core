@@ -39,7 +39,8 @@ import { MasPipe } from '../../pipes/units-pipe';
       height: 10px;
       overflow: visible;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
+      background: var(--bg-sunken);
+      box-shadow: var(--sunken);
     }
 
     .fill {
@@ -47,7 +48,8 @@ import { MasPipe } from '../../pipes/units-pipe';
       height: 100%;
       max-width: 100%;
       border-radius: 999px;
-      background: linear-gradient(90deg, var(--red), var(--orange));
+      background: linear-gradient(90deg, var(--red), var(--ember) 60%, var(--orange));
+      box-shadow: 0 0 10px var(--ember-glow);
     }
 
     .soft {

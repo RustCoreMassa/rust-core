@@ -6,7 +6,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "rust-core-launchpad": {
+    "rust-core": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -84,10 +84,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "rust-core-launchpad:build:production"
+              "buildTarget": "rust-core:build:production"
             },
             "development": {
-              "buildTarget": "rust-core-launchpad:build:development"
+              "buildTarget": "rust-core:build:development"
             }
           },
           "defaultConfiguration": "development"

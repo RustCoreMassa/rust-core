@@ -1,15 +1,26 @@
-.section {
-  padding-bottom: 80px;
-}
-
 .membership {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
-  gap: 40px;
-  border-color: rgba(255, 45, 66, 0.3);
+  gap: 48px;
+  padding: 44px;
+  overflow: hidden;
+  border-color: var(--ember-line);
   background:
-    radial-gradient(circle at 0% 0%, rgba(255, 45, 66, 0.12), transparent 55%), var(--surface-glass);
-  --logo-size: 64px;
+    var(--grain), radial-gradient(520px 360px at 0% 0%, rgba(255, 90, 54, 0.16), transparent 70%),
+    radial-gradient(420px 300px at 100% 100%, rgba(255, 45, 66, 0.08), transparent 70%),
+    var(--surface);
+  box-shadow: var(--bevel), var(--shadow-glow);
+  --logo-size: 72px;
+}
+
+/* What it gives you: a sunken panel inside the card. */
+.benefits {
+  align-self: stretch;
+  padding: 26px;
+  border-radius: var(--radius-lg);
+  background: rgba(8, 8, 10, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: var(--sunken);
 }
 
 .identity {
@@ -54,8 +65,10 @@ h2 {
 .bar {
   height: 10px;
   margin-top: 8px;
+  padding: 2px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--bg-sunken);
+  box-shadow: var(--sunken);
   overflow: hidden;
 }
 
@@ -63,7 +76,9 @@ h2 {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--red), var(--orange));
+  min-width: 6px;
+  background: linear-gradient(90deg, var(--red), var(--ember) 60%, var(--orange));
+  box-shadow: 0 0 10px var(--ember-glow);
   transition: width 0.6s ease;
 }
 
@@ -83,8 +98,16 @@ h2 {
 .facts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
   margin: 20px 0 0;
+}
+
+.facts > div {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--grain), var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--bevel);
 }
 
 .facts dt {
@@ -133,6 +156,11 @@ h2 {
   .membership {
     grid-template-columns: 1fr;
     gap: 28px;
+    padding: 28px 22px;
+  }
+
+  .benefits {
+    padding: 20px;
   }
 }
 

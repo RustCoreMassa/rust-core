@@ -1,0 +1,34 @@
+<section class="hero">
+  <div class="hero-grid" aria-hidden="true"></div>
+  @for (spark of sparks; track $index) {
+    <i
+      class="spark"
+      aria-hidden="true"
+      [style.left.%]="spark.x"
+      [style.top.%]="spark.y"
+      [style.--d]="spark.d"
+    ></i>
+  }
+
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <span class="label">Built for the Massa blockchain</span>
+      <h1>
+        Your keys. Your funds.<br />
+        <span class="grad">Nothing in between.</span>
+      </h1>
+      <p class="lead">
+        RustCore builds self-custodial, verifiable tools for the
+        <a [href]="links.massa" target="_blank" rel="noopener noreferrer">Massa</a> community — a
+        wallet, a launchpad for tokens and NFTs, a marketplace and presales, all in one place,
+        served straight from the blockchain and never taking your data.
+      </p>
+      <p class="hero-note">
+        RustCore: <code>rustcore.massa</code> · Wallet: <code>wrustcore.massa</code> — all served
+        from DeWeb
+      </p>
+    </div>
+
+    <app-core-lattice />
+  </div>
+</section>
