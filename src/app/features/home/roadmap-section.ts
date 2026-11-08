@@ -1,47 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Icon } from '../../shared/ui/icon/icon';
-import { MILESTONES, ROADMAP, RoadmapStatus } from './home-content';
+import { ROADMAP, RoadmapStatus } from './home-content';
 
-/** Milestones shown before "Show the full history". */
-const FIRST = 6;
-
-/** What shipped (a lit timeline, newest first) and the roadmap. */
+/** The roadmap: one card per track, its items ticked as they ship. */
 @Component({
-  selector: 'app-story-section',
+  selector: 'app-roadmap-section',
   imports: [Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="container section" id="built" aria-labelledby="built-title">
-      <div class="section-head">
-        <span class="label">What we've built</span>
-        <h2 id="built-title">Shipped so far</h2>
-      </div>
-      <ol class="timeline">
-        @for (m of shown(); track m.title) {
-          <li>
-            <span class="node" aria-hidden="true"></span>
-            <div class="card entry">
-              <div class="meta">
-                <span class="date">{{ m.date }}</span>
-                <span class="product" [attr.data-product]="m.product">{{ m.product }}</span>
-              </div>
-              <h3>{{ m.title }}</h3>
-              <p>{{ m.text }}</p>
-            </div>
-          </li>
-        }
-      </ol>
-      @if (milestones.length > first) {
-        <div class="more">
-          <button class="btn btn-ghost" type="button" (click)="all.set(!all())">
-            {{
-              all() ? 'Show the latest only' : 'Show the full history (' + milestones.length + ')'
-            }}
-          </button>
-        </div>
-      }
-    </section>
-
     <section class="container section" id="roadmap" aria-labelledby="roadmap-title">
       <div class="section-head">
         <span class="label">What's next</span>
@@ -82,103 +48,6 @@ const FIRST = 6;
     </section>
   `,
   styles: `
-    /* ---- timeline: a lit wire with an ember node per milestone ---- */
-    .timeline {
-      position: relative;
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 0;
-      list-style: none;
-    }
-
-    .timeline::before {
-      content: '';
-      position: absolute;
-      top: 14px;
-      bottom: 14px;
-      left: 5px;
-      width: 2px;
-      border-radius: 2px;
-      background: linear-gradient(
-        180deg,
-        var(--ember) 0%,
-        rgba(255, 106, 61, 0.25) 60%,
-        rgba(255, 255, 255, 0.05) 100%
-      );
-      box-shadow: 0 0 10px rgba(255, 90, 54, 0.4);
-    }
-
-    .timeline li {
-      position: relative;
-      padding: 0 0 16px 40px;
-    }
-
-    .timeline .node {
-      position: absolute;
-      top: 24px;
-      left: 0;
-    }
-
-    /* The short wire from the node to its card. */
-    .timeline li::before {
-      content: '';
-      position: absolute;
-      top: 29px;
-      left: 12px;
-      width: 28px;
-      height: 2px;
-      background: linear-gradient(90deg, var(--ember), rgba(255, 106, 61, 0.1));
-    }
-
-    .entry {
-      padding: 18px 22px;
-    }
-
-    .meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .date {
-      color: var(--gray-500);
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .product {
-      padding: 2px 9px;
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-      color: var(--gray-300);
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .product[data-product='Launchpad'] {
-      border-color: var(--ember-line);
-      color: var(--ember-text);
-    }
-
-    .entry h3 {
-      margin-top: 10px;
-      font-size: 18px;
-    }
-
-    .entry p {
-      margin: 8px 0 0;
-      color: var(--gray-500);
-      font-size: 14px;
-    }
-
-    .more {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-    }
-
     /* ---- roadmap ---- */
     .tracks {
       display: grid;
@@ -278,14 +147,8 @@ const FIRST = 6;
     }
   `,
 })
-export class StorySection {
-  protected readonly milestones = MILESTONES;
+export class RoadmapSection {
   protected readonly roadmap = ROADMAP;
-  protected readonly first = FIRST;
-  protected readonly all = signal(false);
-  protected readonly shown = computed(() =>
-    this.all() ? this.milestones : this.milestones.slice(0, FIRST),
-  );
 
   protected statusKey(status: RoadmapStatus): string {
     return status === 'In progress' ? 'progress' : status.toLowerCase();

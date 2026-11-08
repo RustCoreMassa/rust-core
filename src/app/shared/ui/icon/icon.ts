@@ -45,9 +45,10 @@ export type IconName =
           <circle cx="12.3" cy="9" r="1.3" />
         }
         @case ('market') {
-          <path d="M3.5 9.5L12 3l8.5 6.5" />
-          <path d="M5.5 8v11.5h13V8" />
-          <path d="M9.5 19.5v-5h5v5" />
+          <path
+            d="M3.5 12.4V5A1.5 1.5 0 0 1 5 3.5h7.4l8.1 8.1a1.5 1.5 0 0 1 0 2.1l-6.8 6.8a1.5 1.5 0 0 1-2.1 0z"
+          />
+          <circle cx="8.2" cy="8.2" r="1.4" />
         }
         @case ('presale') {
           <path d="M4 19.5h16" />

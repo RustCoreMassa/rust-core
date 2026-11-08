@@ -2,13 +2,19 @@
   max-width: calc(760px + 2 * var(--gutter));
 }
 
+/* One row of equal tabs: each grows with its name, the names stay on one line. */
 .stepper {
-  display: grid;
-  grid-template-columns: repeat(var(--steps, 4), minmax(0, 1fr));
+  display: flex;
   gap: 8px;
   margin: 0 0 16px;
   padding: 0;
   list-style: none;
+}
+
+.stepper li {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .stepper button {
@@ -17,7 +23,8 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  height: 46px;
+  padding: 0 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--grain), var(--surface);
@@ -51,6 +58,12 @@
 
 .stepper button:not(:disabled):hover {
   border-color: var(--border-strong);
+}
+
+.step-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .num {
@@ -204,11 +217,27 @@ h3 {
   margin-left: auto;
 }
 
-@media (max-width: 600px) {
-  .stepper {
-    grid-template-columns: repeat(2, 1fr);
+/* Narrow screens: the steps not under way show only their number. */
+@media (max-width: 700px) {
+  .stepper li:not(.current) {
+    flex: 0 0 auto;
   }
 
+  .stepper {
+    gap: 6px;
+  }
+
+  .stepper li:not(.current) button {
+    justify-content: center;
+    padding: 0 9px;
+  }
+
+  .stepper li:not(.current) .step-name {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
   .review-tokenomics {
     grid-template-columns: 1fr;
   }

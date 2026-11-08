@@ -14,12 +14,12 @@
       header.
     </div>
   } @else {
-    <ol class="stepper" style="--steps: 5">
+    <ol class="stepper">
       @for (name of steps; track name; let i = $index) {
         <li [class.current]="i === step()" [class.done]="i < step()">
           <button type="button" [disabled]="i >= step()" (click)="goTo(i)">
-            <span class="num">{{ i + 1 }}</span
-            >{{ name }}
+            <span class="num">{{ i + 1 }}</span>
+            <span class="step-name">{{ name }}</span>
           </button>
         </li>
       }

@@ -91,16 +91,40 @@ import { LINKS } from '../../core/links';
       border-top: 1px solid var(--border);
     }
 
-    /* An ember seam along the top edge. */
+    /* An ember seam along the whole top edge: dark at both ends, brightening to a white-hot
+       middle, its glow an ellipse that fades out (no box edges). */
     .glow-line {
       position: absolute;
       top: -1px;
-      left: 50%;
-      width: min(720px, 80%);
+      left: 0;
+      right: 0;
       height: 1px;
-      transform: translateX(-50%);
-      background: linear-gradient(90deg, transparent, var(--ember), transparent);
-      box-shadow: 0 0 18px 2px rgba(255, 90, 54, 0.45);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 45, 66, 0.25) 15%,
+        rgba(255, 106, 61, 0.7) 35%,
+        #ffd9c2 50%,
+        rgba(255, 106, 61, 0.7) 65%,
+        rgba(255, 45, 66, 0.25) 85%,
+        transparent 100%
+      );
+    }
+
+    .glow-line::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -18px;
+      height: 37px;
+      background: radial-gradient(
+        50% 50% at 50% 50%,
+        rgba(255, 90, 54, 0.32) 0%,
+        rgba(255, 90, 54, 0.12) 45%,
+        transparent 100%
+      );
+      pointer-events: none;
     }
 
     .footer-inner {

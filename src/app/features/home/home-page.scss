@@ -77,22 +77,32 @@
   color: var(--gray-500);
 }
 
-/* ---------- principles ---------- */
+/* ---------- principles: a quiet strip under the tools ---------- */
 .principles {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+  margin: 28px 0 0;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
 }
 
-.principle h3 {
-  margin-top: 18px;
-  font-size: 18px;
-}
-
-.principle p {
-  margin: 10px 0 0;
-  color: var(--gray-500);
+.principles li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 14px;
+  line-height: 1.35;
+}
+
+.principles .icon-tile {
+  --tile: 38px;
+}
+
+.principles strong,
+.principles .muted {
+  display: block;
 }
 
 /* ---------- how it works: windows on a lit wire ---------- */

@@ -308,31 +308,18 @@ a.card:hover,
   box-shadow: var(--sunken);
 }
 
-/* The section eyebrow: a matte pill with a glowing ember dot. */
-.label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 13px 6px 11px;
-  border-radius: 999px;
-  background: var(--grain), var(--surface-raised);
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--bevel);
-  color: var(--ember-text);
+/* The eyebrow over a title: small, widely spaced capitals. (Not on SVG text: the tokenomics
+   chart has its own .label.) The negative margin takes back the spacing after the last letter,
+   so centred eyebrows stay centred. */
+.label:not(text) {
+  display: inline-block;
+  margin-right: -0.42em;
+  color: var(--gray-500);
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  line-height: 1.6;
   text-transform: uppercase;
-}
-
-.label::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--ember);
-  box-shadow: 0 0 8px 1px var(--ember-glow);
 }
 
 .pill {
@@ -591,8 +578,11 @@ dialog.sheet::backdrop {
 }
 
 /* ---------- forms ---------- */
+/* Rows keep their content's height when a form row stretches the field: side by side, the
+   labels and inputs line up whether or not a field has a hint under it. */
 .field {
   display: grid;
+  align-content: start;
   gap: 6px;
 }
 

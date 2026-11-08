@@ -2,12 +2,9 @@
 
 <section class="container section" id="tools" aria-labelledby="tools-title">
   <div class="section-head">
-    <span class="label">One place</span>
+    <span class="label">What we do</span>
     <h2 id="tools-title">Everything you do on Massa, in one app</h2>
-    <p>
-      No more jumping between ten sites. Each tool reads the chain directly and asks for one
-      signature.
-    </p>
+    <p>Built by a small, independent team — in the open.</p>
   </div>
   <div class="tools">
     @for (tool of tools; track tool.title) {
@@ -22,6 +19,17 @@
       }
     }
   </div>
+  <ul class="principles">
+    @for (p of principles; track p.title) {
+      <li>
+        <span class="icon-tile"><app-icon [name]="p.icon" /></span>
+        <span>
+          <strong>{{ p.title }}</strong>
+          <span class="muted">{{ p.text }}</span>
+        </span>
+      </li>
+    }
+  </ul>
 </section>
 
 <ng-template #toolBody let-tool>
@@ -38,26 +46,6 @@
     }
   </span>
 </ng-template>
-
-<section class="container section" id="about" aria-labelledby="about-title">
-  <div class="section-head">
-    <span class="label">What we do</span>
-    <h2 id="about-title">A small team building for Massa, in the open</h2>
-    <p>
-      RustCore is an independent team. We build the tools we want to use ourselves: simple to use,
-      honest about what they do, and impossible to hide anything in — every line of code is public.
-    </p>
-  </div>
-  <div class="principles">
-    @for (p of principles; track p.title) {
-      <article class="card principle">
-        <span class="icon-tile"><app-icon [name]="p.icon" /></span>
-        <h3>{{ p.title }}</h3>
-        <p>{{ p.text }}</p>
-      </article>
-    }
-  </div>
-</section>
 
 <section class="container section" id="how" aria-labelledby="how-title">
   <div class="section-head">
@@ -97,7 +85,9 @@
 
 <app-fees-section />
 
-<app-story-section />
+<app-shipped-section />
+
+<app-roadmap-section />
 
 <app-faq-section />
 

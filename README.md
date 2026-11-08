@@ -240,7 +240,7 @@ the links. Pin your files so they stay online.
 
 **Phase 2 — Mainnet** *(done)*
 - [x] Mainnet deployment (Launchpad v1.0.0) and fee values
-- [x] Published on DeWeb (`lrustcore.massa`)
+- [x] Published on DeWeb (`rustcore.massa`)
 - [x] Links from the RustCore website
 
 **Later**

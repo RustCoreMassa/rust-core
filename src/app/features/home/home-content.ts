@@ -2,14 +2,18 @@
  * Static content of the home page: what shipped and what's next. It follows the products'
  * CHANGELOGs (this repo's and RustCore Wallet's) — update it when a product ships.
  */
+import { IconName } from '../../shared/ui/icon/icon';
 
-export type Product = 'Wallet' | 'Launchpad' | 'RustCore';
+/** RustCore is this app (it was named RustCore Launchpad up to 1.8.2). */
+export type Product = 'Wallet' | 'RustCore';
 
 export interface Milestone {
   readonly date: string;
   readonly product: Product;
   readonly title: string;
   readonly text: string;
+  /** A landmark: a large node with this icon ('logo' = the RustCore mark) and a small label. */
+  readonly major?: { readonly icon: IconName | 'logo'; readonly label: string };
 }
 
 /** Newest first. */
@@ -26,8 +30,9 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     date: 'Nov 2026',
-    product: 'Launchpad',
-    title: 'Launchpad 1.5 – 1.8 — public API, Dusa, whitelists and vesting',
+    product: 'RustCore',
+    title: 'RustCore 1.5 – 1.8 — public API, Dusa, whitelists and vesting',
+    major: { icon: 'logo', label: 'RustCore' },
     text:
       'Very large collections load through the public RustCore API. Token owners can open a Dusa ' +
       'pool and add liquidity from the token page. Presale whitelists, vesting and a safer close ' +
@@ -38,14 +43,16 @@ export const MILESTONES: readonly Milestone[] = [
     date: 'Oct 2026',
     product: 'Wallet',
     title: 'RustCore Wallet on the Chrome Web Store',
+    major: { icon: 'globe', label: 'Browser extension' },
     text:
       'The browser extension is public on the Chrome Web Store: install it in one click on Chrome, ' +
       'Brave, Opera, Vivaldi or Arc, and it keeps itself up to date. Edge and Firefox follow.',
   },
   {
     date: 'Oct 2026',
-    product: 'Launchpad',
-    title: 'Core Keepers and Launchpad 1.4',
+    product: 'RustCore',
+    title: 'Core Keepers and RustCore 1.4',
+    major: { icon: 'crown', label: 'NFT collection' },
     text:
       'Our NFT collection is live: 1,000 Core Keepers, minted on the Launchpad. Holding one takes a ' +
       'discount off every Launchpad fee — set in the Launchpad contract, upgraded on mainnet to ' +
@@ -71,8 +78,8 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     date: 'Oct 2026',
-    product: 'Launchpad',
-    title: 'Launchpad 1.3 — tokenomics and audit fixes',
+    product: 'RustCore',
+    title: 'RustCore 1.3 — tokenomics and audit fixes',
     text:
       'Token owners can show how the supply is split, as a chart with the live balance of each ' +
       'address. Fixes from our internal audit: a safer collection template, a royalty fixed when ' +
@@ -100,8 +107,8 @@ export const MILESTONES: readonly Milestone[] = [
     product: 'RustCore',
     title: 'On Massa’s official gateway',
     text:
-      'The wallet, the Launchpad and our site are served by Massa’s own DeWeb gateway, at ' +
-      'wrustcore.massa.network, lrustcore.massa.network and rustcore.massa.network.',
+      'RustCore and its wallet are served by Massa’s own DeWeb gateway, at ' +
+      'rustcore.massa.network and wrustcore.massa.network.',
   },
   {
     date: 'Oct 2026',
@@ -113,8 +120,9 @@ export const MILESTONES: readonly Milestone[] = [
   },
   {
     date: 'Oct 2026',
-    product: 'Launchpad',
-    title: 'RustCore Launchpad 1.0',
+    product: 'RustCore',
+    title: 'RustCore 1.0 — the Launchpad on mainnet',
+    major: { icon: 'logo', label: 'RustCore' },
     text:
       'Live on Massa mainnet and served from DeWeb: launch tokens and NFT collections, trade NFTs ' +
       'and run token presales, with no backend.',
@@ -140,6 +148,7 @@ export const MILESTONES: readonly Milestone[] = [
     date: 'Sep 2026',
     product: 'Wallet',
     title: 'RustCore Wallet 1.0',
+    major: { icon: 'wallet', label: 'RustCore Wallet' },
     text:
       'First production release on Massa mainnet: encrypted multi-wallet vault, send and receive, ' +
       'swaps through Dusa, staking, history and .massa domains.',
@@ -160,7 +169,7 @@ const next = (text: string) => ({ text, done: false });
 
 export const ROADMAP: readonly RoadmapTrack[] = [
   {
-    tag: 'Launchpad · 1.x',
+    tag: 'RustCore · 1.x',
     title: 'Launchpad',
     status: 'Live',
     items: [
@@ -175,7 +184,7 @@ export const ROADMAP: readonly RoadmapTrack[] = [
     ],
   },
   {
-    tag: 'Launchpad · Next',
+    tag: 'RustCore · Next',
     title: 'Launchpad extras',
     status: 'In progress',
     items: [
@@ -217,7 +226,7 @@ export const ROADMAP: readonly RoadmapTrack[] = [
   {
     tag: 'Wallet · Phase 3',
     title: 'Mobile apps',
-    status: 'In progress',
+    status: 'Planned',
     items: [
       next('iOS and Android apps'),
       next('Biometric unlock'),

@@ -7,7 +7,8 @@ import { FaqSection } from './faq-section';
 import { HomeHero } from './home-hero';
 import { FeesSection } from './fees-section';
 import { MembershipSection } from './membership-section';
-import { StorySection } from './story-section';
+import { RoadmapSection } from './roadmap-section';
+import { ShippedSection } from './shipped-section';
 import { SupportSection } from './support-section';
 import { WalletSection } from './wallet-section';
 
@@ -37,7 +38,8 @@ interface Tool {
     WalletSection,
     MembershipSection,
     FeesSection,
-    StorySection,
+    ShippedSection,
+    RoadmapSection,
     FaqSection,
     SupportSection,
   ],
@@ -52,83 +54,68 @@ export class HomePage {
     {
       icon: 'token',
       title: 'Launch a token',
-      text: 'An MRC20 token in one transaction, with its tokenomics. You own the contract and the whole supply.',
+      text: 'An MRC20 token in one transaction — the contract and the supply are yours.',
       action: 'Create a token',
       path: '/create/token',
     },
     {
       icon: 'collection',
       title: 'Launch an NFT collection',
-      text: 'An MRC721 collection with owner or public mint, a royalty and IPFS metadata.',
+      text: 'MRC721 with public mint, royalty and IPFS metadata.',
       action: 'Create a collection',
       path: '/create/collection',
     },
     {
       icon: 'market',
       title: 'Trade NFTs',
-      text: 'List and buy without custody: the NFT stays in your wallet until it sells.',
+      text: 'List and buy without custody.',
       action: 'Open the marketplace',
       path: '/marketplace',
     },
     {
       icon: 'presale',
       title: 'Run a presale',
-      text: 'Raise MAS for your token. Contributors claim on success or take their MAS back.',
+      text: 'Raise MAS; refunds if the soft cap isn’t met.',
       action: 'See presales',
       path: '/presales',
     },
     {
       icon: 'wallet',
       title: 'RustCore Wallet',
-      text: 'Send, swap, stake and sign — on your phone or as a browser extension.',
+      text: 'Send, swap and stake — phone or browser.',
       action: 'Open the wallet',
       href: LINKS.wallet,
     },
     {
       icon: 'cube',
       title: 'Explore projects',
-      text: 'Every token and collection launched or imported, with live supply and holders.',
+      text: 'Every token and collection, live from the chain.',
       action: 'Browse tokens',
       path: '/tokens',
     },
     {
       icon: 'api',
       title: 'Public API',
-      text: 'Read every project, NFT holder and listing from a free, read-only REST API.',
+      text: 'Free, read-only REST API.',
       action: 'Read the docs',
       path: '/api',
     },
     {
       icon: 'plus',
       title: 'More tools on the way',
-      text: 'New tools join this app as they ship — no new site to find, no new address to trust.',
+      text: 'New tools join this app as they ship.',
       action: 'See the roadmap',
       path: '/',
       fragment: 'roadmap',
     },
   ];
 
+  /** Under the tools: what every one of them holds to. */
   protected readonly principles: readonly { icon: IconName; title: string; text: string }[] = [
-    {
-      icon: 'lock',
-      title: 'Self-custodial',
-      text: 'Your keys stay on your device, encrypted with your PIN or password, and are never sent anywhere. There is no RustCore server.',
-    },
-    {
-      icon: 'code',
-      title: 'Verifiable',
-      text: 'The full source is public and every release is built in public CI, with checksums you can compare against your own build.',
-    },
-    {
-      icon: 'cube',
-      title: 'On-chain truth',
-      text: 'Balances, projects and listings come straight from the blockchain. Nothing is shown as done before the network executed it.',
-    },
-    {
-      icon: 'globe',
-      title: 'Served from the chain',
-      text: 'Hosted on DeWeb, Massa’s decentralized web: the files live on-chain, with no web server to take down or tamper with.',
-    },
+    { icon: 'lock', title: 'Self-custodial', text: 'Your keys never leave your device.' },
+    { icon: 'code', title: 'Verifiable', text: 'Public source, reproducible builds.' },
+    { icon: 'cube', title: 'On-chain truth', text: 'Read straight from the blockchain.' },
+    { icon: 'globe', title: 'Served from DeWeb', text: 'No server to take down.' },
   ];
 
   protected readonly steps: readonly { icon: IconName; title: string; text: string }[] = [

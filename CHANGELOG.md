@@ -30,6 +30,9 @@ Works with the Launchpad contract **v1.8.0**; no contract change.
 ### Fixed
 
 - Pages keep their side margins on phones (their content touched the screen's edges).
+- The header stays at the top of the window while you scroll (it scrolled away with the page).
+- Creation wizards: the step tabs stay on one row of equal height, and fields side by side line
+  up whether or not one has a hint under it.
 
 ## [1.8.2] — 2026-11-06
 
@@ -307,9 +310,9 @@ Works with the Launchpad contract **v1.0.0** (unchanged).
 
 ### Changed
 
-- The Launchpad is live on DeWeb at **`lrustcore.massa`**, its only official address, served by
-  Massa's official gateway (https://lrustcore.massa.network); the README lists it. The footer's
-  links to the RustCore site and RustCore Wallet point to that gateway too.
+- The Launchpad is live on DeWeb, served by Massa's official gateway; the README lists its
+  official address. The footer's links to the RustCore site and RustCore Wallet point to that
+  gateway too.
 
 ## [1.0.0] — 2026-10-05
 

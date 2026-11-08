@@ -158,6 +158,8 @@ let nextId = 0;
     .label {
       transition: opacity 150ms ease;
       pointer-events: none;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
     .pct {
       fill: var(--white);
