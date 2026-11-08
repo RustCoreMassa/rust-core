@@ -1,10 +1,10 @@
 {
   "network": "mainnet",
   "address": "AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP",
-  "version": "1.4.0",
+  "version": "1.8.0",
   "admin": "AU126s93ZxbT4QUJcZYqsAxyMc3wv8nkHJYKYCtgQyEnZ8VGRM99P",
   "deployedAt": "2026-10-05T12:16:59.684Z",
-  "launchpadBytes": 157958,
+  "launchpadBytes": 171112,
   "config": {
     "tokenFee": "100",
     "collectionFee": "200",
@@ -25,6 +25,6 @@
       "bytes": 46772
     }
   },
-  "upgradedAt": "2026-10-27T13:38:37.092Z",
-  "upgradedFrom": "1.3.1"
+  "upgradedAt": "2026-11-08T20:44:29.841Z",
+  "upgradedFrom": "1.4.0"
 }
