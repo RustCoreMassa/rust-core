@@ -9,6 +9,18 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.9.1] — 2026-11-08
+
+Works with the Launchpad contract **v1.8.0**, live on mainnet since 2026-11-08; no contract change.
+
+### Changed
+
+- Shipped so far on the home page: RustCore 1.9 (one app, a new look) and RustCore 1.8 (the
+  Launchpad contract v1.8.0, upgraded on mainnet after its 72-hour public delay); the 1.5 – 1.7
+  milestone keeps the public API, Dusa and the Content-Security-Policy. The roadmap ticks
+  "Contract v1.8.0 on mainnet" and RustCore 1.9.
+- README: the Launchpad contract v1.8.0 is the one live on mainnet.
+
 ## [1.9.0] — 2026-11-08
 
 Works with the Launchpad contract **v1.8.0**; no contract change.
@@ -376,6 +388,7 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.9.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.1
 [1.9.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.0
 [1.8.2]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.2
 [1.8.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.1

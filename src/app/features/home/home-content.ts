@@ -20,6 +20,26 @@ export interface Milestone {
 export const MILESTONES: readonly Milestone[] = [
   {
     date: 'Nov 2026',
+    product: 'RustCore',
+    title: 'RustCore 1.9 — one app, a new look',
+    major: { icon: 'logo', label: 'RustCore' },
+    text:
+      'RustCore Launchpad becomes RustCore, one app for every RustCore tool. The website moves in: ' +
+      'RustCore Wallet, Core Keepers, what shipped, the roadmap and the FAQ. A new matte design ' +
+      'and logo.',
+  },
+  {
+    date: 'Nov 2026',
+    product: 'RustCore',
+    title: 'RustCore 1.8 — Launchpad contract v1.8.0 on mainnet',
+    major: { icon: 'shield', label: 'Launchpad contract' },
+    text:
+      'The Launchpad contract was upgraded on mainnet to v1.8.0 after its 72-hour public delay. ' +
+      'Presales can have a whitelist and vesting. Closing a presale no longer sends tokens: their ' +
+      'owner takes them back in a separate step, so a token’s code can’t lock refunds.',
+  },
+  {
+    date: 'Nov 2026',
     product: 'Wallet',
     title: 'RustCore Wallet 1.7 — NFT gallery, safer by default',
     text:
@@ -31,13 +51,11 @@ export const MILESTONES: readonly Milestone[] = [
   {
     date: 'Nov 2026',
     product: 'RustCore',
-    title: 'RustCore 1.5 – 1.8 — public API, Dusa, whitelists and vesting',
-    major: { icon: 'logo', label: 'RustCore' },
+    title: 'RustCore 1.5 – 1.7 — public API and Dusa',
     text:
       'Very large collections load through the public RustCore API. Token owners can open a Dusa ' +
-      'pool and add liquidity from the token page. Presale whitelists, vesting and a safer close ' +
-      'come with Launchpad contract v1.8.0, released and headed for mainnet after its 72-hour ' +
-      'public delay.',
+      'pool and add liquidity from the token page. A Content-Security-Policy lets only the app’s ' +
+      'own files run code, and the app refuses to run inside another site’s frame.',
   },
   {
     date: 'Oct 2026',
@@ -181,6 +199,7 @@ export const ROADMAP: readonly RoadmapTrack[] = [
       done('Core Keepers holder discount (contract v1.4.0)'),
       done('Public API for very large collections'),
       done('Liquidity on Dusa from the token page'),
+      done('RustCore: one app, a new look (1.9)'),
     ],
   },
   {
@@ -189,7 +208,7 @@ export const ROADMAP: readonly RoadmapTrack[] = [
     status: 'In progress',
     items: [
       done('Presale whitelist & vesting (contract v1.8.0)'),
-      next('Contract v1.8.0 on mainnet'),
+      done('Contract v1.8.0 on mainnet'),
       next('Token payments on the marketplace'),
       next('Connection with RustCore Wallet'),
       next('Independent security audit'),
