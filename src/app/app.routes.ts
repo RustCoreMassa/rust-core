@@ -52,6 +52,24 @@ export const routes: Routes = [
     loadComponent: () => import('./features/presales/presale-page').then((m) => m.PresalePage),
   },
   {
+    path: 'launch',
+    title: 'Fair launch · RustCore',
+    loadComponent: () =>
+      import('./features/fair-launch/fair-launches-page').then((m) => m.FairLaunchesPage),
+  },
+  {
+    path: 'launch/new',
+    title: 'Launch a memecoin · RustCore',
+    loadComponent: () =>
+      import('./features/fair-launch/create-fair-launch-page').then((m) => m.CreateFairLaunchPage),
+  },
+  {
+    path: 'launch/:id',
+    title: 'Fair launch · RustCore',
+    loadComponent: () =>
+      import('./features/fair-launch/fair-launch-page').then((m) => m.FairLaunchPage),
+  },
+  {
     path: 'create/token',
     title: 'Create a token · RustCore',
     loadComponent: () =>

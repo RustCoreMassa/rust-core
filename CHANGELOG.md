@@ -9,6 +9,19 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+### Added
+
+- **Fair launch** (new contract `fair-launch.ts`, v1.0.0, not deployed yet): anyone launches a
+  memecoin in one transaction, with no capital. The token (1 B supply, 9 decimals) is deployed
+  from the Launchpad's own RC-Token template, with no owner: nobody can mint, pause or change it.
+  800 M tokens sell on a bonding curve (constant product with virtual reserves); when it sells
+  out, the contract moves itself to Dusa: the last 200 M tokens and the raised MAS (minus a
+  graduation fee and the pool's costs) go into a new pool at the curve's final price, and the
+  pool's liquidity stays in the contract for good. The move is booked as a Massa deferred call
+  (autonomous smart contract); anyone may also trigger it and keeps what the pool's costs didn't
+  use. Pages `/launch`, `/launch/new` and `/launch/:id`; a "Fair launch" menu entry; deploy
+  script `npm run deploy:fair-launch` in `smart-contract/`.
+
 ## [1.9.1] — 2026-11-08
 
 Works with the Launchpad contract **v1.8.0**, live on mainnet since 2026-11-08; no contract change.
