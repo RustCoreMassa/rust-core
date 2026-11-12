@@ -4,7 +4,8 @@ Thanks for helping! Bug reports, ideas and pull requests are all welcome. This g
 running the app and the contracts locally, how the code is organized, and the rules that keep
 them safe.
 
-For releases and deployment, see [docs/RELEASING.md](docs/RELEASING.md).
+For releases and deployment, see [docs/RELEASING.md](docs/RELEASING.md). For the Fair Launch contract (bonding curve, graduation to Dusa), see
+[docs/FAIR_LAUNCH.md](docs/FAIR_LAUNCH.md).
 
 ## Ground rules
 
@@ -129,7 +130,7 @@ src/app/
 src/environments/    Production and development settings (local links, IPFS gateway)
 public/templates/    Frozen source of every template version (for "Download original code")
 smart-contract/
-├── assembly/contracts/  launchpad.ts, rc-token.ts, rc-collection.ts — one .wasm each
+├── assembly/contracts/  launchpad.ts, rc-token.ts, rc-collection.ts, fair-launch.ts — one .wasm each
 ├── assembly/lib/        Internal modules: ownable, mutable, launchpad/ (keys, records,
 │                        rules, settlement, marketplace, presale, math)
 ├── assembly/__tests__/  as-pect tests, incl. the app ↔ contract encoding cross-check
