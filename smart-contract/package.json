@@ -11,6 +11,7 @@
     "test": "asp --summary",
     "clean": "rimraf build",
     "deploy": "npm run build && node --stack-size=16000 --import tsx src/deploy.ts",
+    "deploy:fair-launch": "npm run build && node --stack-size=16000 --import tsx src/deploy-fair-launch.ts",
     "upgrade": "npm run build && node --stack-size=16000 --import tsx src/upgrade.ts",
     "verify": "npm run build && tsx src/verify.ts",
     "check:templates": "tsx src/check-templates.ts"

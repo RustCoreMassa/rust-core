@@ -44,6 +44,11 @@ export interface NetworkConfig {
   readonly apiUrl: string | null;
   /** Dusa on this network; null when it isn't deployed there. */
   readonly dusa: DusaConfig | null;
+  /**
+   * The Fair Launch SC (bonding-curve memecoins that list themselves on Dusa) on this network
+   * (smart-contract/deployments/fair-launch-<network>.json); null until it is deployed there.
+   */
+  readonly fairLaunchAddress: string | null;
 }
 
 export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
@@ -76,6 +81,7 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
       binSteps: [20, 25, 50, 100],
       appUrl: 'https://app.dusa.io',
     },
+    fairLaunchAddress: null,
   },
   buildnet: {
     id: 'buildnet',
@@ -96,6 +102,8 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
       binSteps: [20],
       appUrl: null,
     },
+    // Deploy it with `npm run deploy:fair-launch` in smart-contract/, then paste the address.
+    fairLaunchAddress: null,
   },
 };
 

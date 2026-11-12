@@ -1,0 +1,223 @@
+<section class="page container">
+  <a class="back muted" routerLink="/launch">← All fair launches</a>
+
+  @if (launch() === undefined) {
+    <div class="card"><span class="skeleton" style="width: 50%; height: 28px"></span></div>
+  } @else if (launch() === null) {
+    <div class="card">
+      <h1>Launch not found</h1>
+      <p class="muted">There is no fair launch with this number on {{ network.config().label }}.</p>
+    </div>
+  } @else {
+    @let l = launch()!;
+    <div class="layout">
+      <div class="main">
+        <div class="card head">
+          <div class="identity">
+            <app-project-logo [url]="l.info.logoUrl" [symbol]="l.symbol" />
+            <div class="names">
+              <h1>{{ l.name }}</h1>
+              <span class="muted"
+                >{{ l.symbol }} ·
+                <span class="phase" [attr.data-phase]="phase()">{{ labels[phase()!] }}</span></span
+              >
+            </div>
+          </div>
+          @if (l.hidden) {
+            <div class="notice">The RustCore team hid this launch from the lists.</div>
+          }
+          @if (l.info.description) {
+            <p class="description">{{ l.info.description }}</p>
+          }
+          <app-curve-progress [launch]="l" />
+        </div>
+
+        <div class="card">
+          <h2>Token</h2>
+          <dl class="rows">
+            <div>
+              <dt>Price now</dt>
+              <dd>{{ price() }} MAS</dd>
+            </div>
+            <div>
+              <dt>Market cap</dt>
+              <dd>{{ cap() }} MAS</dd>
+            </div>
+            <div>
+              <dt>Supply</dt>
+              <dd>{{ whole(totalSupply) }} (fixed, no owner)</dd>
+            </div>
+            <div>
+              <dt>Sold on the curve</dt>
+              <dd>{{ whole(l.sold) }}</dd>
+            </div>
+            <div>
+              <dt>For the Dusa pool</dt>
+              <dd>{{ whole(poolTokens) }} + the MAS raised</dd>
+            </div>
+            <div>
+              <dt>Moves to Dusa at</dt>
+              <dd>{{ l.targetMas | mas }} raised</dd>
+            </div>
+            <div>
+              <dt>Trading fee</dt>
+              <dd>{{ l.tradeFeeBps / 100 }}%</dd>
+            </div>
+            <div>
+              <dt>Contract</dt>
+              <dd>
+                @if (explorerUrl(); as url) {
+                  <a [href]="url" target="_blank" rel="noopener noreferrer">{{
+                    l.token | shortAddress
+                  }}</a>
+                } @else {
+                  {{ l.token | shortAddress }}
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Template</dt>
+              <dd class="mono">RC-Token v{{ l.templateVersion }} · {{ hash().slice(0, 12) }}…</dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>{{ l.createdAt | date: 'medium' }} by {{ l.creator | shortAddress }}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="card action">
+          @switch (phase()) {
+            @case ('trading') {
+              <div class="tabs chips">
+                <button
+                  type="button"
+                  class="chip"
+                  [class.selected]="side() === 'buy'"
+                  (click)="setSide('buy')"
+                >
+                  Buy
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  [class.selected]="side() === 'sell'"
+                  (click)="setSide('sell')"
+                >
+                  Sell
+                </button>
+              </div>
+              @if (!wallet.connected()) {
+                <button class="btn btn-red btn-block" type="button" (click)="connect()">
+                  Connect wallet
+                </button>
+              } @else {
+                @if (balance() !== null) {
+                  <p class="muted">You hold {{ whole(balance()!) }} {{ l.symbol }}.</p>
+                }
+                <label class="field">
+                  <span>{{ side() === 'buy' ? 'Spend (MAS)' : 'Sell (' + l.symbol + ')' }}</span>
+                  <div class="with-max">
+                    <input
+                      class="input"
+                      inputmode="decimal"
+                      [value]="amount()"
+                      (input)="setAmount($event)"
+                    />
+                    @if (side() === 'sell') {
+                      <button class="btn btn-ghost btn-sm" type="button" (click)="useAll()">
+                        All
+                      </button>
+                    }
+                  </div>
+                  @if (amountError(); as e) {
+                    <span class="error">{{ e }}</span>
+                  } @else if (previewText(); as text) {
+                    <span class="hint">{{ text }}</span>
+                  }
+                </label>
+                <button
+                  class="btn btn-red btn-block"
+                  type="button"
+                  [disabled]="
+                    !!busy() || !amountUnits() || !!amountError() || wallet.networkMismatch()
+                  "
+                  (click)="trade()"
+                >
+                  @switch (busy()) {
+                    @case ('approve') {
+                      Allow the sale in your wallet (1/2)…
+                    }
+                    @case ('sell') {
+                      Confirm the sale in your wallet…
+                    }
+                    @case ('buy') {
+                      Confirm in your wallet…
+                    }
+                    @default {
+                      {{ side() === 'buy' ? 'Buy' : 'Sell' }}
+                    }
+                  }
+                </button>
+                <p class="hint">
+                  Accepts a price move of up to 2%. A sell takes two signatures the first time: one
+                  to allow the curve to take the tokens back.
+                </p>
+              }
+            }
+            @case ('complete') {
+              <h2>Moving to Dusa</h2>
+              <p class="muted">
+                The curve sold out. The contract booked its own move to Dusa a few seconds later; if
+                it hasn't happened, anyone can do it now and keeps what the pool's costs didn't use.
+              </p>
+              @if (wallet.connected()) {
+                <button
+                  class="btn btn-red btn-block"
+                  type="button"
+                  [disabled]="!!busy()"
+                  (click)="graduate()"
+                >
+                  {{ busy() === 'graduate' ? 'Confirm in your wallet…' : 'Move it to Dusa' }}
+                </button>
+              } @else {
+                <button class="btn btn-ghost btn-block" type="button" (click)="connect()">
+                  Connect wallet
+                </button>
+              }
+            }
+            @case ('graduated') {
+              <h2>On Dusa</h2>
+              <p class="muted">
+                Since {{ l.graduatedAt | date: 'medium' }}: {{ whole(poolTokens) }}
+                {{ l.symbol }} and the MAS raised are in a Dusa pool (bin step
+                {{ l.binStep / 100 }}%). Its liquidity is held by the Fair Launch contract, which
+                has no way to take it out.
+              </p>
+              @if (poolLink(); as url) {
+                <a
+                  class="btn btn-red btn-block"
+                  [href]="url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Trade on Dusa</a
+                >
+              } @else {
+                <p class="hint mono">Pool {{ l.pair | shortAddress }}</p>
+              }
+            }
+          }
+          @if (notice(); as text) {
+            <div class="notice" role="status">{{ text }}</div>
+          }
+          @if (error(); as message) {
+            <div class="notice notice-error" role="alert">{{ message }}</div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+  <app-connect-wallet-dialog />
+</section>

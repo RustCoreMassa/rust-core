@@ -26,6 +26,7 @@ export const NAV_LINKS = [
   { path: '/collections', label: 'Collections' },
   { path: '/marketplace', label: 'Marketplace' },
   { path: '/presales', label: 'Presales' },
+  { path: '/launch', label: 'Fair launch' },
 ] as const;
 
 @Component({

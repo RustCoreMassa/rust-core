@@ -1,0 +1,90 @@
+.back {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.main,
+.side {
+  display: grid;
+  gap: 16px;
+}
+
+.head {
+  display: grid;
+  gap: 16px;
+  --logo-size: 64px;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.names {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+h1 {
+  font-size: clamp(24px, 3.6vw, 32px);
+  overflow-wrap: anywhere;
+}
+
+h2 {
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+
+.description {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.phase[data-phase='trading'],
+.phase[data-phase='graduated'] {
+  color: #7ee2a8;
+}
+
+.action {
+  display: grid;
+  gap: 12px;
+  border-color: var(--ember-line);
+}
+
+.action p {
+  margin: 0;
+}
+
+.with-max {
+  display: flex;
+  gap: 8px;
+}
+
+.with-max .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.mono {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

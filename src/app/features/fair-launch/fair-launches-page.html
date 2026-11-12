@@ -1,0 +1,81 @@
+<section class="page container">
+  <header class="page-head">
+    <span class="label">Fair launch</span>
+    <h1>Memecoins that list themselves</h1>
+    <p>
+      Launch a token with no capital: everyone buys on the same curve, the price rises with each
+      buy. When the curve sells out, the contract moves the token to Dusa by itself, with its
+      liquidity locked for good. No presale, no team tokens, no owner.
+    </p>
+    @if (fair.address()) {
+      <a class="btn btn-red" routerLink="/launch/new">Launch a memecoin</a>
+    }
+  </header>
+
+  @if (!fair.address()) {
+    <div class="notice">Fair Launch isn't deployed on {{ network.config().label }} yet.</div>
+  } @else {
+    <div class="chips filters">
+      <button
+        type="button"
+        class="chip"
+        [class.selected]="filter() === 'all'"
+        (click)="filter.set('all')"
+      >
+        All
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.selected]="filter() === 'trading'"
+        (click)="filter.set('trading')"
+      >
+        On the curve
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.selected]="filter() === 'graduated'"
+        (click)="filter.set('graduated')"
+      >
+        On Dusa
+      </button>
+    </div>
+
+    @if (error(); as message) {
+      <div class="notice notice-error" role="alert">{{ message }}</div>
+    }
+
+    @if (launches() === null) {
+      <div class="grid">
+        @for (row of [1, 2, 3]; track row) {
+          <div class="card"><span class="skeleton" style="width: 70%"></span></div>
+        }
+      </div>
+    } @else if (visible().length === 0) {
+      <div class="card empty">
+        <p class="muted">
+          {{ launches()!.length ? 'No launch matches this filter.' : 'No fair launch yet.' }}
+        </p>
+        <p class="hint">Be the first: it takes one transaction.</p>
+      </div>
+    } @else {
+      <div class="grid">
+        @for (l of visible(); track l.id) {
+          <a class="card launch" [routerLink]="['/launch', l.id.toString()]">
+            <div class="top">
+              <app-project-logo [url]="l.info.logoUrl" [symbol]="l.symbol" />
+              <div class="names">
+                <strong>{{ l.name }}</strong>
+                <span class="muted">{{ l.symbol }}</span>
+              </div>
+              <span class="phase" [attr.data-phase]="phase(l)">{{ labels[phase(l)] }}</span>
+            </div>
+            <app-curve-progress [launch]="l" />
+            <span class="muted cap">Market cap {{ cap(l) }} MAS</span>
+          </a>
+        }
+      </div>
+    }
+  }
+</section>
