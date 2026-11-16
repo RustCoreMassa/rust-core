@@ -49,6 +49,11 @@ export interface NetworkConfig {
    * (smart-contract/deployments/fair-launch-<network>.json); null until it is deployed there.
    */
   readonly fairLaunchAddress: string | null;
+  /**
+   * The block explorer (address and operation pages: /address/<a>, /op/<id>); null where there is
+   * none. Massa's explorer serves mainnet only (2026-11-16).
+   */
+  readonly explorerUrl: string | null;
 }
 
 export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
@@ -82,6 +87,7 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
       appUrl: 'https://app.dusa.io',
     },
     fairLaunchAddress: null,
+    explorerUrl: 'https://explorer.massa.net',
   },
   buildnet: {
     id: 'buildnet',
@@ -102,8 +108,10 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
       binSteps: [20],
       appUrl: null,
     },
-    // Deploy it with `npm run deploy:fair-launch` in smart-contract/, then paste the address.
-    fairLaunchAddress: null,
+    // smart-contract/deployments/fair-launch-buildnet.json (v1.0.0: trade history with each
+    // trade's operation, target 200 MAS). Earlier ones in deployments/history/.
+    fairLaunchAddress: 'AS1m8ZRSWJSUkjQRaKxULTZtXsFXjf6G9v2gLAxdqmP2EaRam93P',
+    explorerUrl: null,
   },
 };
 

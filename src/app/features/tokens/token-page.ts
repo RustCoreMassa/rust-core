@@ -30,7 +30,6 @@ import { NetworkStore } from '../../core/network/network-store';
 import { httpUrl } from '../../core/utils/ipfs';
 import { toUserMessage } from '../../core/utils/user-error';
 import { WalletStore } from '../../core/wallet/wallet-store';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { UnitsPipe } from '../../shared/pipes/units-pipe';
 import { ProjectBadges } from '../../shared/ui/project-badges/project-badges';
 import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
@@ -39,15 +38,17 @@ import { DusaCard } from './dusa-card';
 import { MintDialog } from './mint-dialog';
 import { TokenomicsCard } from './tokenomics-card';
 import { TokenomicsDialog } from './tokenomics-dialog';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
+import { explorerAddressUrl } from '../../core/network/explorer';
 
 /** One token: the registry record plus live reads from its contract. */
 @Component({
   selector: 'app-token-page',
   imports: [
+    ExplorerLink,
     DusaCard,
     DatePipe,
     RouterLink,
-    ShortAddressPipe,
     UnitsPipe,
     ProjectBadges,
     ProjectLogo,
@@ -86,7 +87,6 @@ export class TokenPage {
   protected readonly error = signal<string | null>(null);
   protected readonly downloading = signal(false);
   protected readonly downloadError = signal<string | null>(null);
-  protected readonly copied = signal(false);
 
   protected readonly keepOnlyOriginal = KEEP_ONLY_ORIGINAL;
   protected readonly launched = SOURCE_LAUNCHED;
@@ -131,9 +131,7 @@ export class TokenPage {
   }
 
   protected explorerUrl(address: string): string | null {
-    return this.networks.network() === 'mainnet'
-      ? `https://explorer.massa.net/mainnet/address/${address}`
-      : null;
+    return explorerAddressUrl(this.networks.config().explorerUrl, address);
   }
 
   protected edit(): void {
@@ -171,12 +169,6 @@ export class TokenPage {
 
   protected async onMinted(): Promise<void> {
     this.state.set(await this.tokens.state(this.address()));
-  }
-
-  protected async copyAddress(): Promise<void> {
-    await navigator.clipboard?.writeText(this.address()).catch(() => undefined);
-    this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 1500);
   }
 
   protected async download(): Promise<void> {

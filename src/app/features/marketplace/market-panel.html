@@ -150,7 +150,7 @@
         <div>
           <dt>
             {{ s.soldAt | date: 'mediumDate' }} ·
-            <span class="mono">{{ s.buyer | shortAddress }}</span>
+            <app-explorer-link [value]="s.buyer" />
           </dt>
           <dd>{{ s.price | mas }}</dd>
         </div>

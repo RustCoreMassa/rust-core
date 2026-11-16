@@ -23,10 +23,10 @@ import { Transactions } from '../../core/launchpad/transactions';
 import { toUserMessage } from '../../core/utils/user-error';
 import { WalletStore } from '../../core/wallet/wallet-store';
 import { ConnectWalletDialog } from '../../layout/connect-wallet-dialog/connect-wallet-dialog';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { MasPipe } from '../../shared/pipes/units-pipe';
 import { HolderDiscountNote } from '../../shared/ui/holder-discount-note/holder-discount-note';
 import { priceNano } from '../create/collection-draft';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 const DAY = 24 * 60 * 60 * 1000;
 const EXPIRIES = [
@@ -41,7 +41,7 @@ type Busy = 'approve' | 'list' | 'price' | 'cancel' | 'buy' | null;
 /** Buy, list, reprice or cancel one NFT. No custody. */
 @Component({
   selector: 'app-market-panel',
-  imports: [DatePipe, MasPipe, ShortAddressPipe, ConnectWalletDialog, HolderDiscountNote],
+  imports: [ExplorerLink, DatePipe, MasPipe, ConnectWalletDialog, HolderDiscountNote],
   templateUrl: './market-panel.html',
   styleUrl: './market-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

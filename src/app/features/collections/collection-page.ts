@@ -35,7 +35,6 @@ import { httpUrl } from '../../core/utils/ipfs';
 import { toUserMessage } from '../../core/utils/user-error';
 import { WalletStore } from '../../core/wallet/wallet-store';
 import { ConnectWalletDialog } from '../../layout/connect-wallet-dialog/connect-wallet-dialog';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { MasPipe } from '../../shared/pipes/units-pipe';
 import { EditInfoDialog } from '../../shared/ui/edit-info-dialog/edit-info-dialog';
 import { ProjectBadges } from '../../shared/ui/project-badges/project-badges';
@@ -43,14 +42,15 @@ import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
 import { CollectionSettingsDialog } from './collection-settings-dialog';
 import { NftGrid } from './nft-grid';
 import { OwnerMintDialog } from './owner-mint-dialog';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 /** One collection: the registry record, live mint state, its NFTs, and the owner's tools. */
 @Component({
   selector: 'app-collection-page',
   imports: [
+    ExplorerLink,
     DatePipe,
     RouterLink,
-    ShortAddressPipe,
     MasPipe,
     ProjectBadges,
     ProjectLogo,

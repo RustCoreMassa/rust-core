@@ -31,12 +31,12 @@
         </div>
         <div>
           <dt>Admin</dt>
-          <dd class="mono">{{ s.admin | shortAddress }}</dd>
+          <dd><app-explorer-link [value]="s.admin" /></dd>
         </div>
         @if (s.pendingAdmin) {
           <div>
             <dt>Admin offered to</dt>
-            <dd class="mono">{{ s.pendingAdmin | shortAddress }}</dd>
+            <dd><app-explorer-link [value]="s.pendingAdmin" /></dd>
           </div>
         }
         <div>
@@ -580,8 +580,7 @@
           </p>
           @if (s.pendingAdmin) {
             <p>
-              Offered to <span class="mono">{{ s.pendingAdmin | shortAddress }}</span
-              >.
+              Offered to <app-explorer-link [value]="s.pendingAdmin" />.
               <button
                 class="btn btn-ghost btn-sm"
                 type="button"

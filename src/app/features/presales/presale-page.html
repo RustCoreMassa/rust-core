@@ -99,8 +99,12 @@
               <dd>{{ p.contributors }}</dd>
             </div>
             <div>
+              <dt>Token contract</dt>
+              <dd><app-explorer-link [value]="p.token" /></dd>
+            </div>
+            <div>
               <dt>Owner</dt>
-              <dd class="mono">{{ p.creator | shortAddress }}</dd>
+              <dd><app-explorer-link [value]="p.creator" /></dd>
             </div>
           </dl>
           @if (vesting()) {

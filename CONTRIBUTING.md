@@ -90,7 +90,8 @@ npm test             # as-pect unit tests (vm-mock)
 | `npm run build` | Compiles every top-level file of `assembly/contracts/` to `build/<name>.wasm` |
 | `npm test` | Unit tests (as-pect), offline |
 | `npm run deploy` | Deploys the Launchpad and uploads both templates — buildnet unless `NETWORK=mainnet` (see [docs/RELEASING.md](docs/RELEASING.md)) |
-| `npx tsx src/e2e.ts` | On-chain checks on buildnet: tokens (also `e2e-collections`, `e2e-marketplace`, `e2e-presale`, `e2e-presale-extras`, `e2e-tokenomics`, `e2e-admin`, `e2e-removal`, `e2e-discount`, `e2e-dusa`; `DEPLOYMENT=<name>` picks `deployments/<name>.json`) |
+| `npm run deploy:fair-launch` | Deploys the Fair Launch contract — buildnet unless `NETWORK=mainnet` (see [docs/FAIR_LAUNCH.md](docs/FAIR_LAUNCH.md)) |
+| `npx tsx src/e2e.ts` | On-chain checks on buildnet: tokens (also `e2e-collections`, `e2e-marketplace`, `e2e-presale`, `e2e-presale-extras`, `e2e-tokenomics`, `e2e-admin`, `e2e-removal`, `e2e-discount`, `e2e-dusa`; `DEPLOYMENT=<name>` picks `deployments/<name>.json`). `e2e-fair-launch` checks the Fair Launch (`FAIR_DEPLOYMENT=<name>`, default `fair-launch-buildnet`; about the target + 15 MAS a run), `stress-fair-launch` loads it (`TRADES`, `WALLETS`) |
 
 Deploys and e2e scripts need `smart-contract/.env` (`cp .env.example .env`) with the
 `PRIVATE_KEY` of a **buildnet test account** — never commit it, never use a mainnet key there.

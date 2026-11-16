@@ -53,6 +53,25 @@ export interface Launch {
   graduatedAt: number;
   hidden: boolean;
   info: ProjectInfo;
+  /** Buys and sells so far (the dev buy included): the length of the trade history. */
+  trades: bigint;
+}
+
+/** One buy or sell on a curve, as the contract keeps it (getTrades). */
+export interface Trade {
+  /** Milliseconds since the epoch. */
+  time: number;
+  trader: string;
+  isBuy: boolean;
+  /** nanoMAS the curve took (buy) or paid (sell), before the trade fee. */
+  mas: bigint;
+  /** Smallest units (9 decimals). */
+  tokens: bigint;
+  /** The curve after the trade. */
+  sold: bigint;
+  masIn: bigint;
+  /** The operation that made the trade. */
+  opId: string;
 }
 
 export function readFairConfig(args: Args): FairConfig {
@@ -111,7 +130,29 @@ export function readLaunch(args: Args): Launch {
     graduatedAt: Number(args.nextU64()),
     hidden: args.nextBool(),
     info: readInfo(args),
+    trades: args.nextU64(),
   };
+}
+
+export function readTrade(args: Args): Trade {
+  return {
+    time: Number(args.nextU64()),
+    trader: args.nextString(),
+    isBuy: args.nextBool(),
+    mas: args.nextU64(),
+    tokens: args.nextU64(),
+    sold: args.nextU64(),
+    masIn: args.nextU64(),
+    opId: args.nextString(),
+  };
+}
+
+/** getTrades: a length-prefixed run of Trade records. */
+export function readTradeList(bytes: Uint8Array): Trade[] {
+  const array = new Args(new Args(bytes).nextUint8Array());
+  const out: Trade[] = [];
+  while (array.getOffset() < array.serialize().length) out.push(readTrade(array));
+  return out;
 }
 
 /** getLaunches: a length-prefixed run of records (byte length, then the records). */

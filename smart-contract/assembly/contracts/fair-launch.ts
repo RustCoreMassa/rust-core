@@ -18,7 +18,7 @@
 // Money rules, as in the Launchpad (lib/launchpad/settlement.ts): every write pays its own
 // storage; the MAS in the curves is escrow — the admin can only withdraw the fees collected.
 // This contract has no upgrade function: its code can never change.
-import { Args, bytesToString, bytesToU32, stringToBytes } from '@massalabs/as-types';
+import { Args, bytesToString, bytesToU32, stringToBytes, u64ToBytes } from '@massalabs/as-types';
 import {
   Address,
   Context,
@@ -33,6 +33,7 @@ import {
   deferredCallQuote,
   deferredCallRegister,
   generateEvent,
+  getOriginOperationId,
   isDeployingContract,
   transferCoins,
   validateAddress,
@@ -68,6 +69,7 @@ import {
   STATE_COMPLETE,
   STATE_GRADUATED,
   STATE_TRADING,
+  Trade,
 } from '../lib/fairlaunch/records';
 
 export const VERSION = '1.0.0';
@@ -82,6 +84,7 @@ export const MAX_DEPLOY_DEPOSIT: u64 = 10 * MAS;
 export const MAX_BIN_STEPS: i32 = 8;
 export const MAX_AUTO_GAS: u64 = 4_000_000_000;
 export const MAX_PAGE: u32 = 50;
+export const MAX_TRADES_PAGE: u32 = 100;
 /** Sent with each token transfer: the token pays a new holder's balance entry from it. */
 export const TOKEN_TRANSFER_DEPOSIT: u64 = 10_000_000; // 0.01 MAS
 /** Sent with createLBPair: the new pair's storage; Dusa refunds what it doesn't use. */
@@ -107,6 +110,7 @@ const LAUNCH = stringToBytes('L:');
 const BY_TOKEN = stringToBytes('t:');
 const BY_SYMBOL = stringToBytes('s:');
 const BY_CREATOR = stringToBytes('o:');
+const TRADE = stringToBytes('h:');
 const CLOSE = stringToBytes(':');
 
 function launchKey(id: u64): StaticArray<u8> {
@@ -120,6 +124,10 @@ function ownSymbolKey(symbol: string): StaticArray<u8> {
 }
 function creatorKey(creator: string, id: u64): StaticArray<u8> {
   return BY_CREATOR.concat(stringToBytes(creator)).concat(CLOSE).concat(u64BE(id));
+}
+/** The `index`-th trade (0 = the first) of a launch. */
+function tradeKey(id: u64, index: u64): StaticArray<u8> {
+  return TRADE.concat(u64BE(id)).concat(u64BE(index));
 }
 
 // ==================================================== //
@@ -275,9 +283,10 @@ export function sell(binaryArgs: StaticArray<u8>): void {
   assert(net >= minMas, 'The price moved: you would get less than your minimum');
   launch.sold -= tokens;
   launch.masIn -= gross;
+  const seller = Context.caller().toString();
+  _recordTrade(launch, seller, false, gross, tokens);
   _save(launch);
 
-  const seller = Context.caller().toString();
   call(
     new Address(launch.token),
     'transferFrom',
@@ -290,7 +299,8 @@ export function sell(binaryArgs: StaticArray<u8>): void {
   settle(before, 0, 0, net);
 }
 
-class Trade {
+/** A buy's money: MAS into the curve, its trade fee, and the deferred call it booked (or 0). */
+class BuyResult {
   constructor(
     public mas: u64,
     public fee: u64,
@@ -298,7 +308,13 @@ class Trade {
   ) {}
 }
 
-function _buy(launch: Launch, config: FairConfig, buyer: string, mas: u64, minTokens: u64): Trade {
+function _buy(
+  launch: Launch,
+  config: FairConfig,
+  buyer: string,
+  mas: u64,
+  minTokens: u64,
+): BuyResult {
   assert(launch.state == STATE_TRADING, 'The curve has sold out: trade on Dusa');
   assert(mas > 0, 'Buy for more than zero MAS');
   const quote = quoteBuy(launch.virtualMas, launch.masIn, launch.sold, mas);
@@ -314,6 +330,7 @@ function _buy(launch: Launch, config: FairConfig, buyer: string, mas: u64, minTo
     launch.autoFee = autoFee;
     generateEvent(createEvent('LAUNCH_COMPLETED', [launch.id.toString()]));
   }
+  _recordTrade(launch, buyer, true, quote.mas, quote.tokens);
   _save(launch);
   call(
     new Address(launch.token),
@@ -322,7 +339,24 @@ function _buy(launch: Launch, config: FairConfig, buyer: string, mas: u64, minTo
     TOKEN_TRANSFER_DEPOSIT,
   );
   _tradeEvent(launch, buyer, true, quote.mas, quote.tokens);
-  return new Trade(quote.mas, fee, autoFee);
+  return new BuyResult(quote.mas, fee, autoFee);
+}
+
+/** Adds a trade to the launch's history (paid by the trader, as the rest of the call's storage). */
+function _recordTrade(launch: Launch, who: string, isBuy: bool, mas: u64, tokens: u64): void {
+  const op = getOriginOperationId();
+  const trade = new Trade(
+    Context.timestamp(),
+    who,
+    isBuy,
+    mas,
+    tokens,
+    launch.sold,
+    launch.masIn,
+    op === null ? '' : op,
+  );
+  Storage.set(tradeKey(launch.id, launch.trades), trade.serialize());
+  launch.trades += 1;
 }
 
 /** Books the deferred call that graduates the launch; returns its price (0 when not booked). */
@@ -331,7 +365,9 @@ function _scheduleGraduation(launch: Launch, config: FairConfig): u64 {
   const slot = new Slot(currentPeriod() + AUTO_GRADUATE_DELAY, currentThread());
   const params = new Args().add(launch.id).serialize();
   const price = deferredCallQuote(slot, config.autoGraduateGas, params.length);
-  if (price > launch.masIn / MAX_AUTO_FEE_DIVISOR) return 0;
+  // 0 = the slot can't take the call (full, or more gas than a deferred call may use): booking
+  // it would fail and revert the buy, so the launch waits for a manual graduate instead.
+  if (price == 0 || price > launch.masIn / MAX_AUTO_FEE_DIVISOR) return 0;
   const callId = deferredCallRegister(
     Context.callee().toString(),
     'graduate',
@@ -363,7 +399,8 @@ function _tradeEvent(launch: Launch, who: string, isBuy: bool, mas: u64, tokens:
 
 /**
  * Moves a sold-out launch to Dusa. Args: id (u64). Anyone may call it (the deferred call does);
- * the caller keeps what the pool's reserved costs didn't use. The pool gets POOL_TOKENS and the
+ * the caller keeps what the pool's reserved costs didn't use (the fees get it when the deferred
+ * call graduates the launch). The pool gets POOL_TOKENS and the
  * raised MAS minus the graduation fee, the deferred call's price and GRADUATION_RESERVE, at the
  * bin of that price, in the first bin step of the config whose pool is free (or already at that
  * price). Its liquidity is held by this contract, which can never remove it.
@@ -439,6 +476,16 @@ export function graduate(binaryArgs: StaticArray<u8>): void {
   addFee(graduationFee);
   generateEvent(createEvent('LAUNCH_GRADUATED', [launch.id.toString(), pair, binStep.toString()]));
   // `budget` leaves the escrow: the pool and its costs; what they didn't use is refunded.
+  if (Context.caller() == Context.callee()) {
+    // Our own deferred call: a refund would go back to this contract and sit in no account, so
+    // what the pool's costs didn't use goes to the fees. The fee entry exists before measuring.
+    Storage.set(FEES_KEY, u64ToBytes(accruedFees()));
+    const unused = i64(budget) - (i64(before) - i64(balance()));
+    if (unused > 0) {
+      settle(before, u64(unused), 0, budget);
+      return;
+    }
+  }
   settle(before, 0, 0, budget);
 }
 
@@ -637,6 +684,28 @@ export function getLaunches(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   while (id > 0 && u32(out.length) < limit) {
     out.push(_load(id));
     id--;
+  }
+  return new Args().addSerializableObjectArray(out).serialize();
+}
+
+/**
+ * A launch's trade history, oldest first. Args: id (u64), from (u64, index of the first trade,
+ * 0 = the dev buy or the first buy), limit (u32, ≤ 100). Returns Trade[]; Launch.trades is the
+ * length of the whole history.
+ */
+export function getTrades(binaryArgs: StaticArray<u8>): StaticArray<u8> {
+  const args = new Args(binaryArgs);
+  const launch = _load(args.nextU64().expect('id is missing or invalid'));
+  const from = args.nextU64().expect('from is missing or invalid');
+  let limit = args.nextU32().expect('limit is missing or invalid');
+  if (limit > MAX_TRADES_PAGE) limit = MAX_TRADES_PAGE;
+  const out: Trade[] = [];
+  for (let i = from; i < launch.trades && u32(out.length) < limit; i++) {
+    out.push(
+      new Args(Storage.get(tradeKey(launch.id, i)))
+        .nextSerializable<Trade>()
+        .expect('trade is unreadable'),
+    );
   }
   return new Args().addSerializableObjectArray(out).serialize();
 }

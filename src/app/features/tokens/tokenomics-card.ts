@@ -22,11 +22,10 @@ import {
   shareOf,
   shares,
 } from '../../core/launchpad/tokenomics';
-import { NetworkStore } from '../../core/network/network-store';
 import { formatUnits } from '../../core/utils/token-amount';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { UnitsPipe } from '../../shared/pipes/units-pipe';
 import { TokenomicsChart } from '../../shared/ui/tokenomics-chart/tokenomics-chart';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 /** What an address declared as holding parts holds now. */
 interface Holding {
@@ -42,7 +41,7 @@ interface Holding {
  */
 @Component({
   selector: 'app-tokenomics-card',
-  imports: [DatePipe, ShortAddressPipe, UnitsPipe, TokenomicsChart],
+  imports: [ExplorerLink, DatePipe, UnitsPipe, TokenomicsChart],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (tokenomics(); as t) {
@@ -99,13 +98,7 @@ interface Holding {
                 </div>
                 @if (part.holder) {
                   <div class="holder">
-                    @if (explorerUrl(part.holder); as url) {
-                      <a class="mono" [href]="url" target="_blank" rel="noopener noreferrer">{{
-                        part.holder | shortAddress
-                      }}</a>
-                    } @else {
-                      <span class="mono">{{ part.holder | shortAddress }}</span>
-                    }
+                    <app-explorer-link [value]="part.holder" />
                     @if (holdings().get(part.holder); as h) {
                       @if (h.balance === undefined) {
                         <span class="skeleton" style="width: 90px"></span>
@@ -282,7 +275,6 @@ interface Holding {
 })
 export class TokenomicsCard {
   private readonly tokens = inject(TokenReader);
-  private readonly networks = inject(NetworkStore);
 
   readonly project = input.required<Project>();
   readonly state = input.required<TokenState | null>();
@@ -355,12 +347,6 @@ export class TokenomicsCard {
 
   protected differsTitle(h: Holding): string {
     return `Declared: ${formatBps(h.declaredBps)}; holds now: ${this.heldPercent(h)}.`;
-  }
-
-  protected explorerUrl(address: string): string | null {
-    return this.networks.network() === 'mainnet'
-      ? `https://explorer.massa.net/mainnet/address/${address}`
-      : null;
   }
 
   private async loadHoldings(token: string, t: Tokenomics | null): Promise<void> {

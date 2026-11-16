@@ -100,6 +100,8 @@ export class Launch implements Serializable {
     public graduatedAt: u64 = 0,
     public hidden: bool = false,
     public info: ProjectInfo = new ProjectInfo(),
+    /** Buys and sells so far, the dev buy included: the trade history's length (getTrades). */
+    public trades: u64 = 0,
   ) {}
 
   serialize(): StaticArray<u8> {
@@ -125,6 +127,7 @@ export class Launch implements Serializable {
       .add(this.graduatedAt)
       .add(this.hidden)
       .add(this.info)
+      .add(this.trades)
       .serialize();
   }
 
@@ -151,6 +154,55 @@ export class Launch implements Serializable {
     this.graduatedAt = args.nextU64().expect('graduatedAt is missing or invalid');
     this.hidden = args.nextBool().expect('hidden is missing or invalid');
     this.info = args.nextSerializable<ProjectInfo>().expect('info is missing or invalid');
+    this.trades = args.nextU64().expect('trades is missing or invalid');
+    return new Result(args.offset);
+  }
+}
+
+/**
+ * One buy or sell on a curve, kept for the app's price chart and trade list (no indexer needed).
+ * The curve's state after the trade gives its price: (virtualMas + masIn) / (virtual tokens − sold).
+ */
+export class Trade implements Serializable {
+  constructor(
+    /** Milliseconds since the epoch (the block's time). */
+    public time: u64 = 0,
+    public trader: string = '',
+    public isBuy: bool = false,
+    /** nanoMAS the curve took (buy) or paid (sell), before the trade fee. */
+    public mas: u64 = 0,
+    /** Tokens bought or sold, smallest units. */
+    public tokens: u64 = 0,
+    /** The curve after the trade. */
+    public sold: u64 = 0,
+    public masIn: u64 = 0,
+    /** The operation that made the trade (for an explorer link). */
+    public opId: string = '',
+  ) {}
+
+  serialize(): StaticArray<u8> {
+    return new Args()
+      .add(this.time)
+      .add(this.trader)
+      .add(this.isBuy)
+      .add(this.mas)
+      .add(this.tokens)
+      .add(this.sold)
+      .add(this.masIn)
+      .add(this.opId)
+      .serialize();
+  }
+
+  deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
+    const args = new Args(data, offset);
+    this.time = args.nextU64().expect('time is missing or invalid');
+    this.trader = args.nextString().expect('trader is missing or invalid');
+    this.isBuy = args.nextBool().expect('isBuy is missing or invalid');
+    this.mas = args.nextU64().expect('mas is missing or invalid');
+    this.tokens = args.nextU64().expect('tokens is missing or invalid');
+    this.sold = args.nextU64().expect('sold is missing or invalid');
+    this.masIn = args.nextU64().expect('masIn is missing or invalid');
+    this.opId = args.nextString().expect('opId is missing or invalid');
     return new Result(args.offset);
   }
 }

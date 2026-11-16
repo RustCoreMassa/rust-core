@@ -33,14 +33,37 @@
         </div>
 
         <div class="card">
+          <div class="card-head">
+            <h2>Chart</h2>
+            @if (phase() === 'trading') {
+              <span class="live">Live</span>
+            }
+          </div>
+          <app-price-chart [trades]="trades()" [virtualMas]="l.virtualMas" />
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Trades</h2>
+            <span class="muted">{{ l.trades }} in all</span>
+          </div>
+          <app-trade-list
+            [trades]="trades()"
+            [virtualMas]="l.virtualMas"
+            [symbol]="l.symbol"
+            [me]="wallet.address()"
+          />
+        </div>
+
+        <div class="card">
           <h2>Token</h2>
           <dl class="rows">
             <div>
-              <dt>Price now</dt>
+              <dt>{{ phase() === 'graduated' ? 'Last price on the curve' : 'Price now' }}</dt>
               <dd>{{ price() }} MAS</dd>
             </div>
             <div>
-              <dt>Market cap</dt>
+              <dt>{{ phase() === 'graduated' ? 'Market cap at the move' : 'Market cap' }}</dt>
               <dd>{{ cap() }} MAS</dd>
             </div>
             <div>
@@ -66,13 +89,7 @@
             <div>
               <dt>Contract</dt>
               <dd>
-                @if (explorerUrl(); as url) {
-                  <a [href]="url" target="_blank" rel="noopener noreferrer">{{
-                    l.token | shortAddress
-                  }}</a>
-                } @else {
-                  {{ l.token | shortAddress }}
-                }
+                <app-explorer-link [value]="l.token" />
               </dd>
             </div>
             <div>
@@ -81,7 +98,9 @@
             </div>
             <div>
               <dt>Created</dt>
-              <dd>{{ l.createdAt | date: 'medium' }} by {{ l.creator | shortAddress }}</dd>
+              <dd>
+                {{ l.createdAt | date: 'medium' }} by <app-explorer-link [value]="l.creator" />
+              </dd>
             </div>
           </dl>
         </div>
@@ -204,9 +223,8 @@
                   rel="noopener noreferrer"
                   >Trade on Dusa</a
                 >
-              } @else {
-                <p class="hint mono">Pool {{ l.pair | shortAddress }}</p>
               }
+              <p class="hint">Pool <app-explorer-link [value]="l.pair" /></p>
             }
           }
           @if (notice(); as text) {

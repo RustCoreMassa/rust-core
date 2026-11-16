@@ -13,13 +13,13 @@ import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
 import { LaunchpadConfig } from '../../core/launchpad/records';
 import { NetworkStore } from '../../core/network/network-store';
 import { formatUnits } from '../../core/utils/token-amount';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { Icon } from '../../shared/ui/icon/icon';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 /** The Launchpad's rules and its current fees, read from the contract of the selected network. */
 @Component({
   selector: 'app-fees-section',
-  imports: [RouterLink, ShortAddressPipe, Icon],
+  imports: [ExplorerLink, RouterLink, Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (launchpad.address(); as address) {
@@ -83,10 +83,7 @@ import { Icon } from '../../shared/ui/icon/icon';
             </p>
             <div class="well address">
               <span class="muted">Contract</span>
-              <code [title]="address">{{ address | shortAddress }}</code>
-              <button class="btn btn-ghost btn-sm" type="button" (click)="copy(address)">
-                {{ copied() ? 'Copied' : 'Copy' }}
-              </button>
+              <code><app-explorer-link [value]="address" /></code>
             </div>
           </div>
         </div>
@@ -208,7 +205,6 @@ export class FeesSection {
   /** undefined while it's read, null when the read failed. */
   protected readonly config = signal<LaunchpadConfig | null | undefined>(undefined);
   protected readonly version = signal<string | null>(null);
-  protected readonly copied = signal(false);
   private run = 0;
 
   protected readonly fees = computed(() => {
@@ -267,12 +263,6 @@ export class FeesSection {
       const address = this.launchpad.address();
       untracked(() => void this.load(address));
     });
-  }
-
-  protected async copy(address: string): Promise<void> {
-    await navigator.clipboard?.writeText(address).catch(() => undefined);
-    this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 1800);
   }
 
   private async load(address: string | null): Promise<void> {

@@ -78,13 +78,70 @@ h2 {
   min-width: 0;
 }
 
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #7ee2a8;
+  font-size: 13px;
+}
+
+.live::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live::before {
+    animation: none;
+  }
+}
+
 .mono {
   font-family: var(--font-mono, monospace);
   font-size: 13px;
 }
 
+/* One column: the buy and sell panel right under the token's head, before the chart. */
 @media (max-width: 900px) {
   .layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .main {
+    display: contents;
+  }
+
+  .main > :first-child {
+    order: -2;
+  }
+
+  .side {
+    order: -1;
   }
 }

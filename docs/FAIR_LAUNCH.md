@@ -90,7 +90,7 @@ Rounding always favours the curve, so it can never owe more MAS than it holds.
 
 | `targetMas` | Start price | Start market cap | End price | End market cap |
 |---|---|---|---|---|
-| 100 MAS (buildnet default) | 0.00000003125 | 31.25 MAS | 0.0000005 | 500 MAS |
+| 200 MAS (buildnet default) | 0.0000000625 | 62.5 MAS | 0.000001 | 1 000 MAS |
 | 50 000 MAS (mainnet default) | 0.000015625 | 15 625 MAS | 0.00025 | 250 000 MAS |
 
 (Market cap = price × 1 B tokens.)
@@ -109,7 +109,26 @@ Fees accumulate in the contract's `fees` counter. The admin can withdraw **only*
 (`withdrawFees`); the MAS in the curves is escrow nobody can take out.
 
 Every write also pays its own storage, as in the Launchpad (`settle()`): the caller sends a margin
-and gets back what wasn't used.
+and gets back what wasn't used. Each buy and sell adds a row to the launch's trade history
+(~0.018 MAS of storage, paid by the trader; see "Trade history").
+
+## Trade history (the chart)
+
+The contract keeps every buy and sell of a launch (key `h:` + id + index): time, trader, buy or
+sell, the MAS and tokens traded, the curve after it (`sold`, `masIn`) and the operation that made
+it (`getOriginOperationId`, for the explorer link). `Launch.trades` is the
+count; `getTrades(id, from, limit)` reads them in pages of up to 100, oldest first. With the
+curve state in each row, every price is exact: `(virtualMas + masIn) / (CURVE_VIRTUAL_TOKENS −
+sold)` MAS per token.
+
+The app builds the chart from it with no indexer (`src/app/core/fairlaunch/chart.ts`): candles
+of 1 minute to 1 day, in market cap (price × 1 B, the default) or price, with the MAS traded per
+candle under them; each candle opens where the previous trade left the price. The token page
+reads the launch again every 4 seconds while the curve trades (only while the tab is visible) and
+adds the new trades to the chart and to the trade list (10 to a page; each trader and operation
+opens in the explorer where the network has one). The chart is TradingView's open-source
+[Lightweight Charts](https://github.com/tradingview/lightweight-charts) (Apache-2.0), loaded only
+on the token page.
 
 ## Graduation
 
@@ -120,11 +139,20 @@ deferred call** to `graduate(id)` two periods (~32 s) later. This is the "autono
 contract" part: no bot, no server.
 
 - The booking price (`deferredCallQuote`) is paid out of the raised MAS, recorded as `autoFee`.
-  The buyer doesn't pay it.
-- It's skipped if `autoGraduateGas` is 0 in the config, or if the booking would cost more than
-  5 % of the raised MAS.
+  The buyer doesn't pay it. It is ~0.01 MAS per million gas + ~0.045 (read on buildnet and
+  mainnet on 2026-11-16): **~9.85 MAS** for the default `autoGraduateGas` of 980 M. `graduate`
+  used **872.6 M gas** on buildnet (a new pool, one bin step), so 900 M was too tight a margin.
+  When the call runs, the node gives the storage part of that price (~0.037 MAS) back to the
+  contract, outside any account: it stays there.
+- It's skipped if `autoGraduateGas` is 0 in the config, if the booking would cost more than
+  5 % of the raised MAS (so below a ~197 MAS target at 980 M gas: the buildnet default is 200),
+  or if the slot can't take it (the quote is 0: the slot is full, or the gas is above what one
+  deferred call may use — just under 1 B). Booking anyway would fail and revert the buy that
+  sells the curve out.
 - If the deferred call doesn't run or fails, **anyone** can call `graduate(id)` (the app shows a
   "Move it to Dusa" button). The caller keeps whatever the reserved costs didn't use (see below).
+- When the deferred call graduates the launch, the contract is its own caller: what the reserved
+  costs didn't use goes to the fees (a refund to itself would leave it in no account).
 
 ### The MAS
 
@@ -143,8 +171,8 @@ poolMas       = budget − GRADUATION_RESERVE             → the pool
 | Allowance for the router | 0.01 MAS |
 
 What the reserve doesn't use goes to whoever called `graduate`, as a reward for finishing the
-job. With a small target the reserve is a large share: at 100 MAS the pool gets ~85 MAS, so its
-price starts ~15 % below the curve's last price. From 1 000 MAS up, the gap is about 1 %
+job (to the fees when the deferred call did it). With a small target the reserve is a large
+share: at 100 MAS the pool gets ~85 MAS, so its price starts ~15 % below the curve's last price. From 1 000 MAS up, the gap is about 1 %
 (plus the graduation fee).
 
 ### The bin
@@ -190,6 +218,7 @@ floats. It picks the highest bin whose price is at most the curve's price.
 | `getLaunch` | id | `Launch` record |
 | `getLaunches` | before (u64, 0 = newest), limit (u32, ≤ 50) | `Launch[]`, newest first |
 | `getLaunchesBy` | creator | ids (u64[]) |
+| `getTrades` | id, from (u64, 0 = first trade), limit (u32, ≤ 100) | `Trade[]`, oldest first |
 | `launchOfToken` | token | id, 0 if not a fair launch |
 | `quoteBuyOf` | id, mas | tokens, mas taken, fee |
 | `quoteSellOf` | id, tokens | mas after fee, fee |
@@ -214,7 +243,9 @@ match; `src/app/core/fairlaunch/records.spec.ts` decodes bytes the contract wrot
 
 **Launch:** id, token, creator, createdAt, name, symbol, templateVersion, templateHash, virtualMas,
 targetMas, tradeFeeBps, graduationFeeBps, sold, masIn, state, autoFee, pair, binStep, graduatedAt,
-hidden, info.
+hidden, info, trades.
+
+**Trade:** time, trader, isBuy, mas, tokens, sold, masIn (the curve after it), opId.
 
 **FairConfig:** creationFee, tradeFeeBps, graduationFeeBps, targetMas, deployDeposit, launchpad,
 dusaRouter, dusaFactory, wmas, binSteps (u32[]), autoGraduateGas, paused.
@@ -227,10 +258,17 @@ dusaRouter, dusaFactory, wmas, binSteps (u32[]), autoGraduateGas, paused.
 
 ## Limits and open points
 
-- **Not run on-chain yet.** The unit tests mock Dusa and the deferred calls (vm-mock). Still to
-  check on buildnet: the real `createLBPair` / `addLiquidityMAS` calls from a contract, and that
-  `autoGraduateGas` (900 M by default) is enough for the deferred `graduate`. If it isn't, set it
-  to 0 and graduate by hand.
+- **Tried on buildnet (2026-11-16)** with `npx tsx src/e2e-fair-launch.ts` (target 200 MAS): a
+  launch with a dev buy, a buy, a sell, the buy that sells out; the deferred call graduated it by
+  itself 2 periods later (the contract is its own caller there), the pool was created at the
+  expected bin with the 200 M tokens and 174.17 MAS, its 11 bins held by the contract; the fees
+  got the graduation fee and the unused reserve, then were withdrawn. After every step the
+  contract's balance = fees + MAS in the curves + a constant (+ the deferred call's storage
+  refund). The unit tests mock Dusa and the deferred calls (vm-mock): the skip when a slot can't
+  take the call (quote 0) is not exercised anywhere.
+- **Gas.** `graduate` takes 872.6 M gas for a new pool; each extra bin step it has to look at
+  (pools created in advance) adds a little. Past the deferred call's gas, the call fails and the
+  launch waits for a manual `graduate` (any account, up to the block's gas limit).
 - **Pools created in advance** can block a bin step (see "The pool"); with all of them blocked,
   graduation waits for a new bin step in the config.
 - **Small targets** lose a larger share to the pool's costs (see "The MAS").
@@ -238,11 +276,23 @@ dusaRouter, dusaFactory, wmas, binSteps (u32[]), autoGraduateGas, paused.
 
 ## Trying it on buildnet
 
+Deployed on buildnet at `AS1m8ZRSWJSUkjQRaKxULTZtXsFXjf6G9v2gLAxdqmP2EaRam93P`
+(`deployments/fair-launch-buildnet.json`, target 200 MAS). The earlier ones (without the trade
+history; without the operation ids) are in `deployments/history/`.
+
 1. `cd smart-contract && cp .env.example .env`, then set `PRIVATE_KEY` (a buildnet test account).
-   The `FAIR_*` values there are the buildnet defaults (target 100 MAS).
-2. `npm run deploy:fair-launch`. It writes `deployments/fair-launch-buildnet.json`.
+   The `FAIR_*` values there are the buildnet defaults (target 200 MAS).
+2. `npm run deploy:fair-launch`. It writes `deployments/fair-launch-buildnet.json` (move the old
+   one to `deployments/history/` first).
 3. Put the address in `fairLaunchAddress` (buildnet) in `src/app/core/network/networks.ts`, run
    `npm start`, and select Buildnet.
-4. Launch a token on `/launch/new`, buy and sell, then buy the rest of the curve (~100 MAS).
+4. Launch a token on `/launch/new`, buy and sell (the chart and the trade list follow within a few
+   seconds), then buy the rest of the curve (~200 MAS).
 5. Check that the launch reaches **On Dusa** by itself within a minute, or press "Move it to Dusa".
-   Then check that the pool is on Dusa (`getAllLBPairs` on the factory) at the expected price.
+6. `npx tsx src/e2e-fair-launch.ts` runs all of it and checks the numbers (about the target +
+   15 MAS a run; the account must be the Fair Launch admin).
+7. `TRADES=1000 WALLETS=30 npx tsx src/stress-fair-launch.ts` is the load test: generated wallets
+   trade one new launch at once until it has `TRADES` buys and sells, then it checks that every
+   trade was kept, follows the curve from the previous one, and that the fees, each wallet's
+   tokens and the contract's balance add up. The launch stays open; the wallets send their MAS
+   back.

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -24,14 +25,14 @@ import {
   buyCoins,
   feeOf,
   launchPhase,
-  marketCap,
   quoteBuy,
   quoteSell,
   spotPrice,
   withSlippage,
 } from '../../core/fairlaunch/curve';
+import { tradePrice } from '../../core/fairlaunch/chart';
 import { FairLaunchReader } from '../../core/fairlaunch/fair-launch-reader';
-import { Launch } from '../../core/fairlaunch/records';
+import { Launch, Trade } from '../../core/fairlaunch/records';
 import { parseSupply } from '../../core/launchpad/launch-rules';
 import { ALLOWANCE_COINS } from '../../core/launchpad/presale-cost';
 import { hex } from '../../core/launchpad/records';
@@ -42,25 +43,32 @@ import { formatUnits } from '../../core/utils/token-amount';
 import { toUserMessage } from '../../core/utils/user-error';
 import { WalletStore } from '../../core/wallet/wallet-store';
 import { ConnectWalletDialog } from '../../layout/connect-wallet-dialog/connect-wallet-dialog';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { MasPipe } from '../../shared/pipes/units-pipe';
 import { CurveProgress } from '../../shared/ui/curve-progress/curve-progress';
 import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
+import { PriceChart } from './price-chart';
+import { TradeList } from './trade-list';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 type Side = 'buy' | 'sell';
 type Busy = 'buy' | 'approve' | 'sell' | 'graduate' | null;
+
+/** How often an open launch is read again (curve, new trades), while the tab is visible. */
+const POLL_MS = 4_000;
 
 /** One fair launch: its curve, buy and sell, and its move to Dusa. */
 @Component({
   selector: 'app-fair-launch-page',
   imports: [
+    ExplorerLink,
     DatePipe,
     RouterLink,
     MasPipe,
-    ShortAddressPipe,
     ProjectLogo,
     CurveProgress,
     ConnectWalletDialog,
+    PriceChart,
+    TradeList,
   ],
   templateUrl: './fair-launch-page.html',
   styleUrl: './fair-launch-page.scss',
@@ -81,6 +89,10 @@ export class FairLaunchPage {
   protected readonly launch = signal<Launch | null | undefined>(undefined);
   /** The wallet's balance of the token, smallest units; null when unknown. */
   protected readonly balance = signal<bigint | null>(null);
+  /** The launch's trade history, oldest first; grows as new trades come in. */
+  protected readonly trades = signal<Trade[]>([]);
+  /** Which launch `trades` belongs to (contract + id). */
+  private tradesOf = '';
   protected readonly side = signal<Side>('buy');
   protected readonly amount = signal('');
   protected readonly busy = signal<Busy>(null);
@@ -95,13 +107,24 @@ export class FairLaunchPage {
     const l = this.launch();
     return l ? launchPhase(l) : null;
   });
-  protected readonly price = computed(() => {
+  /**
+   * MAS per token: the curve's now, or once on Dusa (the record's curve is emptied then) the
+   * price its last trade left. Null while that trade isn't read yet.
+   */
+  private readonly priceValue = computed(() => {
     const l = this.launch();
-    return l ? formatPrice(spotPrice(l)) : '—';
+    if (!l) return null;
+    if (this.phase() !== 'graduated') return spotPrice(l);
+    const last = this.trades().at(-1);
+    return last ? tradePrice(l.virtualMas, last) : null;
+  });
+  protected readonly price = computed(() => {
+    const p = this.priceValue();
+    return p === null ? '—' : formatPrice(p);
   });
   protected readonly cap = computed(() => {
-    const l = this.launch();
-    return l ? formatPrice(marketCap(l)) : '—';
+    const p = this.priceValue();
+    return p === null ? '—' : formatPrice(p * Number(TOTAL_SUPPLY / 10n ** 9n));
   });
   protected readonly hash = computed(() => hex(this.launch()?.templateHash ?? new Uint8Array()));
   protected readonly poolLink = computed(() => {
@@ -109,12 +132,6 @@ export class FairLaunchPage {
     const dusa = this.network.config().dusa;
     if (!l || !l.pair || !dusa?.appUrl) return null;
     return poolUrl(dusa.appUrl, l.token, dusa.wmas, l.binStep);
-  });
-  protected readonly explorerUrl = computed(() => {
-    const l = this.launch();
-    return l && this.network.network() === 'mainnet'
-      ? `https://explorer.massa.net/mainnet/address/${l.token}`
-      : null;
   });
 
   /** The typed amount: nanoMAS for a buy, token units for a sell (both 9 decimals). */
@@ -160,6 +177,15 @@ export class FairLaunchPage {
       const holder = this.wallet.address();
       untracked(() => (address ? void this.load(id, holder) : this.launch.set(null)));
     });
+    // Live: while the curve trades (or waits for its move to Dusa), read it again every few
+    // seconds; new trades go onto the chart and the list.
+    const timer = setInterval(() => {
+      const phase = this.phase();
+      if (document.visibilityState !== 'visible' || this.busy()) return;
+      if (phase === 'trading' || phase === 'complete')
+        void this.load(this.id(), this.wallet.address());
+    }, POLL_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
 
   protected connect(): void {
@@ -273,9 +299,20 @@ export class FairLaunchPage {
     try {
       const l = await this.fair.launch(launchId);
       if (run !== this.run) return;
-      this.launch.set(l);
+      const key = `${this.fair.address()}:${l.id}`;
+      const known = key === this.tradesOf ? this.trades() : [];
+      const fresh =
+        BigInt(known.length) < l.trades
+          ? await this.fair.trades(l.id, BigInt(known.length), l.trades)
+          : [];
       const balance = holder ? await this.tokens.balanceOf(l.token, holder) : null;
-      if (run === this.run) this.balance.set(balance);
+      if (run !== this.run) return;
+      this.launch.set(l);
+      if (key !== this.tradesOf || fresh.length) {
+        this.tradesOf = key;
+        this.trades.set([...known, ...fresh]);
+      }
+      this.balance.set(balance);
     } catch (err) {
       if (run !== this.run) return;
       const message = toUserMessage(err);

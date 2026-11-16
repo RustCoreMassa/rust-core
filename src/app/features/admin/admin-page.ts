@@ -54,6 +54,7 @@ import {
   templateCoins,
   upgradeCoins,
 } from './admin-forms';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 interface TemplateState {
   kind: ProjectKind;
@@ -97,7 +98,7 @@ const MAX_RESULTS = 20;
  */
 @Component({
   selector: 'app-admin-page',
-  imports: [DatePipe, RouterLink, MasPipe, ShortAddressPipe],
+  imports: [ExplorerLink, DatePipe, RouterLink, MasPipe, ShortAddressPipe],
   templateUrl: './admin-page.html',
   styleUrl: './admin-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

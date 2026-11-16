@@ -46,7 +46,6 @@ import { formatUnits } from '../../core/utils/token-amount';
 import { toUserMessage } from '../../core/utils/user-error';
 import { WalletStore } from '../../core/wallet/wallet-store';
 import { ConnectWalletDialog } from '../../layout/connect-wallet-dialog/connect-wallet-dialog';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { MasPipe } from '../../shared/pipes/units-pipe';
 import { PresaleProgress } from '../../shared/ui/presale-progress/presale-progress';
 import { ProjectBadges } from '../../shared/ui/project-badges/project-badges';
@@ -54,6 +53,7 @@ import { DusaCard } from '../tokens/dusa-card';
 import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
 import { priceNano } from '../create/collection-draft';
 import { parseAddresses } from '../create/presale-draft';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 type Busy =
   | 'contribute'
@@ -72,11 +72,11 @@ type Busy =
 @Component({
   selector: 'app-presale-page',
   imports: [
+    ExplorerLink,
     DusaCard,
     DatePipe,
     RouterLink,
     MasPipe,
-    ShortAddressPipe,
     ProjectLogo,
     ProjectBadges,
     PresaleProgress,

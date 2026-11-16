@@ -2,10 +2,20 @@ import { Injectable, computed, inject } from '@angular/core';
 import { Args, ArrayTypes } from '@massalabs/massa-web3';
 import { MassaReader } from '../massa/massa-reader';
 import { NetworkStore } from '../network/network-store';
-import { FairConfig, Launch, readFairConfig, readLaunch, readLaunchList } from './records';
+import {
+  FairConfig,
+  Launch,
+  Trade,
+  readFairConfig,
+  readLaunch,
+  readLaunchList,
+  readTradeList,
+} from './records';
 
 /** Launches one getLaunches call returns at most (the contract's MAX_PAGE). */
 export const LAUNCH_PAGE = 50;
+/** Trades one getTrades call returns at most (the contract's MAX_TRADES_PAGE). */
+export const TRADES_PAGE = 100;
 
 /** Reads of the Fair Launch contract on the network selected in the app. */
 @Injectable({ providedIn: 'root' })
@@ -37,6 +47,25 @@ export class FairLaunchReader {
       before = page[page.length - 1].id;
       if (before <= 1n) return out;
     }
+  }
+
+  /** The launch's trades from index `from` (0 = the first) up to `until` (its `trades`). */
+  async trades(id: bigint, from: bigint, until: bigint): Promise<Trade[]> {
+    const out: Trade[] = [];
+    while (from + BigInt(out.length) < until) {
+      const page = readTradeList(
+        await this.read(
+          'getTrades',
+          new Args()
+            .addU64(id)
+            .addU64(from + BigInt(out.length))
+            .addU32(BigInt(TRADES_PAGE)),
+        ),
+      );
+      out.push(...page);
+      if (page.length < TRADES_PAGE) break;
+    }
+    return out;
   }
 
   /** Ids of the launches `creator` made. */

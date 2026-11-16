@@ -11,16 +11,33 @@ Launchpad contract version it works with.
 
 ### Added
 
-- **Fair launch** (new contract `fair-launch.ts`, v1.0.0, not deployed yet): anyone launches a
-  memecoin in one transaction, with no capital. The token (1 B supply, 9 decimals) is deployed
-  from the Launchpad's own RC-Token template, with no owner: nobody can mint, pause or change it.
-  800 M tokens sell on a bonding curve (constant product with virtual reserves); when it sells
-  out, the contract moves itself to Dusa: the last 200 M tokens and the raised MAS (minus a
-  graduation fee and the pool's costs) go into a new pool at the curve's final price, and the
-  pool's liquidity stays in the contract for good. The move is booked as a Massa deferred call
-  (autonomous smart contract); anyone may also trigger it and keeps what the pool's costs didn't
-  use. Pages `/launch`, `/launch/new` and `/launch/:id`; a "Fair launch" menu entry; deploy
-  script `npm run deploy:fair-launch` in `smart-contract/`.
+- **Fair launch** (new contract `fair-launch.ts`, v1.0.0, on buildnet for testing): anyone
+  launches a memecoin in one transaction, with no capital. The token (1 B supply, 9 decimals) is
+  deployed from the Launchpad's own RC-Token template, with no owner: nobody can mint, pause or
+  change it. 800 M tokens sell on a bonding curve (constant product with virtual reserves); when
+  it sells out, the contract moves itself to Dusa: the last 200 M tokens and the raised MAS
+  (minus a graduation fee and the pool's costs) go into a new pool at the curve's final price,
+  and the pool's liquidity stays in the contract for good. The move is booked as a Massa deferred
+  call (autonomous smart contract); anyone may also trigger it and keeps what the pool's costs
+  didn't use (the fees get it when the deferred call does the move). The deferred call is skipped
+  when its slot can't take it, instead of failing the buy that sells the curve out. The contract
+  keeps every buy and sell (`getTrades`): the launch page draws a live price chart from it
+  (candles of 1 minute to 1 day, market cap or price, volume; TradingView's open-source
+  Lightweight Charts) and lists the trades (10 to a page, each with its operation), both updated
+  every few seconds, with no indexer. Pages `/launch`, `/launch/new` and `/launch/:id`; a "Fair
+  launch" menu entry; deploy script `npm run deploy:fair-launch`, on-chain check
+  `npx tsx src/e2e-fair-launch.ts` and load test `src/stress-fair-launch.ts` in `smart-contract/`.
+
+### Changed
+
+- Addresses (contracts, owners, creators, holders, buyers, pools) and fair-launch trades open
+  Massa's explorer in a new tab, on every page; no more copy buttons next to them. Buildnet has
+  no explorer: addresses stay plain text there.
+
+### Fixed
+
+- Explorer links went to a page that no longer exists (`/mainnet/address/…`, a 404 on the
+  current explorer): they now use `/address/<address>` and `/op/<operation>`.
 
 ## [1.9.1] — 2026-11-08
 

@@ -1,3 +1,5 @@
 node_modules
 build
 .env
+# Keys of the throwaway wallets of stress-fair-launch (buildnet only)
+.stress

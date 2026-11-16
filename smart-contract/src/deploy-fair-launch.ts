@@ -29,8 +29,10 @@ const config: FairConfig = {
   creationFee: mas('FAIR_CREATION_FEE_MAS', '1'),
   tradeFeeBps: Number(process.env['FAIR_TRADE_FEE_BPS'] ?? '100'),
   graduationFeeBps: Number(process.env['FAIR_GRADUATION_FEE_BPS'] ?? '200'),
-  // Small on buildnet so a whole curve can be tried with test MAS; the contract's minimum is 100.
-  targetMas: mas('FAIR_TARGET_MAS', network === 'mainnet' ? '50000' : '100'),
+  // Small on buildnet so a whole curve can be tried with test MAS (the contract's minimum is
+  // 100), but at least 200: a 980 M-gas deferred call costs ~9.85 MAS and is booked only up to 5 %
+  // of the MAS raised, so below ~197 MAS the curve never graduates by itself.
+  targetMas: mas('FAIR_TARGET_MAS', network === 'mainnet' ? '50000' : '200'),
   deployDeposit: mas('FAIR_DEPLOY_DEPOSIT_MAS', '0.1'),
   launchpad,
   dusaRouter: dusa.router,
@@ -38,7 +40,9 @@ const config: FairConfig = {
   wmas: dusa.wmas,
   binSteps: [...dusa.binSteps].reverse(), // widest bins first: the steadiest new pools
   // 0 turns the self-graduation (deferred call) off; anyone can still graduate by hand.
-  autoGraduateGas: BigInt(process.env['FAIR_AUTO_GRADUATE_GAS'] ?? '900000000'),
+  // graduate used 872.6 M gas on buildnet (2026-11-16); a deferred call takes just under 1 B.
+  // 980 M costs ~9.85 MAS to book.
+  autoGraduateGas: BigInt(process.env['FAIR_AUTO_GRADUATE_GAS'] ?? '980000000'),
   paused: false,
 };
 

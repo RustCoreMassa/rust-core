@@ -27,6 +27,7 @@
     "@massalabs/massa-web3": "^5.4.0",
     "@massalabs/wallet-provider": "^3.3.1",
     "crypto": "file:shims/crypto",
+    "lightweight-charts": "^5.2.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

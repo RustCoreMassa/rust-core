@@ -6,6 +6,7 @@ import {
   changeCallStack,
   mockAdminContext,
   mockBalance,
+  mockOriginOperationId,
   mockScCall,
   mockTransferredCoins,
   resetStorage,
@@ -23,6 +24,7 @@ import {
   getLaunch,
   getLaunches,
   getLaunchesBy,
+  getTrades,
   graduate,
   launchOfToken,
   quoteBuyOf,
@@ -49,6 +51,7 @@ import {
   STATE_COMPLETE,
   STATE_GRADUATED,
   STATE_TRADING,
+  Trade,
 } from '../lib/fairlaunch/records';
 
 const FAIR = 'AS12BqZEQ6sByhRLyEuf0YbQmcF2PsDdkNNG1akBJu9XcjZA1eT';
@@ -161,6 +164,12 @@ function sellAs(user: string, id: u64, tokens: u64, minMas: u64 = 0): void {
   mockScCall([]); // transferFrom
   sell(new Args().add(id).add(tokens).add(minMas).serialize());
   done();
+}
+
+function history(id: u64, from: u64 = 0, limit: u32 = 100): Trade[] {
+  return new Args(getTrades(new Args().add(id).add(from).add(limit).serialize()))
+    .nextSerializableObjectArray<Trade>()
+    .unwrap();
 }
 
 function accrued(): u64 {
@@ -432,6 +441,75 @@ describe('Trading on the curve', () => {
   });
 });
 
+describe('Trade history', () => {
+  test('keeps every trade, oldest first, with the curve after it', () => {
+    deploy();
+    mockOriginOperationId('O1aliceLaunches');
+    aliceLaunches('CRAB', 5 * MAS);
+    mockOriginOperationId('O1bobBuys');
+    buyAs(BOB, 1, 10 * MAS);
+    mockOriginOperationId('O1bobSells');
+    sellAs(BOB, 1, 1_000_000 * MAS); // 1 M tokens
+    const l = launch(1);
+    expect(l.trades).toBe(3);
+    const trades = history(1);
+    expect(trades.length).toBe(3);
+    expect(trades[0].trader).toBe(ALICE);
+    expect(trades[0].isBuy).toBe(true);
+    expect(trades[0].mas).toBe(5 * MAS);
+    expect(trades[0].sold).toBe(trades[0].tokens);
+    expect(trades[1].trader).toBe(BOB);
+    expect(trades[1].isBuy).toBe(true);
+    expect(trades[1].mas).toBe(10 * MAS);
+    expect(trades[1].masIn).toBe(15 * MAS);
+    expect(trades[1].sold).toBe(trades[0].tokens + trades[1].tokens);
+    expect(trades[2].isBuy).toBe(false);
+    expect(trades[2].tokens).toBe(1_000_000 * MAS);
+    expect(trades[2].sold).toBe(l.sold);
+    expect(trades[2].masIn).toBe(l.masIn);
+    expect(trades[2].mas).toBe(15 * MAS - l.masIn);
+    // Each trade keeps the operation that made it.
+    expect(trades[0].opId).toBe('O1aliceLaunches');
+    expect(trades[1].opId).toBe('O1bobBuys');
+    expect(trades[2].opId).toBe('O1bobSells');
+  });
+
+  test('pages the history', () => {
+    deploy();
+    aliceLaunches('CRAB', 5 * MAS);
+    buyAs(BOB, 1, 10 * MAS);
+    buyAs(ALICE, 1, MAS);
+    const page = history(1, 1, 1);
+    expect(page.length).toBe(1);
+    expect(page[0].trader).toBe(BOB);
+    expect(history(1, 2).length).toBe(1);
+    expect(history(1, 3).length).toBe(0);
+    expect(history(1, 0, 0).length).toBe(0);
+  });
+
+  test('a launch with no dev buy starts with an empty history', () => {
+    deploy();
+    aliceLaunches();
+    expect(launch(1).trades).toBe(0);
+    expect(history(1).length).toBe(0);
+  });
+
+  test('the sell-out buy is the last trade', () => {
+    deploy();
+    aliceLaunches();
+    sellOut(1);
+    const trades = history(1);
+    expect(trades.length).toBe(1);
+    expect(trades[0].sold).toBe(CURVE_TOKENS);
+    expect(trades[0].masIn).toBe(launch(1).masIn);
+  });
+
+  throws('for a launch that does not exist', () => {
+    deploy();
+    history(7);
+  });
+});
+
 describe('Selling out', () => {
   test('the last buy completes the curve and books the graduation', () => {
     deploy();
@@ -488,6 +566,26 @@ describe('Graduation to Dusa', () => {
     expect(l.pair).toBe(PAIR);
     expect(l.binStep).toBe(20);
     expect(l.masIn).toBe(0);
+    expect(accrued()).toBe(feesBefore + feeOf(raised, GRADUATION_FEE_BPS));
+  });
+
+  test('its own deferred call graduates it with no coins sent', () => {
+    deploy();
+    aliceLaunches();
+    sellOut(1);
+    const feesBefore = accrued();
+    const raised = launch(1).masIn;
+    pay(FAIR, 0); // the deferred call: the contract is its own caller
+    mockScCall(pairList([], [])); // getAllLBPairs: no pool yet (bin step 20)
+    mockScCall([]); // increaseAllowance
+    mockScCall([]); // createLBPair
+    mockScCall(pairList([20], [PAIR])); // getAllLBPairs: the new pool
+    mockScCall([]); // addLiquidityMAS
+    graduate(new Args().add(u64(1)).serialize());
+    done();
+    expect(launch(1).state).toBe(STATE_GRADUATED);
+    // The vm-mock's Dusa refunds nothing, so the reserve is used up: no leftover for the fees.
+    // The leftover going to the fees is checked on buildnet (e2e-fair-launch).
     expect(accrued()).toBe(feesBefore + feeOf(raised, GRADUATION_FEE_BPS));
   });
 
@@ -614,8 +712,13 @@ describe('Admin', () => {
 describe('Encoding for the app', () => {
   test('logs a launch record and the config', () => {
     deploy();
+    mockOriginOperationId('O12xChkLaunchTx1');
     aliceLaunches('XCHK', 5 * MAS);
     log<string>('FAIR_LAUNCH_BYTES ' + getLaunch(new Args().add(u64(1)).serialize()).toString());
     log<string>('FAIR_CONFIG_BYTES ' + config([]).toString());
+    log<string>(
+      'FAIR_TRADES_BYTES ' +
+        getTrades(new Args().add(u64(1)).add(u64(0)).add(u32(10)).serialize()).toString(),
+    );
   });
 });

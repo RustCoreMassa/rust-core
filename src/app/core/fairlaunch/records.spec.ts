@@ -5,26 +5,28 @@ import {
   readFairConfig,
   readLaunch,
   readLaunchList,
+  readTradeList,
   writeFairConfig,
 } from './records';
 import { CURVE_TOKENS, quoteBuy } from './curve';
 
 // Written by the contract's own code (smart-contract/assembly/__tests__/fair-launch.spec.ts,
-// "Encoding for the app"): a launch with a 5 MAS dev buy, and the test config. If the app and
-// the contract ever disagree on the encoding, these tests fail.
+// "Encoding for the app"): a launch with a 5 MAS dev buy, the test config and the launch's trade
+// history (the dev buy). If the app and the contract ever disagree on the encoding, these tests
+// fail.
 const CONTRACT_LAUNCH = new Uint8Array([
-  1, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 65, 83, 50, 105, 122, 120, 50, 78, 106, 51, 57, 117, 109,
-  107, 116, 80, 83, 112, 109, 86, 83, 86, 65, 54, 100, 120, 76, 54, 106, 72, 69, 77, 99, 88, 110,
-  97, 90, 89, 70, 106, 69, 82, 107, 56, 111, 112, 72, 49, 115, 84, 54, 51, 118, 51, 0, 0, 0, 65, 85,
+  1, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 65, 83, 56, 84, 106, 54, 86, 99, 107, 101, 82, 57, 78, 78,
+  113, 100, 57, 106, 115, 84, 101, 100, 89, 55, 110, 113, 90, 74, 78, 67, 97, 66, 97, 90, 104, 90,
+  104, 97, 86, 51, 84, 52, 101, 113, 101, 87, 107, 98, 97, 115, 88, 101, 98, 51, 0, 0, 0, 65, 85,
   49, 50, 66, 113, 90, 69, 81, 54, 115, 66, 121, 104, 82, 76, 121, 69, 117, 102, 48, 89, 98, 81,
   109, 99, 70, 50, 80, 115, 68, 100, 107, 78, 78, 71, 49, 97, 107, 66, 74, 117, 57, 88, 99, 106, 90,
-  65, 49, 101, 56, 143, 220, 127, 207, 161, 1, 0, 0, 9, 0, 0, 0, 70, 97, 105, 114, 32, 67, 114, 97,
+  65, 49, 101, 56, 19, 105, 243, 227, 161, 1, 0, 0, 9, 0, 0, 0, 70, 97, 105, 114, 32, 67, 114, 97,
   98, 4, 0, 0, 0, 88, 67, 72, 75, 1, 0, 0, 0, 3, 0, 0, 0, 9, 9, 9, 85, 5, 55, 156, 77, 0, 0, 0, 0,
   16, 165, 212, 232, 0, 0, 0, 100, 0, 200, 0, 159, 55, 76, 191, 220, 0, 56, 0, 0, 242, 5, 42, 1, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0,
   84, 111, 32, 116, 104, 101, 32, 109, 111, 111, 110, 44, 32, 102, 97, 105, 114, 108, 121, 15, 0, 0,
   0, 105, 112, 102, 115, 58, 47, 47, 98, 97, 102, 121, 76, 111, 103, 111, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
 ]);
 
 const CONTRACT_CONFIG = new Uint8Array([
@@ -40,6 +42,15 @@ const CONTRACT_CONFIG = new Uint8Array([
   53, 82, 115, 53, 89, 78, 50, 122, 100, 112, 69, 110, 113, 119, 106, 52, 105, 72, 85, 85, 80, 116,
   57, 82, 52, 69, 113, 106, 113, 50, 113, 116, 112, 74, 70, 78, 75, 87, 51, 109, 110, 51, 51, 82,
   117, 76, 85, 8, 0, 0, 0, 20, 0, 0, 0, 50, 0, 0, 0, 0, 202, 154, 59, 0, 0, 0, 0, 0,
+]);
+
+const CONTRACT_TRADES = new Uint8Array([
+  116, 0, 0, 0, 19, 105, 243, 227, 161, 1, 0, 0, 51, 0, 0, 0, 65, 85, 49, 50, 66, 113, 90, 69, 81,
+  54, 115, 66, 121, 104, 82, 76, 121, 69, 117, 102, 48, 89, 98, 81, 109, 99, 70, 50, 80, 115, 68,
+  100, 107, 78, 78, 71, 49, 97, 107, 66, 74, 117, 57, 88, 99, 106, 90, 65, 49, 101, 56, 1, 0, 242,
+  5, 42, 1, 0, 0, 0, 159, 55, 76, 191, 220, 0, 56, 0, 159, 55, 76, 191, 220, 0, 56, 0, 0, 242, 5,
+  42, 1, 0, 0, 0, 16, 0, 0, 0, 79, 49, 50, 120, 67, 104, 107, 76, 97, 117, 110, 99, 104, 84, 120,
+  49,
 ]);
 
 const MAS = 1_000_000_000n;
@@ -68,6 +79,21 @@ describe('Fair Launch records', () => {
     expect(launch.hidden).toBe(false);
     expect(launch.info.description).toBe('To the moon, fairly');
     expect(launch.info.logoUrl).toBe('ipfs://bafyLogo');
+    expect(launch.trades).toBe(1n);
+  });
+
+  it('reads the trade history written by the contract', () => {
+    const launch = readLaunch(new Args(CONTRACT_LAUNCH));
+    const trades = readTradeList(CONTRACT_TRADES);
+    expect(trades.length).toBe(1);
+    expect(trades[0].trader).toBe(launch.creator);
+    expect(trades[0].isBuy).toBe(true);
+    expect(trades[0].mas).toBe(5n * MAS);
+    expect(trades[0].tokens).toBe(launch.sold);
+    expect(trades[0].sold).toBe(launch.sold);
+    expect(trades[0].masIn).toBe(launch.masIn);
+    expect(trades[0].time).toBe(launch.createdAt);
+    expect(trades[0].opId).toBe('O12xChkLaunchTx1');
   });
 
   it('reads the config written by the contract, and writes the same bytes', () => {

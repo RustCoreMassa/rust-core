@@ -15,9 +15,9 @@ import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
 import { PRESALE_SUCCESS, Project } from '../../core/launchpad/records';
 import { NetworkStore } from '../../core/network/network-store';
 import { WalletStore } from '../../core/wallet/wallet-store';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { MasPipe, UnitsPipe } from '../../shared/pipes/units-pipe';
 import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 /**
  * The token's MAS pools on Dusa: price, what's in them, a link to trade there; its owner can
@@ -25,7 +25,7 @@ import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
  */
 @Component({
   selector: 'app-dusa-card',
-  imports: [MasPipe, UnitsPipe, ShortAddressPipe, DusaLiquidityDialog],
+  imports: [ExplorerLink, MasPipe, UnitsPipe, DusaLiquidityDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (enabled()) {
@@ -71,6 +71,7 @@ import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
                     Empty: its price was set by whoever created it, nobody trades at it yet.
                   </div>
                 }
+                <div class="muted small">Pool <app-explorer-link [value]="pool.pair" /></div>
                 @if (pool.url) {
                   <a
                     class="btn btn-red btn-sm"
@@ -86,9 +87,7 @@ import { DusaLiquidityDialog } from './dusa-liquidity-dialog';
           <p class="hint">
             Dusa is an independent exchange: prices there come from trades, not from the Launchpad.
             If Dusa doesn't list {{ project().symbol }} yet, import it there by its address:
-            <button class="link mono" type="button" (click)="copy()" title="Copy the address">
-              {{ copied() ? 'Copied ✓' : (project().address | shortAddress) }}</button
-            >.
+            <app-explorer-link [value]="project().address" />.
           </p>
         }
       </section>
@@ -137,7 +136,6 @@ export class DusaCard {
   protected readonly enabled = computed(() => this.dusa.config() !== null);
   /** undefined = loading, null = couldn't be read. */
   protected readonly pools = signal<DusaPool[] | null | undefined>(undefined);
-  protected readonly copied = signal(false);
   private run = 0;
 
   constructor() {
@@ -169,12 +167,6 @@ export class DusaCard {
     if (!pool.fees) return '';
     const low = feePercent(baseFeeBps(pool.fees, pool.binStep));
     return `${low}–${feePercent(maxFeeBps(pool.fees, pool.binStep))}`;
-  }
-
-  protected async copy(): Promise<void> {
-    await navigator.clipboard?.writeText(this.project().address).catch(() => undefined);
-    this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 1500);
   }
 
   protected async openDialog(): Promise<void> {
