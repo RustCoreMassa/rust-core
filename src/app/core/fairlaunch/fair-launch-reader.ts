@@ -68,6 +68,24 @@ export class FairLaunchReader {
     return out;
   }
 
+  async version(): Promise<string> {
+    return new TextDecoder().decode(await this.read('version'));
+  }
+
+  async admin(): Promise<string> {
+    return new TextDecoder().decode(await this.read('admin'));
+  }
+
+  /** The address offered the admin role, '' when none. */
+  async pendingAdmin(): Promise<string> {
+    return new TextDecoder().decode(await this.read('pendingAdmin'));
+  }
+
+  /** Fees collected and not withdrawn, nanoMAS. */
+  async fees(): Promise<bigint> {
+    return new Args(await this.read('fees')).nextU64();
+  }
+
   /** Ids of the launches `creator` made. */
   async idsBy(creator: string): Promise<bigint[]> {
     const bytes = await this.read('getLaunchesBy', new Args().addString(creator));

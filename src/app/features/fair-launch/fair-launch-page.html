@@ -24,7 +24,10 @@
             </div>
           </div>
           @if (l.hidden) {
-            <div class="notice">The RustCore team hid this launch from the lists.</div>
+            <div class="notice">
+              The RustCore team hid this launch: it's out of the lists and takes no more buys.
+              Holders can still sell back to the curve.
+            </div>
           }
           @if (l.info.description) {
             <p class="description">{{ l.info.description }}</p>
@@ -159,6 +162,9 @@
                 @if (balance() !== null) {
                   <p class="muted">You hold {{ whole(balance()!) }} {{ l.symbol }}.</p>
                 }
+                @if (side() === 'buy' && l.hidden) {
+                  <p class="notice">Buying is closed on this launch. You can still sell.</p>
+                }
                 <label class="field">
                   <span>{{ side() === 'buy' ? 'Spend (MAS)' : 'Sell (' + l.symbol + ')' }}</span>
                   <div class="with-max">
@@ -184,7 +190,11 @@
                   class="btn btn-red btn-block"
                   type="button"
                   [disabled]="
-                    !!busy() || !amountUnits() || !!amountError() || wallet.networkMismatch()
+                    !!busy() ||
+                    !amountUnits() ||
+                    !!amountError() ||
+                    wallet.networkMismatch() ||
+                    (side() === 'buy' && l.hidden)
                   "
                   (click)="trade()"
                 >

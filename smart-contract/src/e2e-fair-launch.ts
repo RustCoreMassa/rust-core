@@ -284,6 +284,27 @@ check('balance = fees + curves (+ constant)', (await rest()) === rest0);
 const notReady = await refusal(FAIR, 'graduate', idArgs(id), GRADUATE_COINS);
 check('graduate before the sell-out is refused', /not ready/.test(notReady), notReady);
 
+// ---- hidden by the admin: no buys, sells stay open ---------------------------------------------
+await send(FAIR, 'setHidden', idArgs(id).addBool(true), MAS / 20n);
+l = await getLaunch(id);
+const hiddenBuy = await refusal(
+  FAIR,
+  'buy',
+  idArgs(id).addU64(MAS).addU64(0n),
+  buyCoins(MAS, l.tradeFeeBps),
+);
+check('a hidden launch refuses buys', l.hidden && /hidden/.test(hiddenBuy), hiddenBuy);
+check(
+  'and quotes none',
+  new Args(await read(FAIR, 'quoteBuyOf', idArgs(id).addU64(MAS))).nextU64() === 0n,
+);
+await send(FAIR, 'setHidden', idArgs(id).addBool(false), MAS / 20n);
+l = await getLaunch(id);
+check(
+  'unhidden, it quotes buys again',
+  !l.hidden && new Args(await read(FAIR, 'quoteBuyOf', idArgs(id).addU64(MAS))).nextU64() > 0n,
+);
+
 // ---- the minimum time on the curve -----------------------------------------------------------
 check(
   'the launch keeps the config’s minimum time',

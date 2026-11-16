@@ -28,6 +28,7 @@ import {
   getTrades,
   graduate,
   launchOfToken,
+  pendingAdmin,
   quoteBuyOf,
   quoteSellOf,
   sell,
@@ -780,6 +781,46 @@ describe('Admin', () => {
     callAs(ADMIN);
     setHidden(new Args().add(u64(1)).add(true).serialize());
     expect(launch(1).hidden).toBe(true);
+  });
+
+  test('a hidden launch takes no quote for a buy, but sells go on', () => {
+    deploy();
+    aliceLaunches('CRAB', 10 * MAS);
+    buyAs(BOB, 1, 5 * MAS);
+    callAs(ADMIN);
+    setHidden(new Args().add(u64(1)).add(true).serialize());
+    const quote = new Args(quoteBuyOf(new Args().add(u64(1)).add(MAS).serialize()));
+    expect(quote.nextU64().unwrap()).toBe(0);
+    const soldBefore = launch(1).sold;
+    sellAs(BOB, 1, 1_000_000 * MAS);
+    expect(launch(1).sold).toBe(soldBefore - 1_000_000 * MAS);
+  });
+
+  test('unhidden, it takes buys again', () => {
+    deploy();
+    aliceLaunches();
+    callAs(ADMIN);
+    setHidden(new Args().add(u64(1)).add(true).serialize());
+    callAs(ADMIN);
+    setHidden(new Args().add(u64(1)).add(false).serialize());
+    buyAs(BOB, 1, MAS);
+    expect(launch(1).sold > 0).toBe(true);
+  });
+
+  throws('a buy on a hidden launch', () => {
+    deploy();
+    aliceLaunches();
+    callAs(ADMIN);
+    setHidden(new Args().add(u64(1)).add(true).serialize());
+    buyAs(BOB, 1, MAS);
+  });
+
+  test('shows the pending admin', () => {
+    deploy();
+    expect(pendingAdmin([]).length).toBe(0);
+    callAs(ADMIN);
+    transferAdmin(new Args().add(BOB).serialize());
+    expect(pendingAdmin([])).toStrictEqual(stringToBytes(BOB));
   });
 
   test('hands over the admin role in two steps', () => {

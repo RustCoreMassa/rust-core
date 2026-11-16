@@ -238,14 +238,14 @@ floats. It picks the highest bin whose price is at most the curve's price.
 | `launchOfToken` | token | id, 0 if not a fair launch |
 | `quoteBuyOf` | id, mas | tokens, mas taken, fee |
 | `quoteSellOf` | id, tokens | mas after fee, fee |
-| `config`, `fees`, `count`, `admin`, `version` | — | — |
+| `config`, `fees`, `count`, `admin`, `pendingAdmin`, `version` | — | — |
 
 ### Admin
 
 | Function | What it can do | What it can't |
 |---|---|---|
 | `setConfig` | Fees (within the caps), target, bin steps, auto-graduation gas, minimum time on the curve (≤ 30 days), pause | Change a launch already created (fees and target are fixed in it) |
-| `setHidden` | Hide a launch from the app's lists | Stop its trading |
+| `setHidden` | Hide a launch (a scam, an offensive name): out of the app's lists, no more buys; unhide it again | Stop its sells, or delete it: its curve holds its buyers' MAS |
 | `withdrawFees` | Take the fees collected | Touch the MAS in any curve |
 | `transferAdmin` + `acceptAdmin` | Hand over the role in two steps | — |
 
@@ -292,10 +292,14 @@ dusaRouter, dusaFactory, wmas, binSteps (u32[]), autoGraduateGas, paused, minCur
 
 ## Trying it on buildnet
 
-Deployed on buildnet at `AS19r9ifibP3T6cY8xVcm55wQ8ecTjWfSR6VJMqAD2vrBNFoMump`
+Deployed on buildnet at `AS1rkVpe7CKC9Ew6meJddQFDrfTGDzJFBGsmbJdhpV4W5QVGvYqF`
 (`deployments/fair-launch-buildnet.json`, target 200 MAS, 10 minutes on the curve at least). The
-earlier ones (without the trade history; without the operation ids; without the minimum time; without the holder discount) are
-in `deployments/history/`.
+earlier ones (without the trade history, the operation ids, the minimum time or the holder
+discount; with buys still open on hidden launches) are in `deployments/history/`.
+
+The admin tools are on `/admin`, under the Launchpad's, for the Fair Launch admin wallet: status
+and pause, the settings (setConfig), the fees collected (withdrawFees), Hide / Unhide on each
+launch, and the two-step hand-over of the role.
 
 1. `cd smart-contract && cp .env.example .env`, then set `PRIVATE_KEY` (a buildnet test account).
    The `FAIR_*` values there are the buildnet defaults (target 200 MAS).

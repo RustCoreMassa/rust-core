@@ -27,6 +27,8 @@ Launchpad contract version it works with.
   every few seconds, with no indexer, and the token's top holders. A curve can't sell out (move to
   Dusa) before a minimum time set by the admin: until then it keeps its last token unit. Holders
   of the Launchpad's discount collection (Core Keepers) pay the launch fee less their discount.
+  The admin can hide a launch (out of the lists, no more buys; sells stay open) and manage the
+  Fair Launch from /admin (pause, settings, fees, Hide / Unhide, hand-over of the role).
   Pages `/launch`, `/launch/new` and `/launch/:id`; a "Fair launch" menu entry; deploy script
   `npm run deploy:fair-launch`, on-chain check `npx tsx src/e2e-fair-launch.ts` and load test
   `src/stress-fair-launch.ts` in `smart-contract/`.

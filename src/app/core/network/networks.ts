@@ -111,7 +111,7 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
     // smart-contract/deployments/fair-launch-buildnet.json (v1.0.0: trade history with each
     // trade's operation, minimum time on the curve 10 min, target 200 MAS). Earlier ones in
     // deployments/history/.
-    fairLaunchAddress: 'AS19r9ifibP3T6cY8xVcm55wQ8ecTjWfSR6VJMqAD2vrBNFoMump',
+    fairLaunchAddress: 'AS1rkVpe7CKC9Ew6meJddQFDrfTGDzJFBGsmbJdhpV4W5QVGvYqF',
     // Massa's explorer has no buildnet: links go to the mainnet one anyway (user request,
     // 2026-11-16), to check every link in the development build. Buildnet addresses and
     // operations aren't found there.

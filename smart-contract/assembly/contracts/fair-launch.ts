@@ -329,6 +329,8 @@ function _buy(
   minTokens: u64,
 ): BuyResult {
   assert(launch.state == STATE_TRADING, 'The curve has sold out: trade on Dusa');
+  // Hidden by the admin (a scam, an offensive name…): no new buys; sells stay open.
+  assert(!launch.hidden, 'This launch was hidden by the RustCore team: only sells are open');
   assert(mas > 0, 'Buy for more than zero MAS');
   // Before its minimum time the curve keeps its last unit: it can't sell out (move to Dusa) yet.
   const limit = buyLimit(launch.sold, Context.timestamp(), launch.sellOutFrom);
@@ -600,7 +602,10 @@ export function setConfig(binaryArgs: StaticArray<u8>): void {
   settle(before, 0);
 }
 
-/** Args: id (u64), hidden (bool). Hidden launches keep trading; the app leaves them out. */
+/**
+ * Args: id (u64), hidden (bool). A hidden launch takes no more buys and the app leaves it out of
+ * its lists; sells (and a graduation already due) keep working, so nobody's MAS is stuck.
+ */
 export function setHidden(binaryArgs: StaticArray<u8>): void {
   const before = balance();
   _onlyAdmin();
@@ -658,6 +663,11 @@ export function version(_: StaticArray<u8>): StaticArray<u8> {
 
 export function admin(_: StaticArray<u8>): StaticArray<u8> {
   return Storage.get(ADMIN_KEY);
+}
+
+/** The address offered the admin role (transferAdmin), empty when none. */
+export function pendingAdmin(_: StaticArray<u8>): StaticArray<u8> {
+  return Storage.has(PENDING_ADMIN_KEY) ? Storage.get(PENDING_ADMIN_KEY) : [];
 }
 
 export function config(_: StaticArray<u8>): StaticArray<u8> {
@@ -744,7 +754,7 @@ export function quoteBuyOf(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(binaryArgs);
   const launch = _load(args.nextU64().expect('id is missing or invalid'));
   const mas = args.nextU64().expect('mas is missing or invalid');
-  if (launch.state != STATE_TRADING)
+  if (launch.state != STATE_TRADING || launch.hidden)
     return new Args().add(u64(0)).add(u64(0)).add(u64(0)).serialize();
   const limit = buyLimit(launch.sold, Context.timestamp(), launch.sellOutFrom);
   const quote = quoteBuy(launch.virtualMas, launch.masIn, launch.sold, mas, limit);
