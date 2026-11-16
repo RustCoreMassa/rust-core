@@ -31,8 +31,8 @@ Launchpad contract version it works with.
 ### Changed
 
 - Addresses (contracts, owners, creators, holders, buyers, pools) and fair-launch trades open
-  Massa's explorer in a new tab, on every page; no more copy buttons next to them. Buildnet has
-  no explorer: addresses stay plain text there.
+  Massa's explorer in a new tab, on every page; no more copy buttons next to them. Massa's
+  explorer has no buildnet: the development build links buildnet to the mainnet one too.
 
 ### Fixed
 

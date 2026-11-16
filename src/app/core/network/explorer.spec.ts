@@ -12,7 +12,6 @@ describe('explorer links', () => {
   });
 
   it('has none where the network has no explorer, or for nothing', () => {
-    expect(NETWORKS.buildnet.explorerUrl).toBeNull();
     expect(explorerAddressUrl(null, 'AS1abc')).toBeNull();
     expect(explorerOperationUrl(explorer, '')).toBeNull();
   });

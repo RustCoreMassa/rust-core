@@ -51,7 +51,7 @@ export interface NetworkConfig {
   readonly fairLaunchAddress: string | null;
   /**
    * The block explorer (address and operation pages: /address/<a>, /op/<id>); null where there is
-   * none. Massa's explorer serves mainnet only (2026-11-16).
+   * none. Massa's explorer serves mainnet only (2026-11-16); buildnet links to it too.
    */
   readonly explorerUrl: string | null;
 }
@@ -111,7 +111,10 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
     // smart-contract/deployments/fair-launch-buildnet.json (v1.0.0: trade history with each
     // trade's operation, target 200 MAS). Earlier ones in deployments/history/.
     fairLaunchAddress: 'AS1m8ZRSWJSUkjQRaKxULTZtXsFXjf6G9v2gLAxdqmP2EaRam93P',
-    explorerUrl: null,
+    // Massa's explorer has no buildnet: links go to the mainnet one anyway (user request,
+    // 2026-11-16), to check every link in the development build. Buildnet addresses and
+    // operations aren't found there.
+    explorerUrl: 'https://explorer.massa.net',
   },
 };
 
