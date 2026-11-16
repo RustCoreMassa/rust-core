@@ -91,7 +91,7 @@ Rounding always favours the curve, so it can never owe more MAS than it holds.
 | `targetMas` | Start price | Start market cap | End price | End market cap |
 |---|---|---|---|---|
 | 200 MAS (buildnet default) | 0.0000000625 | 62.5 MAS | 0.000001 | 1 000 MAS |
-| 50 000 MAS (mainnet default) | 0.000015625 | 15 625 MAS | 0.00025 | 250 000 MAS |
+| 100 000 MAS (mainnet default, user decision 2026-11-16; can change) | 0.00003125 | 31 250 MAS | 0.0005 | 500 000 MAS |
 
 (Market cap = price × 1 B tokens.)
 
@@ -101,7 +101,7 @@ All set by the admin in the config; a launch keeps the values in force when it w
 
 | Fee | When | Paid by | Cap in the contract | Default |
 |---|---|---|---|---|
-| Creation fee | `createLaunch` | Creator | — | 1 MAS |
+| Creation fee | `createLaunch` | Creator, less the Launchpad's holder discount (`getHolderDiscount`: 30 % for Core Keepers holders on mainnet) | — | 50 MAS on mainnet, 1 on buildnet |
 | Trade fee | Every buy (on top of the MAS spent) and sell (out of the MAS received) | Trader | 2 % | 1 % |
 | Graduation fee | At graduation, out of the MAS raised | The pool | 5 % | 2 % |
 
@@ -129,6 +129,22 @@ adds the new trades to the chart and to the trade list (10 to a page; each trade
 opens in the explorer where the network has one). The chart is TradingView's open-source
 [Lightweight Charts](https://github.com/tradingview/lightweight-charts) (Apache-2.0), loaded only
 on the token page.
+
+**Top holders.** The page also lists the token's holders, largest first, 10 to a page, with their
+share of the supply: read straight from the token's standard balance entries (`BALANCE` +
+address), again with no indexer, and read again with new trades (at most every 15 s). The curve
+(the Fair Launch contract), the Dusa pool and the creator are named.
+
+## Minimum time on the curve
+
+`FairConfig.minCurveMs` (fixed in each launch as `Launch.sellOutFrom = createdAt + minCurveMs`,
+at most 30 days) is the least time a curve trades before it may sell out. Until then a buy can't
+take the curve's last token unit: the biggest buy gets all but that unit, and with only that unit
+left a buy is refused ("The curve can sell out only after its minimum time"). Buys and sells go on
+normally; from `sellOutFrom` on, the next buy sells the curve out and graduation follows. So
+nobody, the creator's dev buy included, can buy a curve out and move it to Dusa the moment it
+opens. Defaults: 24 hours on mainnet (user decision, 2026-11-16; can change), 10 minutes on
+buildnet (`FAIR_MIN_CURVE_MINUTES`).
 
 ## Graduation
 
@@ -228,7 +244,7 @@ floats. It picks the highest bin whose price is at most the curve's price.
 
 | Function | What it can do | What it can't |
 |---|---|---|
-| `setConfig` | Fees (within the caps), target, bin steps, auto-graduation gas, pause | Change a launch already created (fees and target are fixed in it) |
+| `setConfig` | Fees (within the caps), target, bin steps, auto-graduation gas, minimum time on the curve (≤ 30 days), pause | Change a launch already created (fees and target are fixed in it) |
 | `setHidden` | Hide a launch from the app's lists | Stop its trading |
 | `withdrawFees` | Take the fees collected | Touch the MAS in any curve |
 | `transferAdmin` + `acceptAdmin` | Hand over the role in two steps | — |
@@ -243,12 +259,12 @@ match; `src/app/core/fairlaunch/records.spec.ts` decodes bytes the contract wrot
 
 **Launch:** id, token, creator, createdAt, name, symbol, templateVersion, templateHash, virtualMas,
 targetMas, tradeFeeBps, graduationFeeBps, sold, masIn, state, autoFee, pair, binStep, graduatedAt,
-hidden, info, trades.
+hidden, info, trades, sellOutFrom.
 
 **Trade:** time, trader, isBuy, mas, tokens, sold, masIn (the curve after it), opId.
 
 **FairConfig:** creationFee, tradeFeeBps, graduationFeeBps, targetMas, deployDeposit, launchpad,
-dusaRouter, dusaFactory, wmas, binSteps (u32[]), autoGraduateGas, paused.
+dusaRouter, dusaFactory, wmas, binSteps (u32[]), autoGraduateGas, paused, minCurveMs.
 
 ## Events
 
@@ -276,9 +292,10 @@ dusaRouter, dusaFactory, wmas, binSteps (u32[]), autoGraduateGas, paused.
 
 ## Trying it on buildnet
 
-Deployed on buildnet at `AS1m8ZRSWJSUkjQRaKxULTZtXsFXjf6G9v2gLAxdqmP2EaRam93P`
-(`deployments/fair-launch-buildnet.json`, target 200 MAS). The earlier ones (without the trade
-history; without the operation ids) are in `deployments/history/`.
+Deployed on buildnet at `AS19r9ifibP3T6cY8xVcm55wQ8ecTjWfSR6VJMqAD2vrBNFoMump`
+(`deployments/fair-launch-buildnet.json`, target 200 MAS, 10 minutes on the curve at least). The
+earlier ones (without the trade history; without the operation ids; without the minimum time; without the holder discount) are
+in `deployments/history/`.
 
 1. `cd smart-contract && cp .env.example .env`, then set `PRIVATE_KEY` (a buildnet test account).
    The `FAIR_*` values there are the buildnet defaults (target 200 MAS).

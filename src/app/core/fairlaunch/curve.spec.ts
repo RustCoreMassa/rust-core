@@ -2,6 +2,8 @@ import {
   CURVE_TOKENS,
   TRADE_MARGIN,
   buyCoins,
+  buyLimit,
+  durationText,
   feeOf,
   launchPhase,
   marketCap,
@@ -58,5 +60,23 @@ describe('Fair Launch curve (mirror of the contract)', () => {
     expect(feeOf(1_000n * MAS, 100)).toBe(10n * MAS);
     expect(withSlippage(10_000n, 200)).toBe(9_800n);
     expect(buyCoins(100n * MAS, 100)).toBe(101n * MAS + TRADE_MARGIN);
+  });
+
+  it('keeps the last unit before the minimum time, like the contract', () => {
+    const start = 1_800_000_000_000;
+    const l = { virtualMas: TARGET / 3n, masIn: 0n, sold: 0n, sellOutFrom: start + 3_600_000 };
+    expect(buyLimit(l, start)).toBe(CURVE_TOKENS - 1n);
+    expect(buyLimit(l, start + 3_600_000)).toBe(CURVE_TOKENS);
+    expect(quoteBuy(l, 2n * TARGET, buyLimit(l, start)).tokens).toBe(CURVE_TOKENS - 1n);
+    expect(buyLimit({ sold: CURVE_TOKENS - 1n, sellOutFrom: start + 1 }, start)).toBe(0n);
+    expect(quoteBuy({ ...l, sold: CURVE_TOKENS - 1n }, MAS, 0n).tokens).toBe(0n);
+  });
+
+  it('says durations as people do', () => {
+    expect(durationText(45 * 60_000)).toBe('45 min');
+    expect(durationText(60 * 60_000)).toBe('1 h');
+    expect(durationText(90 * 60_000)).toBe('1 h 30 min');
+    expect(durationText(24 * 60 * 60_000)).toBe('1 day');
+    expect(durationText(3 * 24 * 60 * 60_000)).toBe('3 days');
   });
 });

@@ -26,13 +26,14 @@ const launchpad = process.env['LAUNCHPAD'] ?? net.launchpadAddress;
 if (!launchpad) throw new Error(`No Launchpad on ${network}: set LAUNCHPAD=<address>`);
 
 const config: FairConfig = {
-  creationFee: mas('FAIR_CREATION_FEE_MAS', '1'),
+  // Less the Launchpad's holder discount (30 % for Core Keepers on mainnet), asked at creation.
+  creationFee: mas('FAIR_CREATION_FEE_MAS', network === 'mainnet' ? '50' : '1'),
   tradeFeeBps: Number(process.env['FAIR_TRADE_FEE_BPS'] ?? '100'),
   graduationFeeBps: Number(process.env['FAIR_GRADUATION_FEE_BPS'] ?? '200'),
   // Small on buildnet so a whole curve can be tried with test MAS (the contract's minimum is
   // 100), but at least 200: a 980 M-gas deferred call costs ~9.85 MAS and is booked only up to 5 %
   // of the MAS raised, so below ~197 MAS the curve never graduates by itself.
-  targetMas: mas('FAIR_TARGET_MAS', network === 'mainnet' ? '50000' : '200'),
+  targetMas: mas('FAIR_TARGET_MAS', network === 'mainnet' ? '100000' : '200'),
   deployDeposit: mas('FAIR_DEPLOY_DEPOSIT_MAS', '0.1'),
   launchpad,
   dusaRouter: dusa.router,
@@ -44,6 +45,11 @@ const config: FairConfig = {
   // 980 M costs ~9.85 MAS to book.
   autoGraduateGas: BigInt(process.env['FAIR_AUTO_GRADUATE_GAS'] ?? '980000000'),
   paused: false,
+  // The least time a curve trades before it may sell out and move to Dusa (until then it keeps
+  // its last unit): no instant sell-out by one buyer. Short on buildnet, for the e2e.
+  minCurveMs:
+    BigInt(process.env['FAIR_MIN_CURVE_MINUTES'] ?? (network === 'mainnet' ? '1440' : '10')) *
+    60_000n,
 };
 
 const file = `deployments/fair-launch-${network}.json`;
@@ -90,6 +96,8 @@ writeFileSync(
         targetMas: Mas.toString(config.targetMas),
         deployDeposit: Mas.toString(config.deployDeposit),
         autoGraduateGas: config.autoGraduateGas.toString(),
+        minCurveMs: undefined,
+        minCurveMinutes: Number(config.minCurveMs / 60_000n),
       },
     },
     null,

@@ -34,12 +34,19 @@ export interface BuyQuote {
   mas: bigint;
 }
 
-export function quoteBuy(l: Pick<Launch, 'virtualMas' | 'masIn' | 'sold'>, mas: bigint): BuyQuote {
+/** `limit`: the most a buy may take (buyLimit); everything left when omitted. */
+export function quoteBuy(
+  l: Pick<Launch, 'virtualMas' | 'masIn' | 'sold'>,
+  mas: bigint,
+  limit: bigint = CURVE_TOKENS,
+): BuyQuote {
   if (mas <= 0n || l.sold >= CURVE_TOKENS) return { tokens: 0n, mas: 0n };
   const x = l.virtualMas + l.masIn;
   const y = CURVE_VIRTUAL_TOKENS - l.sold;
   let tokens = (y * mas) / (x + mas);
-  const left = CURVE_TOKENS - l.sold;
+  let left = CURVE_TOKENS - l.sold;
+  if (limit < left) left = limit;
+  if (left <= 0n) return { tokens: 0n, mas: 0n };
   if (tokens >= left) {
     tokens = left;
     const product = x * left;
@@ -47,6 +54,26 @@ export function quoteBuy(l: Pick<Launch, 'virtualMas' | 'masIn' | 'sold'>, mas: 
     mas = product / d + (product % d === 0n ? 0n : 1n);
   }
   return { tokens, mas };
+}
+
+/**
+ * What a buy may take at `now` (ms): everything the curve has left, or all but its last unit
+ * before `sellOutFrom` (the contract's buyLimit: a curve can't sell out before its minimum time).
+ */
+export function buyLimit(l: Pick<Launch, 'sold' | 'sellOutFrom'>, now: number): bigint {
+  const left = l.sold >= CURVE_TOKENS ? 0n : CURVE_TOKENS - l.sold;
+  return now < l.sellOutFrom && left > 0n ? left - 1n : left;
+}
+
+/** A duration in ms as people say it: "45 min", "6 h", "1 h 30 min", "2 days". */
+export function durationText(ms: number): string {
+  const minutes = Math.round(ms / 60_000);
+  if (minutes < 60) return `${minutes} min`;
+  const days = Math.floor(minutes / 1440);
+  if (days >= 1 && minutes % 1440 === 0) return `${days} day${days === 1 ? '' : 's'}`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours} h ${rest} min` : `${hours} h`;
 }
 
 /** nanoMAS before the fee for selling `tokens` back. */

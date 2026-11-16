@@ -1,10 +1,10 @@
 {
   "network": "buildnet",
-  "address": "AS1m8ZRSWJSUkjQRaKxULTZtXsFXjf6G9v2gLAxdqmP2EaRam93P",
+  "address": "AS19r9ifibP3T6cY8xVcm55wQ8ecTjWfSR6VJMqAD2vrBNFoMump",
   "version": "1.0.0",
   "admin": "AU1w8EqC9wJA7ouwVdytcKSubGmUZ4eEaB84BxQZZWSmBSqwT6dJ",
-  "deployedAt": "2026-11-16T10:39:44.930Z",
-  "bytes": 87148,
+  "deployedAt": "2026-11-16T12:29:20.980Z",
+  "bytes": 88671,
   "config": {
     "creationFee": "1",
     "tradeFeeBps": 100,
@@ -19,6 +19,7 @@
       20
     ],
     "autoGraduateGas": "980000000",
-    "paused": false
+    "paused": false,
+    "minCurveMinutes": 10
   }
 }

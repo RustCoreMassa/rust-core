@@ -49,20 +49,35 @@ export class BuyQuote {
 
 /**
  * Tokens for `mas` nanoMAS (fee already taken), rounded down. Capped at what the curve still
- * sells: then `mas` is only what those last tokens cost (rounded up), the caller refunds the rest.
+ * sells (or at `limit`, when lower: before its minimum time a curve keeps its last unit): then
+ * `mas` is only what those tokens cost (rounded up), the caller refunds the rest.
  */
-export function quoteBuy(virtualMas: u64, masIn: u64, sold: u64, mas: u64): BuyQuote {
+export function quoteBuy(
+  virtualMas: u64,
+  masIn: u64,
+  sold: u64,
+  mas: u64,
+  limit: u64 = CURVE_TOKENS,
+): BuyQuote {
   if (mas == 0 || sold >= CURVE_TOKENS) return new BuyQuote();
   const x = virtualMas + masIn;
   const y = CURVE_VIRTUAL_TOKENS - sold;
   let tokens = mulDiv(y, mas, x + mas);
-  const left = CURVE_TOKENS - sold;
+  let left = CURVE_TOKENS - sold;
+  if (limit < left) left = limit;
+  if (left == 0) return new BuyQuote();
   if (tokens >= left) {
     tokens = left;
     // The MAS that buys exactly `left`: x · left / (y − left), rounded up.
     mas = mulDivUp(x, left, y - left);
   }
   return new BuyQuote(tokens, mas);
+}
+
+/** What a buy may take now: everything left, or all but the last unit before `sellOutFrom`. */
+export function buyLimit(sold: u64, now: u64, sellOutFrom: u64): u64 {
+  const left = sold >= CURVE_TOKENS ? 0 : CURVE_TOKENS - sold;
+  return now < sellOutFrom && left > 0 ? left - 1 : left;
 }
 
 /** nanoMAS out for selling `tokens` back (fee not yet taken), rounded down. */

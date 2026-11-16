@@ -24,9 +24,12 @@ Launchpad contract version it works with.
   keeps every buy and sell (`getTrades`): the launch page draws a live price chart from it
   (candles of 1 minute to 1 day, market cap or price, volume; TradingView's open-source
   Lightweight Charts) and lists the trades (10 to a page, each with its operation), both updated
-  every few seconds, with no indexer. Pages `/launch`, `/launch/new` and `/launch/:id`; a "Fair
-  launch" menu entry; deploy script `npm run deploy:fair-launch`, on-chain check
-  `npx tsx src/e2e-fair-launch.ts` and load test `src/stress-fair-launch.ts` in `smart-contract/`.
+  every few seconds, with no indexer, and the token's top holders. A curve can't sell out (move to
+  Dusa) before a minimum time set by the admin: until then it keeps its last token unit. Holders
+  of the Launchpad's discount collection (Core Keepers) pay the launch fee less their discount.
+  Pages `/launch`, `/launch/new` and `/launch/:id`; a "Fair launch" menu entry; deploy script
+  `npm run deploy:fair-launch`, on-chain check `npx tsx src/e2e-fair-launch.ts` and load test
+  `src/stress-fair-launch.ts` in `smart-contract/`.
 
 ### Changed
 

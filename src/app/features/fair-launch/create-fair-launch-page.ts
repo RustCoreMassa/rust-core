@@ -12,8 +12,10 @@ import { Router, RouterLink } from '@angular/router';
 import { Args, StorageCost } from '@massalabs/massa-web3';
 import {
   CREATE_MARGIN,
+  CURVE_TOKENS,
   DEFAULT_SLIPPAGE_BPS,
   TOKEN_DECIMALS,
+  durationText,
   feeOf,
   quoteBuy,
   withSlippage,
@@ -37,13 +39,15 @@ import { toUserMessage } from '../../core/utils/user-error';
 import { WalletStore } from '../../core/wallet/wallet-store';
 import { ConnectWalletDialog } from '../../layout/connect-wallet-dialog/connect-wallet-dialog';
 import { MasPipe } from '../../shared/pipes/units-pipe';
+import { HolderDiscountNote } from '../../shared/ui/holder-discount-note/holder-discount-note';
+import { HolderDiscountStore } from '../../core/launchpad/holder-discount';
 
 type Field = 'name' | 'symbol' | 'description' | 'logoUrl' | 'website' | 'twitter' | 'telegram';
 
 /** Launches a token on the Fair Launch curve in one transaction. */
 @Component({
   selector: 'app-create-fair-launch-page',
-  imports: [RouterLink, MasPipe, ConnectWalletDialog],
+  imports: [RouterLink, MasPipe, ConnectWalletDialog, HolderDiscountNote],
   templateUrl: './create-fair-launch-page.html',
   styleUrl: './create-fair-launch-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,6 +59,7 @@ export class CreateFairLaunchPage {
   private readonly transactions = inject(Transactions);
   private readonly router = inject(Router);
   private readonly connectDialog = viewChild.required(ConnectWalletDialog);
+  private readonly discount = inject(HolderDiscountStore);
 
   private readonly launchpad = inject(LaunchpadReader);
 
@@ -102,24 +107,39 @@ export class CreateFairLaunchPage {
     () => Object.values(this.errors()).some((e) => e !== null) || !!this.devBuyError(),
   );
 
+  /** The least time the curve trades before it may move to Dusa; null when there is none. */
+  protected readonly minCurveText = computed(() => {
+    const c = this.config();
+    return c?.minCurveMs ? durationText(Number(c.minCurveMs)) : null;
+  });
+
   /** What the dev buy gets on a fresh curve. */
   protected readonly devTokens = computed(() => {
     const c = this.config();
     const mas = this.devBuyNano();
     if (!c || !mas) return 0n;
-    return quoteBuy({ virtualMas: c.targetMas / 3n, masIn: 0n, sold: 0n }, mas).tokens;
+    // Before its minimum time a curve keeps its last unit, a dev buy included.
+    const limit = c.minCurveMs > 0n ? CURVE_TOKENS - 1n : CURVE_TOKENS;
+    return quoteBuy({ virtualMas: c.targetMas / 3n, masIn: 0n, sold: 0n }, mas, limit).tokens;
   });
   protected readonly devTokensText = computed(() =>
     formatUnits(this.devTokens(), TOKEN_DECIMALS).replace(/\.\d+$/, ''),
   );
 
+  /** The launch fee, less the Launchpad's holder discount (the contract asks it the same). */
+  protected readonly launchFee = computed(() => {
+    const c = this.config();
+    return c ? c.creationFee - feeOf(c.creationFee, this.discount.bps()) : null;
+  });
+
   /** Fee + the token contract's storage and deposit + dev buy and its fee, before the record. */
   protected readonly cost = computed(() => {
     const c = this.config();
+    const fee = this.launchFee();
     const storage = this.contractStorage();
-    if (!c || storage === null) return null;
+    if (!c || fee === null || storage === null) return null;
     const dev = this.devBuyNano() ?? 0n;
-    return c.creationFee + c.deployDeposit + storage + dev + feeOf(dev, c.tradeFeeBps);
+    return fee + c.deployDeposit + storage + dev + feeOf(dev, c.tradeFeeBps);
   });
 
   constructor() {

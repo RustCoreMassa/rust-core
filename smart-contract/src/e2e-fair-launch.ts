@@ -149,6 +149,15 @@ const [code] = await provider.readStorage(
 );
 const rest0 = await rest();
 const spentAtStart = await myBalance();
+// The Launchpad's holder discount on the launch fee (the contract asks it the same).
+const discountBytes = await read(config.launchpad, 'getHolderDiscount', new Args().addString(ME));
+const discountBps = new DataView(
+  discountBytes.buffer,
+  discountBytes.byteOffset,
+  discountBytes.byteLength,
+).getUint16(0, true);
+const launchFee = config.creationFee - feeOf(config.creationFee, discountBps);
+console.log(`  launch fee ${mas(launchFee)} (holder discount ${discountBps / 100}%)`);
 
 // ---- createLaunch with a dev buy of 1 MAS ------------------------------------------------------
 const symbol =
@@ -161,7 +170,7 @@ const symbol =
 const dev = 1n * MAS;
 const devTokens = quoteBuy({ virtualMas: config.targetMas / 3n, masIn: 0n, sold: 0n }, dev).tokens;
 const cost =
-  config.creationFee +
+  launchFee +
   config.deployDeposit +
   StorageCost.smartContractDeploy(code!.length) +
   dev +
@@ -216,8 +225,8 @@ check(
   new Args(await read(FAIR, 'launchOfToken', new Args().addString(token))).nextU64() === id,
 );
 check(
-  'fees: creation fee + the dev buy’s trade fee',
-  (await fees()) === fees0 + config.creationFee + feeOf(dev, config.tradeFeeBps),
+  'fees: launch fee (less the holder discount) + the dev buy’s trade fee',
+  (await fees()) === fees0 + launchFee + feeOf(dev, config.tradeFeeBps),
 );
 check('balance = fees + curves (+ constant)', (await rest()) === rest0);
 const taken = await refusal(FAIR, 'createLaunch', launchArgs(), cost + CREATE_MARGIN);
@@ -272,8 +281,45 @@ check(
 l = await getLaunch(id);
 check('the curve took the tokens back', (await tokenBalance(token, ME)) === held - sellTokens);
 check('balance = fees + curves (+ constant)', (await rest()) === rest0);
-const early = await refusal(FAIR, 'graduate', idArgs(id), GRADUATE_COINS);
-check('graduate before the sell-out is refused', /not ready/.test(early), early);
+const notReady = await refusal(FAIR, 'graduate', idArgs(id), GRADUATE_COINS);
+check('graduate before the sell-out is refused', /not ready/.test(notReady), notReady);
+
+// ---- the minimum time on the curve -----------------------------------------------------------
+check(
+  'the launch keeps the config’s minimum time',
+  l.sellOutFrom === l.createdAt + Number(config.minCurveMs),
+  `not before ${new Date(l.sellOutFrom).toISOString()}`,
+);
+const waited = Date.now() < l.sellOutFrom;
+if (waited) {
+  // Before it, the biggest buy takes all but the last unit: the curve can't sell out yet.
+  const allButOne = CURVE_TOKENS - l.sold - 1n;
+  const capped = quoteBuy(l, l.targetMas * 2n, allButOne);
+  const cappedOffer = (capped.mas * 101n) / 100n;
+  await send(
+    FAIR,
+    'buy',
+    idArgs(id).addU64(cappedOffer).addU64(allButOne),
+    buyCoins(cappedOffer, l.tradeFeeBps),
+  );
+  ops.push(lastOp);
+  l = await getLaunch(id);
+  check(
+    'before its minimum time the curve keeps its last unit',
+    l.state === STATE_TRADING && l.sold === CURVE_TOKENS - 1n,
+  );
+  const tooEarly = await refusal(
+    FAIR,
+    'buy',
+    idArgs(id).addU64(MAS).addU64(0n),
+    buyCoins(MAS, l.tradeFeeBps),
+  );
+  check('the last unit waits for the minimum time', /minimum time/.test(tooEarly), tooEarly);
+  const wait = l.sellOutFrom - Date.now() + 20_000;
+  console.log(`  waiting ${Math.ceil(wait / 1000)} s for the minimum time…`);
+  await new Promise((r) => setTimeout(r, wait));
+  l = await getLaunch(id);
+} else console.log('  (the minimum time had passed already: the cap is not checked)');
 
 // ---- the buy that sells the curve out ----------------------------------------------------------
 // Speculative only: its deferred call graduates the launch 2 periods (~32 s) later, before the
@@ -387,10 +433,15 @@ check(
 
 // ---- the trade history (chart and trade list) --------------------------------------------------
 const history = await getTrades(id);
-check('the history holds every trade', l.trades === 4n && history.length === 4, `${l.trades}`);
+const tradeCount = waited ? 5 : 4;
 check(
-  'buy, buy, sell, buy — by this account',
-  history.map((t) => (t.isBuy ? 'B' : 'S')).join('') === 'BBSB' &&
+  'the history holds every trade',
+  l.trades === BigInt(tradeCount) && history.length === tradeCount,
+  `${l.trades}`,
+);
+check(
+  `${waited ? 'buy, buy, sell, buy, buy' : 'buy, buy, sell, buy'} — by this account`,
+  history.map((t) => (t.isBuy ? 'B' : 'S')).join('') === (waited ? 'BBSBB' : 'BBSB') &&
     history.every((t) => t.trader === ME),
 );
 check(
@@ -399,7 +450,7 @@ check(
 );
 check(
   'the last trade left the curve sold out',
-  history[3].sold === CURVE_TOKENS && history[3].masIn === masAtSellOut,
+  history.at(-1)!.sold === CURVE_TOKENS && history.at(-1)!.masIn === masAtSellOut,
 );
 check(
   'times follow the blocks, in order',
@@ -416,7 +467,7 @@ check('getTrades pages', page.length === 2 && page[1].isBuy === false);
 const chart = candles(history, l.virtualMas, 60);
 check(
   'the chart ends at the final price (market cap)',
-  chart.length > 0 && chart.at(-1)!.close === tradePrice(l.virtualMas, history[3]) * 1e9,
+  chart.length > 0 && chart.at(-1)!.close === tradePrice(l.virtualMas, history.at(-1)!) * 1e9,
   `${chart.length} candle(s), last ${chart.at(-1)?.close.toFixed(2)} MAS`,
 );
 

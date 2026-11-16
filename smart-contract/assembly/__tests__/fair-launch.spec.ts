@@ -1,4 +1,4 @@
-import { Args, bytesToU64, stringToBytes, u32ToBytes } from '@massalabs/as-types';
+import { Args, bytesToU64, stringToBytes, u16ToBytes, u32ToBytes } from '@massalabs/as-types';
 import {
   Address,
   Storage,
@@ -8,6 +8,7 @@ import {
   mockBalance,
   mockOriginOperationId,
   mockScCall,
+  mockTimestamp,
   mockTransferredCoins,
   resetStorage,
   setDeployContext,
@@ -80,6 +81,7 @@ function testConfig(
   paused: bool = false,
   autoGas: u64 = AUTO_GAS,
   steps: u32[] = [20, 50],
+  minCurveMs: u64 = 0,
 ): FairConfig {
   return new FairConfig(
     CREATION_FEE,
@@ -94,6 +96,7 @@ function testConfig(
     steps,
     autoGas,
     paused,
+    minCurveMs,
   );
 }
 
@@ -137,9 +140,15 @@ function launchArgs(symbol: string, devBuy: u64 = 0, minTokens: u64 = 0): Static
   return new Args().add('Fair Crab').add(symbol).add(info()).add(devBuy).add(minTokens).serialize();
 }
 
+/** The Launchpad's answer to getHolderDiscount: `bps` off the creation fee. */
+function discountAnswer(bps: u16 = 0): StaticArray<u8> {
+  return u16ToBytes(bps);
+}
+
 /** Alice launches `symbol` (with an optional dev buy); returns the launch. */
-function aliceLaunches(symbol: string = 'CRAB', devBuy: u64 = 0): Launch {
+function aliceLaunches(symbol: string = 'CRAB', devBuy: u64 = 0, discountBps: u16 = 0): Launch {
   pay(ALICE, CREATION_FEE + DEPOSIT + devBuy + devBuy / 50 + MAS);
+  mockScCall(discountAnswer(discountBps)); // the Launchpad's getHolderDiscount
   mockScCall([]); // the token's constructor
   mockScCall([]); // renounceOwnership
   if (devBuy > 0) mockScCall([]); // transfer of the dev buy
@@ -251,6 +260,12 @@ describe('Creating a launch', () => {
     expect(mine).toStrictEqual([1]);
   });
 
+  test('a holder of the Launchpad’s discount collection pays less to create', () => {
+    deploy();
+    aliceLaunches('CRAB', 0, 3_000); // the Launchpad answers 30 %
+    expect(accrued()).toBe(CREATION_FEE - (CREATION_FEE * 3) / 10);
+  });
+
   test('a dev buy fills the curve at once', () => {
     deploy();
     const l = aliceLaunches('CRAB', 10 * MAS);
@@ -280,6 +295,7 @@ describe('Creating a launch', () => {
   throws('without the creation fee', () => {
     deploy();
     pay(ALICE, CREATION_FEE - 1);
+    mockScCall(discountAnswer());
     mockScCall([]);
     mockScCall([]);
     createLaunch(launchArgs('CRAB'));
@@ -323,6 +339,7 @@ describe('Creating a launch', () => {
   throws('a dev buy below its minimum', () => {
     deploy();
     pay(ALICE, 100 * MAS);
+    mockScCall(discountAnswer());
     mockScCall([]);
     mockScCall([]);
     mockScCall([]);
@@ -507,6 +524,82 @@ describe('Trade history', () => {
   throws('for a launch that does not exist', () => {
     deploy();
     history(7);
+  });
+});
+
+const HOUR: u64 = 60 * 60 * 1000;
+const T0: u64 = 1_800_000_000_000;
+
+/** A curve that may sell out only an hour after its launch; the clock at T0. */
+function deployWithMinimum(): void {
+  deploy(testConfig(false, AUTO_GAS, [20, 50], HOUR));
+  mockTimestamp(T0);
+}
+
+describe('Minimum time on the curve', () => {
+  test('the launch keeps when its curve may sell out', () => {
+    deployWithMinimum();
+    aliceLaunches();
+    expect(launch(1).sellOutFrom).toBe(T0 + HOUR);
+  });
+
+  test('before it, a buy takes all but the last unit and the curve keeps trading', () => {
+    deployWithMinimum();
+    aliceLaunches();
+    mockTimestamp(T0 + HOUR / 2);
+    sellOut(1);
+    const l = launch(1);
+    expect(l.state).toBe(STATE_TRADING);
+    expect(l.sold).toBe(CURVE_TOKENS - 1);
+    expect(l.autoFee).toBe(0);
+    sellAs(BOB, 1, 1_000_000 * MAS); // sells still work
+    expect(launch(1).sold).toBe(CURVE_TOKENS - 1 - 1_000_000 * MAS);
+  });
+
+  test('a dev buy cannot take the whole curve at its launch', () => {
+    deployWithMinimum();
+    aliceLaunches('CRAB', 2 * TARGET);
+    expect(launch(1).sold).toBe(CURVE_TOKENS - 1);
+    expect(launch(1).state).toBe(STATE_TRADING);
+  });
+
+  test('quoteBuyOf shows the same limit', () => {
+    deployWithMinimum();
+    aliceLaunches();
+    const quote = new Args(
+      quoteBuyOf(
+        new Args()
+          .add(u64(1))
+          .add(2 * TARGET)
+          .serialize(),
+      ),
+    );
+    expect(quote.nextU64().unwrap()).toBe(CURVE_TOKENS - 1);
+  });
+
+  test('from it, the next buy sells the curve out and books the graduation', () => {
+    deployWithMinimum();
+    aliceLaunches();
+    mockTimestamp(T0 + HOUR / 2);
+    sellOut(1);
+    mockTimestamp(T0 + HOUR);
+    buyAs(BOB, 1, MAS);
+    const l = launch(1);
+    expect(l.state).toBe(STATE_COMPLETE);
+    expect(l.sold).toBe(CURVE_TOKENS);
+    expect(l.autoFee).toBe(MOCK_QUOTE);
+  });
+
+  throws('the last unit before it', () => {
+    deployWithMinimum();
+    aliceLaunches();
+    mockTimestamp(T0 + HOUR / 2);
+    sellOut(1);
+    buyAs(BOB, 1, MAS);
+  });
+
+  throws('a minimum above 30 days', () => {
+    deploy(testConfig(false, AUTO_GAS, [20, 50], 31 * 24 * HOUR));
   });
 });
 
@@ -712,6 +805,7 @@ describe('Admin', () => {
 describe('Encoding for the app', () => {
   test('logs a launch record and the config', () => {
     deploy();
+    mockTimestamp(T0); // one clock for the whole call, as a block has
     mockOriginOperationId('O12xChkLaunchTx1');
     aliceLaunches('XCHK', 5 * MAS);
     log<string>('FAIR_LAUNCH_BYTES ' + getLaunch(new Args().add(u64(1)).serialize()).toString());

@@ -23,6 +23,7 @@ import {
   TOTAL_SUPPLY,
   TRADE_MARGIN,
   buyCoins,
+  buyLimit,
   feeOf,
   launchPhase,
   quoteBuy,
@@ -46,6 +47,8 @@ import { ConnectWalletDialog } from '../../layout/connect-wallet-dialog/connect-
 import { MasPipe } from '../../shared/pipes/units-pipe';
 import { CurveProgress } from '../../shared/ui/curve-progress/curve-progress';
 import { ProjectLogo } from '../../shared/ui/project-logo/project-logo';
+import { HolderList } from '../../shared/ui/holder-list/holder-list';
+import { Holder } from '../../core/launchpad/holders';
 import { PriceChart } from './price-chart';
 import { TradeList } from './trade-list';
 import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
@@ -55,6 +58,8 @@ type Busy = 'buy' | 'approve' | 'sell' | 'graduate' | null;
 
 /** How often an open launch is read again (curve, new trades), while the tab is visible. */
 const POLL_MS = 4_000;
+/** The holders are read again with new trades, at most this often. */
+const HOLDERS_EVERY_MS = 15_000;
 
 /** One fair launch: its curve, buy and sell, and its move to Dusa. */
 @Component({
@@ -69,6 +74,7 @@ const POLL_MS = 4_000;
     ConnectWalletDialog,
     PriceChart,
     TradeList,
+    HolderList,
   ],
   templateUrl: './fair-launch-page.html',
   styleUrl: './fair-launch-page.scss',
@@ -93,6 +99,22 @@ export class FairLaunchPage {
   protected readonly trades = signal<Trade[]>([]);
   /** Which launch `trades` belongs to (contract + id). */
   private tradesOf = '';
+  /** The token's holders, largest first; null while read. */
+  protected readonly holders = signal<Holder[] | null>(null);
+  /** When the holders were last read, and for which launch. */
+  private holdersAt = 0;
+  private holdersOf = '';
+  protected readonly holderLabels = computed(() => {
+    const l = this.launch();
+    const fair = this.fair.address();
+    if (!l || !fair) return {};
+    const labels: Record<string, string> = {
+      [l.creator]: 'Creator',
+      [fair]: this.phase() === 'graduated' ? 'Fair Launch' : 'Bonding curve',
+    };
+    if (l.pair) labels[l.pair] = 'Dusa pool';
+    return labels;
+  });
   protected readonly side = signal<Side>('buy');
   protected readonly amount = signal('');
   protected readonly busy = signal<Busy>(null);
@@ -103,6 +125,11 @@ export class FairLaunchPage {
   protected readonly totalSupply = TOTAL_SUPPLY;
   protected readonly poolTokens = POOL_TOKENS;
 
+  /** Until when the curve keeps its last unit (minimum time); null once it may sell out. */
+  protected readonly waitsUntil = computed(() => {
+    const l = this.launch();
+    return l && this.phase() === 'trading' && Date.now() < l.sellOutFrom ? l.sellOutFrom : null;
+  });
   protected readonly phase = computed(() => {
     const l = this.launch();
     return l ? launchPhase(l) : null;
@@ -151,7 +178,7 @@ export class FairLaunchPage {
     const units = this.amountUnits();
     if (!l || !units) return null;
     if (this.side() === 'buy') {
-      const q = quoteBuy(l, units);
+      const q = quoteBuy(l, units, buyLimit(l, Date.now()));
       return { out: q.tokens, spent: q.mas, fee: feeOf(q.mas, l.tradeFeeBps) };
     }
     const gross = quoteSell(l, units);
@@ -287,6 +314,17 @@ export class FairLaunchPage {
     }
   }
 
+  private async loadHolders(token: string, key: string): Promise<void> {
+    this.holdersAt = Date.now();
+    try {
+      const holders = await this.tokens.holders(token);
+      if (key === this.holdersOf) this.holders.set(holders);
+    } catch {
+      // Kept as they were; read again with the next trades.
+      this.holdersAt = 0;
+    }
+  }
+
   private async load(id: string, holder: string | null): Promise<void> {
     const run = ++this.run;
     let launchId: bigint;
@@ -313,6 +351,14 @@ export class FairLaunchPage {
         this.trades.set([...known, ...fresh]);
       }
       this.balance.set(balance);
+      // Holders: read with the launch, then again when trades came in (at most every 15 s).
+      if (key !== this.holdersOf) {
+        this.holdersOf = key;
+        this.holders.set(null);
+        void this.loadHolders(l.token, key);
+      } else if (fresh.length && Date.now() - this.holdersAt > HOLDERS_EVERY_MS) {
+        void this.loadHolders(l.token, key);
+      }
     } catch (err) {
       if (run !== this.run) return;
       const message = toUserMessage(err);

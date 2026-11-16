@@ -18,7 +18,14 @@
 // Money rules, as in the Launchpad (lib/launchpad/settlement.ts): every write pays its own
 // storage; the MAS in the curves is escrow — the admin can only withdraw the fees collected.
 // This contract has no upgrade function: its code can never change.
-import { Args, bytesToString, bytesToU32, stringToBytes, u64ToBytes } from '@massalabs/as-types';
+import {
+  Args,
+  bytesToString,
+  bytesToU16,
+  bytesToU32,
+  stringToBytes,
+  u64ToBytes,
+} from '@massalabs/as-types';
 import {
   Address,
   Context,
@@ -58,6 +65,7 @@ import {
   TOKEN_DECIMALS,
   TOTAL_SUPPLY,
   binForPrice,
+  buyLimit,
   feeOf,
   quoteBuy,
   quoteSell,
@@ -83,6 +91,8 @@ export const MAX_TARGET_MAS: u64 = 100_000_000 * MAS;
 export const MAX_DEPLOY_DEPOSIT: u64 = 10 * MAS;
 export const MAX_BIN_STEPS: i32 = 8;
 export const MAX_AUTO_GAS: u64 = 4_000_000_000;
+/** The longest minimum time on the curve the admin may set: 30 days. */
+export const MAX_MIN_CURVE_MS: u64 = 30 * 24 * 60 * 60 * 1000;
 export const MAX_PAGE: u32 = 50;
 export const MAX_TRADES_PAGE: u32 = 100;
 /** Sent with each token transfer: the token pays a new holder's balance entry from it. */
@@ -177,6 +187,9 @@ export function createLaunch(binaryArgs: StaticArray<u8>): void {
   assert(!Storage.has(ownSymbolKey(symbol)), 'This symbol is already taken');
   const launchpad = new Address(config.launchpad);
   assert(!Storage.hasOf(launchpad, symbolKey(symbol)), 'This symbol is taken in the Launchpad');
+  // The Launchpad's holder discount (holders of its membership collection) on the creation fee.
+  const creator = Context.caller().toString();
+  const discountBps = bytesToU16(call(launchpad, 'getHolderDiscount', new Args().add(creator), 0));
 
   // The Launchpad's newest token template: the same bytecode, version and hash it launches.
   const versionKey = templateVersionKey(KIND_TOKEN);
@@ -201,7 +214,6 @@ export function createLaunch(binaryArgs: StaticArray<u8>): void {
   );
   call(token, 'renounceOwnership', new Args(), 0);
 
-  const creator = Context.caller().toString();
   const id = _count() + 1;
   Storage.set(COUNT_KEY, u64BE(id));
   const launch = new Launch(
@@ -219,12 +231,13 @@ export function createLaunch(binaryArgs: StaticArray<u8>): void {
     config.graduationFeeBps,
   );
   launch.info = info;
+  launch.sellOutFrom = launch.createdAt + config.minCurveMs;
   Storage.set(tokenKey(launch.token), u64BE(id));
   Storage.set(ownSymbolKey(symbol), u64BE(id));
   Storage.set(creatorKey(creator, id), new StaticArray<u8>(0));
   generateEvent(createEvent('LAUNCH_CREATED', [id.toString(), launch.token, creator]));
 
-  let fee = config.creationFee;
+  let fee = config.creationFee - feeOf(config.creationFee, discountBps);
   let kept: u64 = 0;
   let released: u64 = 0;
   if (devBuy > 0) {
@@ -317,7 +330,10 @@ function _buy(
 ): BuyResult {
   assert(launch.state == STATE_TRADING, 'The curve has sold out: trade on Dusa');
   assert(mas > 0, 'Buy for more than zero MAS');
-  const quote = quoteBuy(launch.virtualMas, launch.masIn, launch.sold, mas);
+  // Before its minimum time the curve keeps its last unit: it can't sell out (move to Dusa) yet.
+  const limit = buyLimit(launch.sold, Context.timestamp(), launch.sellOutFrom);
+  assert(limit > 0, 'The curve can sell out only after its minimum time');
+  const quote = quoteBuy(launch.virtualMas, launch.masIn, launch.sold, mas, limit);
   assert(quote.tokens > 0, 'Too little MAS to buy a token unit');
   assert(quote.tokens >= minTokens, 'The price moved: you would get less than your minimum');
   const fee = feeOf(quote.mas, launch.tradeFeeBps);
@@ -730,7 +746,8 @@ export function quoteBuyOf(binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const mas = args.nextU64().expect('mas is missing or invalid');
   if (launch.state != STATE_TRADING)
     return new Args().add(u64(0)).add(u64(0)).add(u64(0)).serialize();
-  const quote = quoteBuy(launch.virtualMas, launch.masIn, launch.sold, mas);
+  const limit = buyLimit(launch.sold, Context.timestamp(), launch.sellOutFrom);
+  const quote = quoteBuy(launch.virtualMas, launch.masIn, launch.sold, mas, limit);
   return new Args()
     .add(quote.tokens)
     .add(quote.mas)
@@ -783,6 +800,7 @@ function _assertConfig(config: FairConfig): void {
     assert(config.binSteps[i] > 0 && config.binSteps[i] <= 1_000, 'Invalid bin step');
   }
   assert(config.autoGraduateGas <= MAX_AUTO_GAS, 'Auto-graduation gas too high');
+  assert(config.minCurveMs <= MAX_MIN_CURVE_MS, 'Minimum time on the curve above 30 days');
 }
 
 function _onlyAdmin(): void {

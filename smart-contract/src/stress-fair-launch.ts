@@ -10,11 +10,11 @@
 //   - the app's chart and trade list can be built from it (time to read the whole history).
 // The curve is kept below its target (no sell-out), the launch stays open for the app. Trades
 // accept any price (minimums 0): with this many traders at once, prices move between a quote
-// and its block. At the end the wallets send their MAS back to PRIVATE_KEY. Their keys are kept in
-// .stress/wallets-<launch>.json (git-ignored): if a run stops early, SWEEP=<that file> sends
-// their MAS back.
+// and its block. At the end the wallets send their MAS back to PRIVATE_KEY. Their keys are kept
+// in .stress/wallets-<contract>-<launch>.json (git-ignored): if a run stops early,
+// SWEEP=<that file> sends their MAS back.
 //   TRADES=1000 WALLETS=30 npx tsx src/stress-fair-launch.ts
-//   SWEEP=.stress/wallets-8.json npx tsx src/stress-fair-launch.ts
+//   SWEEP=.stress/wallets-AS19r9ifibP3-2.json npx tsx src/stress-fair-launch.ts
 // Costs ≈ 0.04 MAS a trade (operation fee, the trade's storage, its 1 % fee) plus the launch.
 import 'dotenv/config';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
@@ -265,7 +265,7 @@ const wallets = await Promise.all(
 );
 const addresses = wallets.map((w) => w.account.address.toString());
 mkdirSync('.stress', { recursive: true });
-const keyFile = `.stress/wallets-${id}.json`;
+const keyFile = `.stress/wallets-${FAIR.slice(0, 12)}-${id}.json`;
 writeFileSync(
   keyFile,
   JSON.stringify(
@@ -400,7 +400,14 @@ check(
 
 let sold = 0n;
 let masIn = 0n;
-let feeSum = config.creationFee;
+// The launch fee less the creator's holder discount (the contract asks the Launchpad).
+const discountAnswer = await read(config.launchpad, 'getHolderDiscount', new Args().addString(ME));
+const discountBps = new DataView(
+  discountAnswer.buffer,
+  discountAnswer.byteOffset,
+  discountAnswer.byteLength,
+).getUint16(0, true);
+let feeSum = config.creationFee - feeOf(config.creationFee, discountBps);
 let curveBreaks = 0;
 let orderBreaks = 0;
 const byTrader = new Map<string, bigint>();

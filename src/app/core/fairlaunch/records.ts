@@ -28,6 +28,8 @@ export interface FairConfig {
   /** Gas of the deferred call that graduates a sold-out launch by itself; 0 = off. */
   autoGraduateGas: bigint;
   paused: boolean;
+  /** The least time a curve trades before it may sell out (move to Dusa), in ms. */
+  minCurveMs: bigint;
 }
 
 export interface Launch {
@@ -55,6 +57,8 @@ export interface Launch {
   info: ProjectInfo;
   /** Buys and sells so far (the dev buy included): the length of the trade history. */
   trades: bigint;
+  /** When the curve may sell out at the earliest (ms): until then it keeps its last unit. */
+  sellOutFrom: number;
 }
 
 /** One buy or sell on a curve, as the contract keeps it (getTrades). */
@@ -88,6 +92,7 @@ export function readFairConfig(args: Args): FairConfig {
     binSteps: (args.nextArray(ArrayTypes.U32) as bigint[]).map(Number),
     autoGraduateGas: args.nextU64(),
     paused: args.nextBool(),
+    minCurveMs: args.nextU64(),
   };
 }
 
@@ -104,7 +109,8 @@ export function writeFairConfig(args: Args, c: FairConfig): Args {
     .addString(c.wmas)
     .addArray(c.binSteps.map(BigInt), ArrayTypes.U32)
     .addU64(c.autoGraduateGas)
-    .addBool(c.paused);
+    .addBool(c.paused)
+    .addU64(c.minCurveMs);
 }
 
 export function readLaunch(args: Args): Launch {
@@ -131,6 +137,7 @@ export function readLaunch(args: Args): Launch {
     hidden: args.nextBool(),
     info: readInfo(args),
     trades: args.nextU64(),
+    sellOutFrom: Number(args.nextU64()),
   };
 }
 

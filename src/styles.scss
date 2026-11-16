@@ -850,3 +850,60 @@ input[type='number'] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* A table of records (fair-launch trades, token holders): scrolls sideways on small screens. */
+.data-table {
+  overflow-x: auto;
+}
+
+.data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.data-table th {
+  padding: 0 10px 8px;
+  color: var(--gray-500);
+  font-weight: 500;
+  text-align: left;
+}
+
+.data-table td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.data-table th:first-child,
+.data-table td:first-child {
+  padding-left: 0;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+  padding-right: 0;
+}
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table .tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ember-soft);
+  color: var(--ember-text);
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .data-table th,
+  .data-table td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}

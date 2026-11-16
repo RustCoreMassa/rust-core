@@ -34,6 +34,11 @@ export class FairConfig implements Serializable {
     public autoGraduateGas: u64 = 0,
     /** Pauses new launches and buys. Sells and graduation keep working. */
     public paused: bool = false,
+    /**
+     * The least time a curve trades before it may sell out (and move to Dusa), in ms. Until then a
+     * buy can't take its last token unit. Fixed in each launch (Launch.sellOutFrom).
+     */
+    public minCurveMs: u64 = 0,
   ) {}
 
   serialize(): StaticArray<u8> {
@@ -50,6 +55,7 @@ export class FairConfig implements Serializable {
       .add(this.binSteps)
       .add(this.autoGraduateGas)
       .add(this.paused)
+      .add(this.minCurveMs)
       .serialize();
   }
 
@@ -67,6 +73,7 @@ export class FairConfig implements Serializable {
     this.binSteps = args.nextFixedSizeArray<u32>().expect('binSteps is missing or invalid');
     this.autoGraduateGas = args.nextU64().expect('autoGraduateGas is missing or invalid');
     this.paused = args.nextBool().expect('paused is missing or invalid');
+    this.minCurveMs = args.nextU64().expect('minCurveMs is missing or invalid');
     return new Result(args.offset);
   }
 }
@@ -102,6 +109,8 @@ export class Launch implements Serializable {
     public info: ProjectInfo = new ProjectInfo(),
     /** Buys and sells so far, the dev buy included: the trade history's length (getTrades). */
     public trades: u64 = 0,
+    /** When the curve may sell out at the earliest (ms): createdAt + the config's minCurveMs. */
+    public sellOutFrom: u64 = 0,
   ) {}
 
   serialize(): StaticArray<u8> {
@@ -128,6 +137,7 @@ export class Launch implements Serializable {
       .add(this.hidden)
       .add(this.info)
       .add(this.trades)
+      .add(this.sellOutFrom)
       .serialize();
   }
 
@@ -155,6 +165,7 @@ export class Launch implements Serializable {
     this.hidden = args.nextBool().expect('hidden is missing or invalid');
     this.info = args.nextSerializable<ProjectInfo>().expect('info is missing or invalid');
     this.trades = args.nextU64().expect('trades is missing or invalid');
+    this.sellOutFrom = args.nextU64().expect('sellOutFrom is missing or invalid');
     return new Result(args.offset);
   }
 }

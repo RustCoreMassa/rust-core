@@ -6,8 +6,8 @@ import { TOKEN_DECIMALS } from '../../core/fairlaunch/curve';
 import { Trade } from '../../core/fairlaunch/records';
 import { explorerOperationUrl } from '../../core/network/explorer';
 import { NetworkStore } from '../../core/network/network-store';
-import { pageList } from '../../core/utils/pagination';
 import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
+import { Pager } from '../../shared/ui/pager/pager';
 import { formatUnits } from '../../core/utils/token-amount';
 import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
@@ -23,13 +23,13 @@ const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFra
  */
 @Component({
   selector: 'app-trade-list',
-  imports: [ExplorerLink, DatePipe, ShortAddressPipe],
+  imports: [ExplorerLink, DatePipe, ShortAddressPipe, Pager],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (!trades().length) {
       <p class="muted empty">No trades yet.</p>
     } @else {
-      <div class="scroll">
+      <div class="data-table">
         <table>
           <thead>
             <tr>
@@ -48,7 +48,7 @@ const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFra
                 <td>
                   <app-explorer-link [value]="row.trade.trader" />
                   @if (row.trade.trader === me()) {
-                    <span class="you">you</span>
+                    <span class="tag">you</span>
                   }
                 </td>
                 <td [class]="row.trade.isBuy ? 'buy' : 'sell'">
@@ -80,44 +80,15 @@ const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFra
           </tbody>
         </table>
       </div>
-      <nav class="pager" aria-label="Trade pages">
-        <span class="muted range">{{ range() }}</span>
-        <div class="pages">
-          <button
-            type="button"
-            class="page-btn"
-            [disabled]="page() === 1"
-            (click)="goTo(page() - 1)"
-            aria-label="Newer trades"
-          >
-            ‹
-          </button>
-          @for (p of pageButtons(); track $index) {
-            @if (p === null) {
-              <span class="gap muted">…</span>
-            } @else {
-              <button
-                type="button"
-                class="page-btn"
-                [class.current]="p === page()"
-                [attr.aria-current]="p === page() ? 'page' : null"
-                (click)="goTo(p)"
-              >
-                {{ p }}
-              </button>
-            }
-          }
-          <button
-            type="button"
-            class="page-btn"
-            [disabled]="page() === pages()"
-            (click)="goTo(page() + 1)"
-            aria-label="Older trades"
-          >
-            ›
-          </button>
-        </div>
-      </nav>
+      <app-pager
+        [page]="page()"
+        [pages]="pages()"
+        [range]="range()"
+        label="Trade pages"
+        previousLabel="Newer trades"
+        nextLabel="Older trades"
+        (go)="goTo($event)"
+      />
       @if (newer()) {
         <button type="button" class="newer" (click)="goTo(1)">
           {{ newer() }} new {{ newer() === 1 ? 'trade' : 'trades' }} since · back to the newest
@@ -135,117 +106,12 @@ const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFra
       margin: 0;
     }
 
-    .scroll {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-
-    th {
-      padding: 0 10px 8px;
-      color: var(--gray-500);
-      font-weight: 500;
-      text-align: left;
-    }
-
-    td {
-      padding: 8px 10px;
-      border-top: 1px solid var(--border);
-    }
-
-    th:first-child,
-    td:first-child {
-      padding-left: 0;
-    }
-
-    th:last-child,
-    td:last-child {
-      padding-right: 0;
-    }
-
-    .num {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .mono {
-      font-family: var(--font-mono, monospace);
-      font-size: 13px;
-    }
-
     .buy {
       color: #7ee2a8;
     }
 
     .sell {
       color: #ff7a88;
-    }
-
-    .you {
-      margin-left: 6px;
-      padding: 1px 6px;
-      border-radius: 999px;
-      background: var(--ember-soft);
-      color: var(--ember-text);
-      font-family: var(--font-body);
-      font-size: 11px;
-    }
-
-    .pager {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px 16px;
-    }
-
-    .range {
-      font-size: 13px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .pages {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .page-btn {
-      min-width: 32px;
-      height: 32px;
-      padding: 0 8px;
-      border-radius: 8px;
-      border: 1px solid var(--border-strong);
-      background: var(--grain), var(--surface-raised);
-      box-shadow: var(--bevel);
-      color: var(--gray-300);
-      font-size: 13px;
-      font-variant-numeric: tabular-nums;
-      cursor: pointer;
-    }
-
-    .page-btn:hover:not(:disabled) {
-      color: var(--white);
-    }
-
-    .page-btn:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-
-    .page-btn.current {
-      border-color: var(--ember-line);
-      background: linear-gradient(180deg, rgba(255, 106, 61, 0.16), rgba(255, 106, 61, 0.06));
-      color: var(--white);
-    }
-
-    .gap {
-      padding: 0 2px;
     }
 
     .newer {
@@ -272,12 +138,6 @@ const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFra
       .wide,
       .tx-id {
         display: none;
-      }
-
-      th,
-      td {
-        padding-left: 6px;
-        padding-right: 6px;
       }
     }
   `,
@@ -308,7 +168,6 @@ export class TradeList {
       ? 1
       : Math.min(this.wanted(), this.pages()),
   );
-  protected readonly pageButtons = computed(() => pageList(this.page(), this.pages()));
   /** Trades that came in since the pages were frozen. */
   protected readonly newer = computed(() => this.trades().length - this.counted());
   protected readonly range = computed(() => {

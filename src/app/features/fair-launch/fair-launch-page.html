@@ -56,6 +56,23 @@
         </div>
 
         <div class="card">
+          <div class="card-head">
+            <h2>Top holders</h2>
+            @if (holders(); as h) {
+              <span class="muted">{{ h.length }} in all</span>
+            }
+          </div>
+          <app-holder-list
+            [holders]="holders()"
+            [totalSupply]="totalSupply"
+            [decimals]="decimals"
+            [symbol]="l.symbol"
+            [labels]="holderLabels()"
+            [me]="wallet.address()"
+          />
+        </div>
+
+        <div class="card">
           <h2>Token</h2>
           <dl class="rows">
             <div>
@@ -82,6 +99,12 @@
               <dt>Moves to Dusa at</dt>
               <dd>{{ l.targetMas | mas }} raised</dd>
             </div>
+            @if (l.sellOutFrom > l.createdAt) {
+              <div>
+                <dt>Not before</dt>
+                <dd>{{ l.sellOutFrom | date: 'medium' }}</dd>
+              </div>
+            }
             <div>
               <dt>Trading fee</dt>
               <dd>{{ l.tradeFeeBps / 100 }}%</dd>
@@ -180,6 +203,12 @@
                     }
                   }
                 </button>
+                @if (waitsUntil(); as until) {
+                  <p class="hint">
+                    Until {{ until | date: 'MMM d, HH:mm' }} the curve keeps its last token: it
+                    can't sell out, nor move to Dusa, before then.
+                  </p>
+                }
                 <p class="hint">
                   Accepts a price move of up to 2%. A sell takes two signatures the first time: one
                   to allow the curve to take the tokens back.

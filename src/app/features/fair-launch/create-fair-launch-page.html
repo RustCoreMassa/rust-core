@@ -95,7 +95,7 @@
         <dl class="rows">
           <div>
             <dt>Launch fee</dt>
-            <dd>{{ c.creationFee | mas }}</dd>
+            <dd>{{ launchFee() | mas }}</dd>
           </div>
           <div>
             <dt>Token contract (storage + deposit)</dt>
@@ -109,11 +109,18 @@
             <dt>Moves to Dusa at</dt>
             <dd>{{ c.targetMas | mas }} raised</dd>
           </div>
+          @if (minCurveText(); as time) {
+            <div>
+              <dt>Not before</dt>
+              <dd>{{ time }} on the curve</dd>
+            </div>
+          }
           <div>
             <dt>You pay now</dt>
             <dd>{{ cost() | mas }}</dd>
           </div>
         </dl>
+        <app-holder-discount-note />
         @if (c.paused) {
           <div class="notice">New launches are paused for now.</div>
         }
