@@ -21,6 +21,17 @@ export const MILESTONES: readonly Milestone[] = [
   {
     date: 'Nov 2026',
     product: 'RustCore',
+    title: 'RustCore 1.10 — Fair launch',
+    major: { icon: 'token', label: 'Fair launch' },
+    text:
+      'Anyone launches a memecoin in one transaction, with no capital: 1 B tokens, no owner. They ' +
+      'sell on a bonding curve; once it sells out, the contract lists the token on Dusa by itself ' +
+      'and locks the liquidity for good. Each launch shows a live chart, its trades and its top ' +
+      'holders, read from the chain. Every address now opens in the explorer.',
+  },
+  {
+    date: 'Nov 2026',
+    product: 'RustCore',
     title: 'RustCore 1.9 — one app, a new look',
     major: { icon: 'logo', label: 'RustCore' },
     text:
@@ -200,6 +211,7 @@ export const ROADMAP: readonly RoadmapTrack[] = [
       done('Public API for very large collections'),
       done('Liquidity on Dusa from the token page'),
       done('RustCore: one app, a new look (1.9)'),
+      done('Explorer links on every address (1.10)'),
     ],
   },
   {
@@ -211,6 +223,20 @@ export const ROADMAP: readonly RoadmapTrack[] = [
       done('Contract v1.8.0 on mainnet'),
       next('Token payments on the marketplace'),
       next('Connection with RustCore Wallet'),
+      next('Independent security audit'),
+    ],
+  },
+  {
+    tag: 'RustCore · 1.10',
+    title: 'Fair launch',
+    status: 'Live',
+    items: [
+      done('Memecoins on a bonding curve, no capital needed'),
+      done('Listed on Dusa by the contract itself, liquidity locked'),
+      done('Live chart, trades and top holders, from the chain'),
+      done('A least time on the curve, Core Keepers discount'),
+      done('Admin tools: hide a launch, settings, fees'),
+      done('Live on mainnet'),
       next('Independent security audit'),
     ],
   },

@@ -72,7 +72,8 @@ Actions. It builds from exactly the tagged commit, in public, and:
   launches from (`KNOWN_TEMPLATES` in `src/app/core/launchpad/templates.ts`);
 - publishes a [GitHub Release](https://github.com/RustCoreMassa/rust-core/releases)
   with the changelog notes, the app as `rust-core-vX.Y.Z.zip` with `SHA256SUMS`, and
-  the compiled contracts (`launchpad.wasm`, `rc-token.wasm`, `rc-collection.wasm`) as
+  the compiled contracts (`launchpad.wasm`, `rc-token.wasm`, `rc-collection.wasm`,
+  `fair-launch.wasm`) as
   `rust-core-contracts-vX.Y.Z.zip` with `SHA256SUMS-contracts`.
 
 A version bump without a tag publishes nothing. A release never deploys a contract: deploys and
@@ -143,6 +144,13 @@ storage).
 
 A fresh buildnet deployment starts with an empty registry; that's fine for the test network.
 
+**Fair Launch.** `npm run deploy:fair-launch` writes `deployments/fair-launch-buildnet.json`
+(move the old one to `deployments/history/` first); put the address in
+`NETWORKS.buildnet.fairLaunchAddress`, then run `npx tsx src/e2e-fair-launch.ts` (about the
+target + 15 MAS, ~15 minutes with the 10-minute least time on the curve) and, for a release
+that changes the contract, the load test `TRADES=1000 WALLETS=30 npx tsx
+src/stress-fair-launch.ts` (~35 minutes). See [FAIR_LAUNCH.md](FAIR_LAUNCH.md).
+
 ### Mainnet
 
 0. Check out the release tag, `npm ci`, `npm run build`, and compare
@@ -155,6 +163,20 @@ A fresh buildnet deployment starts with an empty registry; that's fine for the t
 3. `NETWORK=mainnet npm run verify`.
 4. Put the address in `NETWORKS.mainnet.launchpadAddress` and commit
    `deployments/mainnet.json`; the app release that carries the address goes out next.
+
+### Fair Launch on mainnet
+
+The Fair Launch contract has no upgrade function: a new version is a new deployment, and the
+launches already made stay on the old one (its trading and graduation keep working).
+
+0. From the release tag's build, compare `fair-launch.wasm` with `SHA256SUMS-contracts`.
+1. In `.env`, the admin account's `PRIVATE_KEY` and, if they differ from the defaults, the
+   `FAIR_*` values: the defaults for mainnet are a 50 MAS launch fee, 1% on trades, 2% at
+   graduation, a 100 000 MAS target, 24 hours on the curve at least and 980 M gas for the
+   self-graduation (user decisions of 2026-11-16).
+2. `NETWORK=mainnet npm run deploy:fair-launch` writes `deployments/fair-launch-mainnet.json`.
+3. Put the address in `NETWORKS.mainnet.fairLaunchAddress`; the app release that carries it goes
+   out next. The settings can change later from the Fair Launch section of `/admin`.
 
 ### Upgrading the Launchpad
 

@@ -61,6 +61,11 @@ import { ROADMAP, RoadmapStatus } from './home-content';
       gap: 14px;
     }
 
+    /* A last card alone on its row spans it, instead of leaving two empty columns. */
+    .track:last-child:nth-child(3n + 1) {
+      grid-column: 1 / -1;
+    }
+
     .track.live {
       border-color: rgba(255, 106, 61, 0.22);
     }
@@ -138,11 +143,23 @@ import { ROADMAP, RoadmapStatus } from './home-content';
       .tracks {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .track:last-child:nth-child(3n + 1) {
+        grid-column: auto;
+      }
+
+      .track:last-child:nth-child(2n + 1) {
+        grid-column: 1 / -1;
+      }
     }
 
     @media (max-width: 640px) {
       .tracks {
         grid-template-columns: 1fr;
+      }
+
+      .track:last-child:nth-child(2n + 1) {
+        grid-column: auto;
       }
     }
   `,

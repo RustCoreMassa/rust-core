@@ -167,8 +167,8 @@ jobs:
       - name: Package the contracts and checksums
         run: |
           CONTRACTS_ZIP="rust-core-contracts-$TAG.zip"
-          (cd smart-contract/build && sha256sum launchpad.wasm rc-token.wasm rc-collection.wasm) > SHA256SUMS-contracts
-          (cd smart-contract/build && zip -q "$GITHUB_WORKSPACE/$CONTRACTS_ZIP" launchpad.wasm rc-token.wasm rc-collection.wasm)
+          (cd smart-contract/build && sha256sum launchpad.wasm rc-token.wasm rc-collection.wasm fair-launch.wasm) > SHA256SUMS-contracts
+          (cd smart-contract/build && zip -q "$GITHUB_WORKSPACE/$CONTRACTS_ZIP" launchpad.wasm rc-token.wasm rc-collection.wasm fair-launch.wasm)
           sha256sum "$CONTRACTS_ZIP" >> SHA256SUMS-contracts
           echo "CONTRACTS_ZIP=$CONTRACTS_ZIP" >> "$GITHUB_ENV"
           cat SHA256SUMS-contracts

@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.9.1" src="https://img.shields.io/badge/version-1.9.1-brightgreen" />
+  <img alt="Version 1.10.0" src="https://img.shields.io/badge/version-1.10.0-brightgreen" />
   <img alt="Network: Massa" src="https://img.shields.io/badge/network-Massa-red" />
   <img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" />
 </p>
@@ -46,12 +46,13 @@ four principles:
   The Launchpad's own code can only change after a **72-hour public delay**, and its admin can
   never touch presale funds — only the fees collected.
 
-> **Version 1.9.1** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.8.0** is live
+> **Version 1.10.0** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.8.0** is live
 > on Massa **mainnet** at `AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP`, upgraded in
 > place (v1.0.0 → v1.3.1 on 2026-10-17, → v1.4.0 on 2026-10-27, → v1.8.0 with presale
 > whitelists, vesting and presale tokens taken back by their owner on 2026-11-08), each time
 > after the 72-hour public delay. It has not had an independent security audit yet: start with
-> small amounts.
+> small amounts. New in 1.10: **Fair Launch**, memecoins on a bonding curve that list themselves
+> on Dusa, with a contract of its own (v1.0.0, no upgrade function, not audited yet either).
 
 ## What you can do
 
@@ -65,7 +66,7 @@ four principles:
 | 🚀 **Run a presale** | Sell your token for MAS with a soft and hard cap, optionally to a whitelist first and with vesting for the tokens. Success: contributors claim their tokens. Failure: they take their MAS back. Nobody can touch the MAS in between. |
 | 📊 **Tokenomics** | Show how your token's supply is split — team, liquidity, community… — as a chart on its page, with the live balance of each address you name. Declared at launch or anytime later; checked to add up to the supply. |
 | ✏️ **Edit & download** | Change your project's description, logo and links anytime, and download the original contract code as a zip. |
-| 🎢 **Fair launch** *(coming: on buildnet for testing)* | A memecoin in one transaction, no capital needed: 1 B tokens, no owner. 800 M sell on a bonding curve whose price rises with each buy; when it sells out, the contract lists the token on Dusa by itself with the last 200 M tokens and the MAS raised, and locks that liquidity for good. How it works: [docs/FAIR_LAUNCH.md](docs/FAIR_LAUNCH.md). |
+| 🎢 **Fair launch** | A memecoin in one transaction, no capital needed: 1 B tokens, no owner. 800 M sell on a bonding curve whose price rises with each buy; when it sells out (at the earliest a set time after its launch, 24 h on mainnet), the contract lists the token on Dusa by itself with the last 200 M tokens and the MAS raised, and locks that liquidity for good. Each launch has a live price chart, its trades and its top holders, all read from the chain. How it works: [docs/FAIR_LAUNCH.md](docs/FAIR_LAUNCH.md). |
 | 🔒 **Mutable or immutable** | Choose at launch whether you can ever upgrade your contract's code. Immutable means nobody — you included — can change it. |
 | 🏠 **RustCore, in one place** | The home page gathers what the RustCore site used to show: RustCore Wallet and where to get it, the Core Keepers membership NFT, the fees, what shipped, the roadmap and the FAQ. New tools join this app as they ship. |
 
@@ -106,6 +107,11 @@ On top of the fee, a launch pays the storage of its new contract (about 4–5 MA
 live in the Launchpad contract (its `config`, readable by anyone) and may change; each
 operation shows its cost before you sign, and a change never reaches presales or listings
 already created.
+
+**Fair launch** (in the Fair Launch contract's config, readable by anyone): 50 MAS to launch
+a memecoin (less the holder discount below), 1% of every buy and sell on the curve, and 2% of
+the MAS raised when it moves to Dusa. The MAS in a curve belongs to its holders: the admin can
+withdraw only the fees.
 
 **Holder discount** (Launchpad v1.4.0): whoever holds at least one NFT of the RustCore
 collection, **Core Keepers** (`AS125HSzXL9sphoniiqezuYKX3mGNuuS19yLQKvaJUGyEkfALpVTB`), when
@@ -263,7 +269,17 @@ the links. Pin your files so they stay online.
 - [x] The Launchpad becomes RustCore: the website's content (wallet, membership NFT, timeline,
       roadmap, FAQ, donations) moves to the app's home page
 - [x] A new matte design and logo
+- [x] Explorer links on every address and transaction (1.10)
 - [ ] More tools for the Massa ecosystem, in this app
+
+**Phase 4 — Fair launch** *(live)*
+- [x] Memecoins on a bonding curve, no capital needed, no owner (contract v1.0.0)
+- [x] Listed on Dusa by the contract itself, its liquidity locked for good
+- [x] Live price chart, trades and top holders, read from the chain
+- [x] A least time on the curve before the move to Dusa; Core Keepers discount on the launch fee
+- [x] Admin tools: hide a launch (no more buys, sells stay open), settings, fees
+- [x] The Fair Launch contract on mainnet (1.10)
+- [ ] Independent security audit
 
 ## Community
 

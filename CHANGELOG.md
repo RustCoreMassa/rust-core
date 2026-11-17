@@ -9,9 +9,15 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-11-17
+
+Works with the Launchpad contract **v1.8.0**, live on mainnet; no Launchpad change. New: the
+**Fair Launch** contract v1.0.0, deployed on mainnet from this release's build; its compiled code
+is in the release's contracts zip.
+
 ### Added
 
-- **Fair launch** (new contract `fair-launch.ts`, v1.0.0, on buildnet for testing): anyone
+- **Fair launch** (new contract `fair-launch.ts`, v1.0.0): anyone
   launches a memecoin in one transaction, with no capital. The token (1 B supply, 9 decimals) is
   deployed from the Launchpad's own RC-Token template, with no owner: nobody can mint, pause or
   change it. 800 M tokens sell on a bonding curve (constant product with virtual reserves); when
@@ -35,6 +41,7 @@ Launchpad contract version it works with.
 
 ### Changed
 
+- The release's contracts zip and `SHA256SUMS-contracts` also carry `fair-launch.wasm`.
 - Addresses (contracts, owners, creators, holders, buyers, pools) and fair-launch trades open
   Massa's explorer in a new tab, on every page; no more copy buttons next to them. Massa's
   explorer has no buildnet: the development build links buildnet to the mainnet one too.
@@ -423,6 +430,7 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.10.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.10.0
 [1.9.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.1
 [1.9.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.0
 [1.8.2]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.8.2
