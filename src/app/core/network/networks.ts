@@ -86,7 +86,8 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
       binSteps: [20, 25, 50, 100],
       appUrl: 'https://app.dusa.io',
     },
-    fairLaunchAddress: null,
+    // smart-contract/deployments/fair-launch-mainnet.json (v1.0.0, deployed 2026-11-17).
+    fairLaunchAddress: 'AS12PwFGZtxWWa2KGPPdSoGeYMSNkG74NsuFb3SAdz3U52L1twTp3',
     explorerUrl: 'https://explorer.massa.net',
   },
   buildnet: {

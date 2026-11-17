@@ -52,7 +52,9 @@ four principles:
 > whitelists, vesting and presale tokens taken back by their owner on 2026-11-08), each time
 > after the 72-hour public delay. It has not had an independent security audit yet: start with
 > small amounts. New in 1.10: **Fair Launch**, memecoins on a bonding curve that list themselves
-> on Dusa, with a contract of its own (v1.0.0, no upgrade function, not audited yet either).
+> on Dusa, with a contract of its own: v1.0.0 at
+> `AS12PwFGZtxWWa2KGPPdSoGeYMSNkG74NsuFb3SAdz3U52L1twTp3` (no upgrade function, not audited yet
+> either).
 
 ## What you can do
 

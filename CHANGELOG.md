@@ -12,8 +12,9 @@ Launchpad contract version it works with.
 ## [1.10.0] — 2026-11-17
 
 Works with the Launchpad contract **v1.8.0**, live on mainnet; no Launchpad change. New: the
-**Fair Launch** contract v1.0.0, deployed on mainnet from this release's build; its compiled code
-is in the release's contracts zip.
+**Fair Launch** contract v1.0.0, deployed on mainnet from this release's build at
+`AS12PwFGZtxWWa2KGPPdSoGeYMSNkG74NsuFb3SAdz3U52L1twTp3` (2026-11-17); its compiled code is in the
+release's contracts zip.
 
 ### Added
 

@@ -8,6 +8,7 @@ allocation, no owner.
 | | |
 |---|---|
 | Contract | `smart-contract/assembly/contracts/fair-launch.ts` (v1.0.0), separate from the Launchpad |
+| Mainnet | `AS12PwFGZtxWWa2KGPPdSoGeYMSNkG74NsuFb3SAdz3U52L1twTp3` (2026-11-17, `deployments/fair-launch-mainnet.json`): 50 MAS launch fee, 1 % on trades, 2 % at graduation, 100 000 MAS target, 24 h on the curve at least |
 | Libraries | `assembly/lib/fairlaunch/curve.ts` (math), `assembly/lib/fairlaunch/records.ts` (records) |
 | Tests | `assembly/__tests__/curve.spec.ts`, `assembly/__tests__/fair-launch.spec.ts` |
 | App | `src/app/core/fairlaunch/` (records mirror, curve mirror, reader), `src/app/features/fair-launch/` (pages `/launch`, `/launch/new`, `/launch/:id`) |
