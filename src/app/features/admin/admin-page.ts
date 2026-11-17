@@ -54,6 +54,9 @@ import {
   templateCoins,
   upgradeCoins,
 } from './admin-forms';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
+import { FairLaunchAdmin } from './fair-launch-admin';
+import { FairLaunchReader } from '../../core/fairlaunch/fair-launch-reader';
 
 interface TemplateState {
   kind: ProjectKind;
@@ -97,12 +100,13 @@ const MAX_RESULTS = 20;
  */
 @Component({
   selector: 'app-admin-page',
-  imports: [DatePipe, RouterLink, MasPipe, ShortAddressPipe],
+  imports: [FairLaunchAdmin, ExplorerLink, DatePipe, RouterLink, MasPipe, ShortAddressPipe],
   templateUrl: './admin-page.html',
   styleUrl: './admin-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminPage {
+  protected readonly fair = inject(FairLaunchReader);
   protected readonly launchpad = inject(LaunchpadReader);
   protected readonly network = inject(NetworkStore);
   protected readonly wallet = inject(WalletStore);

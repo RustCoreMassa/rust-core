@@ -153,7 +153,11 @@
         <span class="muted">Owner</span>
         <strong class="mono small">
           @if (state(); as s) {
-            {{ s.owner ? (s.owner | shortAddress) : 'None' }}
+            @if (s.owner) {
+              <app-explorer-link [value]="s.owner" />
+            } @else {
+              None
+            }
           } @else {
             <span class="skeleton"></span>
           }
@@ -295,11 +299,11 @@
           <dl class="rows">
             <div>
               <dt>Contract</dt>
-              <dd class="mono">{{ p.address | shortAddress }}</dd>
+              <dd><app-explorer-link [value]="p.address" /></dd>
             </div>
             <div>
               <dt>{{ p.source === launched ? 'Launched by' : 'Imported by' }}</dt>
-              <dd class="mono">{{ p.creator | shortAddress }}</dd>
+              <dd><app-explorer-link [value]="p.creator" /></dd>
             </div>
             <div>
               <dt>Date</dt>

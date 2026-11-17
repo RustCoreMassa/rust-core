@@ -1,0 +1,14 @@
+/* Its cards sit in the admin page's grid, like the Launchpad's. */
+:host {
+  display: contents;
+}
+
+.section-title {
+  display: grid;
+  gap: 4px;
+  margin-top: 24px;
+}
+
+.section-title h2 {
+  font-size: 22px;
+}

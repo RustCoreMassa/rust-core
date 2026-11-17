@@ -18,14 +18,14 @@ import { NetworkStore } from '../../core/network/network-store';
 import { httpUrl } from '../../core/utils/ipfs';
 import { toUserMessage } from '../../core/utils/user-error';
 import { WalletStore } from '../../core/wallet/wallet-store';
-import { ShortAddressPipe } from '../../shared/pipes/short-address-pipe';
 import { ProjectBadges } from '../../shared/ui/project-badges/project-badges';
 import { MarketPanel } from '../marketplace/market-panel';
+import { ExplorerLink } from '../../shared/ui/explorer-link/explorer-link';
 
 /** One NFT: its metadata (from the creator's link), its holder and its collection. */
 @Component({
   selector: 'app-nft-page',
-  imports: [RouterLink, ShortAddressPipe, ProjectBadges, MarketPanel],
+  imports: [ExplorerLink, RouterLink, ProjectBadges, MarketPanel],
   template: `
     <section class="page container">
       <a class="back muted" [routerLink]="['/collections', address()]"
@@ -70,8 +70,12 @@ import { MarketPanel } from '../marketplace/market-panel';
               <dl class="rows">
                 <div>
                   <dt>Owner</dt>
-                  <dd class="mono">
-                    {{ owner() | shortAddress }}
+                  <dd>
+                    @if (owner(); as o) {
+                      <app-explorer-link [value]="o" />
+                    } @else {
+                      —
+                    }
                     @if (owner() === wallet.address()) {
                       <span class="yours">· you</span>
                     }
@@ -80,6 +84,10 @@ import { MarketPanel } from '../marketplace/market-panel';
                 <div>
                   <dt>Token id</dt>
                   <dd>{{ tokenId() }}</dd>
+                </div>
+                <div>
+                  <dt>Collection contract</dt>
+                  <dd><app-explorer-link [value]="address()" /></dd>
                 </div>
                 @if (uri()) {
                   <div>

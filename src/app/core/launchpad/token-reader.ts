@@ -1,6 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Args, JsonRpcPublicProvider } from '@massalabs/massa-web3';
 import { MassaReader, READ_FINAL } from '../massa/massa-reader';
+import { BALANCE_PREFIX, Holder, readHolders } from './holders';
+
+/** Balance entries per readStorage call. */
+const HOLDERS_BATCH = 100;
 
 /** What an RC-Token reports through templateInfo(); absent on imported tokens. */
 export interface TokenTemplateInfo {
@@ -53,6 +57,18 @@ export class TokenReader {
       new Args().addString(owner).addString(spender),
     );
     return new Args(bytes).nextU256();
+  }
+
+  /** Every holder of an MRC20 token, largest first, from its balance entries. */
+  async holders(address: string): Promise<Holder[]> {
+    const provider = this.reader.provider();
+    const keys = await provider.getStorageKeys(address, BALANCE_PREFIX, READ_FINAL);
+    const values: (Uint8Array | null)[] = [];
+    for (let i = 0; i < keys.length; i += HOLDERS_BATCH)
+      values.push(
+        ...(await provider.readStorage(address, keys.slice(i, i + HOLDERS_BATCH), READ_FINAL)),
+      );
+    return readHolders(keys, values);
   }
 
   async decimals(address: string): Promise<number> {

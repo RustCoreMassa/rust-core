@@ -88,14 +88,7 @@
           <div>
             <dt>Contract</dt>
             <dd>
-              <button
-                class="link mono"
-                type="button"
-                (click)="copyAddress()"
-                title="Copy the address"
-              >
-                {{ copied() ? 'Copied ✓' : (p.address | shortAddress) }}
-              </button>
+              <app-explorer-link [value]="p.address" />
             </dd>
           </div>
           <div>
@@ -130,9 +123,13 @@
           </div>
           <div>
             <dt>Owner</dt>
-            <dd class="mono">
+            <dd>
               @if (state(); as s) {
-                {{ s.owner ? (s.owner | shortAddress) : 'None (renounced)' }}
+                @if (s.owner) {
+                  <app-explorer-link [value]="s.owner" />
+                } @else {
+                  None (renounced)
+                }
               } @else {
                 <span class="skeleton"></span>
               }
@@ -140,7 +137,7 @@
           </div>
           <div>
             <dt>{{ p.source === launched ? 'Launched by' : 'Imported by' }}</dt>
-            <dd class="mono">{{ p.creator | shortAddress }}</dd>
+            <dd><app-explorer-link [value]="p.creator" /></dd>
           </div>
           <div>
             <dt>Date</dt>

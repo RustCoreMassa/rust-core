@@ -1,0 +1,25 @@
+{
+  "network": "buildnet",
+  "address": "AS1kELNyK4e6ZD8bH2Prkk4E6bh1FbeYsu1VwHSY2x1uxG437mc2",
+  "version": "1.0.0",
+  "admin": "AU1w8EqC9wJA7ouwVdytcKSubGmUZ4eEaB84BxQZZWSmBSqwT6dJ",
+  "deployedAt": "2026-11-16T12:15:25.901Z",
+  "bytes": 88499,
+  "config": {
+    "creationFee": "1",
+    "tradeFeeBps": 100,
+    "graduationFeeBps": 200,
+    "targetMas": "200",
+    "deployDeposit": "0.1",
+    "launchpad": "AS12rFvAEoLamej3EM4FugHpXrsEyhDmpMkJPsUyCikH8AeGfPGTg",
+    "dusaRouter": "AS1xed5qTFcsWR2Ce7VLaAEHde8bJiTrX8JHM35qkHjmnqH1GFU8",
+    "dusaFactory": "AS12w3vcEYn8VBX1utw1fSmFNbYv9vMvy5n8tqCJjoGz3vaQYEhfp",
+    "wmas": "AS12FW5Rs5YN2zdpEnqwj4iHUUPt9R4Eqjq2qtpJFNKW3mn33RuLU",
+    "binSteps": [
+      20
+    ],
+    "autoGraduateGas": "980000000",
+    "paused": false,
+    "minCurveMinutes": 10
+  }
+}

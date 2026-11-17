@@ -1,0 +1,33 @@
+.narrow {
+  max-width: 760px;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.form,
+.summary {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary p {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .links {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,334 @@
+@if (loadError(); as message) {
+  <div class="card">
+    <h2>Fair Launch</h2>
+    <div class="notice notice-error" role="alert">{{ message }}</div>
+  </div>
+} @else if (status(); as s) {
+  @if (isAdmin() || isOffered()) {
+    <header class="section-title">
+      <span class="label">Fair Launch</span>
+      <h2>Memecoins on a bonding curve</h2>
+    </header>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Status</h2>
+        <span class="state" [class.paused]="s.config.paused">{{
+          s.config.paused ? 'Paused' : 'Running'
+        }}</span>
+      </div>
+      <dl class="rows">
+        <div>
+          <dt>Contract</dt>
+          <dd><app-explorer-link [value]="fair.address()!" /> · v{{ s.version }}</dd>
+        </div>
+        <div>
+          <dt>Admin</dt>
+          <dd><app-explorer-link [value]="s.admin" /></dd>
+        </div>
+        @if (s.pendingAdmin) {
+          <div>
+            <dt>Admin offered to</dt>
+            <dd><app-explorer-link [value]="s.pendingAdmin" /></dd>
+          </div>
+        }
+        <div>
+          <dt>Launches</dt>
+          <dd>{{ s.launches.length }}</dd>
+        </div>
+        <div>
+          <dt>Settings</dt>
+          <dd>
+            fee {{ s.config.creationFee | mas }} · trades {{ s.config.tradeFeeBps / 100 }}% ·
+            graduation {{ s.config.graduationFeeBps / 100 }}% · target
+            {{ s.config.targetMas | mas }} · at least {{ minCurveText() }} on the curve
+          </dd>
+        </div>
+      </dl>
+      @if (isAdmin()) {
+        <div>
+          <button
+            class="btn btn-ghost btn-sm"
+            type="button"
+            [disabled]="!!busy()"
+            (click)="setPaused(!s.config.paused)"
+          >
+            {{ s.config.paused ? 'Resume' : 'Pause' }}
+          </button>
+        </div>
+        <p class="hint">
+          Pause stops new launches and buys; sells and moves to Dusa go on, so nobody's MAS is
+          stuck.
+        </p>
+      }
+      @if (busy() === 'status') {
+        <span class="hint">Confirm in your wallet…</span>
+      }
+      @if (errorIn('status'); as message) {
+        <div class="notice notice-error" role="alert">{{ message }}</div>
+      }
+      @if (doneIn('status'); as message) {
+        <div class="notice" role="status">{{ message }}</div>
+      }
+    </div>
+
+    @if (isAdmin()) {
+      <div class="grid">
+        @if (form(); as f) {
+          <div class="card">
+            <h2>Settings</h2>
+            <div class="form-grid">
+              <label class="field">
+                <span>Launch fee (MAS)</span>
+                <input
+                  class="input"
+                  inputmode="decimal"
+                  [value]="f.creationFee"
+                  (input)="update('creationFee', text($event))"
+                />
+                @if (formErrors().creationFee; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Trading fee (%)</span>
+                <input
+                  class="input"
+                  inputmode="decimal"
+                  [value]="f.tradeFee"
+                  (input)="update('tradeFee', text($event))"
+                />
+                @if (formErrors().tradeFee; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Graduation fee (% of the MAS raised)</span>
+                <input
+                  class="input"
+                  inputmode="decimal"
+                  [value]="f.graduationFee"
+                  (input)="update('graduationFee', text($event))"
+                />
+                @if (formErrors().graduationFee; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Target: MAS raised to move to Dusa</span>
+                <input
+                  class="input"
+                  inputmode="decimal"
+                  [value]="f.target"
+                  (input)="update('target', text($event))"
+                />
+                @if (formErrors().target; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Least time on the curve (minutes)</span>
+                <input
+                  class="input"
+                  inputmode="numeric"
+                  [value]="f.minCurveMinutes"
+                  (input)="update('minCurveMinutes', text($event))"
+                />
+                @if (formErrors().minCurveMinutes; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Deposit per token contract (MAS)</span>
+                <input
+                  class="input"
+                  inputmode="decimal"
+                  [value]="f.deposit"
+                  (input)="update('deposit', text($event))"
+                />
+                @if (formErrors().deposit; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Dusa bin steps, in order</span>
+                <input
+                  class="input"
+                  [value]="f.binSteps"
+                  (input)="update('binSteps', text($event))"
+                />
+                @if (formErrors().binSteps; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+              <label class="field">
+                <span>Gas of the self-graduation (0 = by hand)</span>
+                <input
+                  class="input"
+                  inputmode="numeric"
+                  [value]="f.autoGraduateGas"
+                  (input)="update('autoGraduateGas', text($event))"
+                />
+                @if (formErrors().autoGraduateGas; as e) {
+                  <span class="error">{{ e }}</span>
+                }
+              </label>
+            </div>
+            <p class="hint">
+              Each launch keeps the fees, the target and the least time in force when it was
+              created. Graduation used ~873 M gas on buildnet.
+            </p>
+            <div>
+              <button
+                class="btn btn-red btn-sm"
+                type="button"
+                [disabled]="!!busy() || !formResult() || 'errors' in formResult()!"
+                (click)="saveConfig()"
+              >
+                {{ busy() === 'config' ? 'Confirm in your wallet…' : 'Save the settings' }}
+              </button>
+            </div>
+            @if (errorIn('config'); as message) {
+              <div class="notice notice-error" role="alert">{{ message }}</div>
+            }
+            @if (doneIn('config'); as message) {
+              <div class="notice" role="status">{{ message }}</div>
+            }
+          </div>
+        }
+
+        <div class="card">
+          <h2>Fees collected</h2>
+          <p>
+            <strong>{{ s.fees | mas }}</strong> from launch fees, trades and moves to Dusa. Only
+            this can be withdrawn: the MAS in the curves belongs to their holders.
+          </p>
+          <div>
+            <button
+              class="btn btn-red btn-sm"
+              type="button"
+              [disabled]="!!busy() || !s.fees"
+              (click)="withdrawFees()"
+            >
+              {{ busy() === 'fees' ? 'Confirm in your wallet…' : 'Withdraw to the admin wallet' }}
+            </button>
+          </div>
+          @if (errorIn('fees'); as message) {
+            <div class="notice notice-error" role="alert">{{ message }}</div>
+          }
+          @if (doneIn('fees'); as message) {
+            <div class="notice" role="status">{{ message }}</div>
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Fair launches</h2>
+        <p class="hint">
+          Hide takes a launch out of the lists and stops its buys (a scam, an offensive name…). Its
+          holders can still sell back to the curve, so nobody's MAS is stuck; Unhide opens it again.
+          A launch can't be deleted: its curve holds its buyers' MAS.
+        </p>
+        <input
+          class="input"
+          type="search"
+          placeholder="Search by name, symbol, token or creator address"
+          [value]="query()"
+          (input)="query.set(text($event))"
+        />
+        @if (!shown().length) {
+          <p class="muted">{{ query() ? 'No match.' : 'No fair launch yet.' }}</p>
+        } @else {
+          <ul class="projects">
+            @for (l of shown(); track l.id) {
+              <li>
+                <a class="names" [routerLink]="['/launch', l.id.toString()]">
+                  <strong>{{ l.name }}</strong>
+                  <span class="muted">#{{ l.id }} · {{ l.symbol }} · {{ phase(l) }}</span>
+                </a>
+                <span class="flags">
+                  @if (l.hidden) {
+                    <span class="bad">Hidden</span>
+                  }
+                </span>
+                <span class="actions">
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    [class.danger]="!l.hidden"
+                    type="button"
+                    [disabled]="!!busy()"
+                    (click)="setHidden(l, !l.hidden)"
+                  >
+                    {{ l.hidden ? 'Unhide' : 'Hide' }}
+                  </button>
+                </span>
+              </li>
+            }
+          </ul>
+          @if (s.launches.length > shown().length && !query()) {
+            <p class="hint">The 50 newest; search to find an older one.</p>
+          }
+        }
+        @if (busy() === 'launches') {
+          <span class="hint">Confirm in your wallet…</span>
+        }
+        @if (errorIn('launches'); as message) {
+          <div class="notice notice-error" role="alert">{{ message }}</div>
+        }
+        @if (doneIn('launches'); as message) {
+          <div class="notice" role="status">{{ message }}</div>
+        }
+      </div>
+    }
+
+    <div class="card">
+      <h2>Hand over the Fair Launch admin role</h2>
+      @if (isOffered()) {
+        <p>This wallet is offered the Fair Launch admin role.</p>
+        <div>
+          <button
+            class="btn btn-red btn-sm"
+            type="button"
+            [disabled]="!!busy()"
+            (click)="acceptAdmin()"
+          >
+            {{ busy() === 'admin' ? 'Confirm in your wallet…' : 'Accept the role' }}
+          </button>
+        </div>
+      } @else {
+        <p class="hint">
+          Two steps: offer it here, then the new wallet accepts it on this page. Until then this
+          wallet stays the admin.
+        </p>
+        <label class="field">
+          <span>New admin address</span>
+          <div class="with-max">
+            <input
+              class="input"
+              [value]="newAdmin()"
+              (input)="newAdmin.set(text($event))"
+              placeholder="AU…"
+            />
+            <button
+              class="btn btn-ghost btn-sm"
+              type="button"
+              [disabled]="!!busy() || !newAdmin().trim() || !!newAdminError()"
+              (click)="offerAdmin()"
+            >
+              Offer
+            </button>
+          </div>
+          @if (newAdminError(); as e) {
+            <span class="error">{{ e }}</span>
+          }
+        </label>
+      }
+      @if (errorIn('admin'); as message) {
+        <div class="notice notice-error" role="alert">{{ message }}</div>
+      }
+      @if (doneIn('admin'); as message) {
+        <div class="notice" role="status">{{ message }}</div>
+      }
+    </div>
+  }
+}

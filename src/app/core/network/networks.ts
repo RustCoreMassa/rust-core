@@ -44,6 +44,16 @@ export interface NetworkConfig {
   readonly apiUrl: string | null;
   /** Dusa on this network; null when it isn't deployed there. */
   readonly dusa: DusaConfig | null;
+  /**
+   * The Fair Launch SC (bonding-curve memecoins that list themselves on Dusa) on this network
+   * (smart-contract/deployments/fair-launch-<network>.json); null until it is deployed there.
+   */
+  readonly fairLaunchAddress: string | null;
+  /**
+   * The block explorer (address and operation pages: /address/<a>, /op/<id>); null where there is
+   * none. Massa's explorer serves mainnet only (2026-11-16); buildnet links to it too.
+   */
+  readonly explorerUrl: string | null;
 }
 
 export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
@@ -76,6 +86,8 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
       binSteps: [20, 25, 50, 100],
       appUrl: 'https://app.dusa.io',
     },
+    fairLaunchAddress: null,
+    explorerUrl: 'https://explorer.massa.net',
   },
   buildnet: {
     id: 'buildnet',
@@ -96,6 +108,14 @@ export const NETWORKS: Readonly<Record<NetworkId, NetworkConfig>> = {
       binSteps: [20],
       appUrl: null,
     },
+    // smart-contract/deployments/fair-launch-buildnet.json (v1.0.0: trade history with each
+    // trade's operation, minimum time on the curve 10 min, target 200 MAS). Earlier ones in
+    // deployments/history/.
+    fairLaunchAddress: 'AS1rkVpe7CKC9Ew6meJddQFDrfTGDzJFBGsmbJdhpV4W5QVGvYqF',
+    // Massa's explorer has no buildnet: links go to the mainnet one anyway (user request,
+    // 2026-11-16), to check every link in the development build. Buildnet addresses and
+    // operations aren't found there.
+    explorerUrl: 'https://explorer.massa.net',
   },
 };
 
