@@ -9,6 +9,11 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.10.1] — 2026-11-20
+
+Works with the Launchpad contract **v1.8.0** and the Fair Launch contract **v1.0.0**, both live on
+mainnet; no contract change.
+
 ### Added
 
 - **Connect with RustCore Wallet**: the browser extension is found and connects like the other
@@ -447,6 +452,7 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.10.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.10.1
 [1.10.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.10.0
 [1.9.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.1
 [1.9.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.0
