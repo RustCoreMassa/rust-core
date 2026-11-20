@@ -21,6 +21,10 @@ import { WalletPhone } from './wallet-phone';
             home screen like a native app — and now also as a browser extension, on the
             <a [href]="links.walletChrome" target="_blank" rel="noopener noreferrer"
               >Chrome Web Store</a
+            >
+            and
+            <a [href]="links.walletFirefox" target="_blank" rel="noopener noreferrer"
+              >Firefox Add-ons</a
             >.
           </p>
           <ul class="feature-list">
@@ -67,6 +71,13 @@ import { WalletPhone } from './wallet-phone';
               target="_blank"
               rel="noopener noreferrer"
               >Add to Chrome</a
+            >
+            <a
+              class="btn btn-ghost"
+              [href]="links.walletFirefox"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Add to Firefox</a
             >
             <a
               class="btn btn-ghost"

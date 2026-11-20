@@ -73,8 +73,8 @@ Metadata read from a local IPFS node (`http://127.0.0.1:<port>/ipfs/…`) resolv
 `ipfs://` links through that node. To send every `ipfs://` link to your node, set
 `ipfsGateway: 'http://127.0.0.1:8080/ipfs/'` (your node's gateway) in that file.
 
-**Wallets.** Connecting needs Bearby, Massa Station or MetaMask with the Massa Snap, set to
-buildnet, with test MAS.
+**Wallets.** Connecting needs the RustCore Wallet extension, Bearby, Massa Station or MetaMask
+with the Massa Snap, set to buildnet, with test MAS.
 
 ### Contracts
 

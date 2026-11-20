@@ -74,7 +74,10 @@ four principles:
 
 ## Getting started
 
-1. **Install a Massa wallet**: [RustCore Wallet](https://wrustcore.massa.network),
+1. **Install a Massa wallet**: [RustCore Wallet](https://wrustcore.massa.network) (also a
+   browser extension, on the
+   [Chrome Web Store](https://chromewebstore.google.com/detail/rustcore-wallet/djhcnkifdfjcbbfibopdhfkepiilhabf)
+   and [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/rustcore-wallet/)),
    [Bearby](https://bearby.io), [Massa Station](https://station.massa.net/) or MetaMask with the
    [Massa Snap](https://snaps.metamask.io/snap/npm/massalabs/metamask-snap/).
 2. **Have some MAS** on Massa mainnet for the fees and storage, and keep your wallet on
@@ -149,15 +152,16 @@ the Launchpad's development.
 |---|---|
 | The DeWeb gateway you open RustCore from | Delivers the app itself. Some gateways add their own "hosted on chain" label to the page; the app's security policy blocks its script, so it stays hidden. |
 | `mainnet.massa.net` / `buildnet.massa.net` | Massa's public nodes: every read (Dusa's pools included), and the transactions you sign. |
-| Your wallet | Only after you click **Connect wallet**: the Bearby / MetaMask extensions inside your browser, and Massa Station's local server (`station.massa`, `localhost:8080`). Nothing connects on its own. |
+| Your wallet | Only after you click **Connect wallet**: the RustCore Wallet / Bearby / MetaMask extensions inside your browser, and Massa Station's local server (`station.massa`, `localhost:8080`). Nothing connects on its own. |
 | `api.rustcoremassa.com` | The read-only RustCore API (mainnet): `/status`, the holders and listing prices of collections of 500 NFTs and more, and the NFTs your address holds (My NFTs). Public chain data only, no cookies; like any web server, it sees your IP address. The app falls back to the chain if it doesn't answer. |
 | `ipfs.io` | Public IPFS gateway for `ipfs://` images and NFT metadata. |
 | The `https://` addresses project owners chose | Their logos, banners, NFT metadata and images. Requested without a referrer or cookies. |
 
 That's all: no analytics, no tracking, no cookies; fonts are bundled. Links to
 `explorer.massa.net`, to Dusa (`app.dusa.io`), to project websites and to RustCore's own places
-(the wallet, the Chrome Web Store, GitHub, Telegram, X) open only when you click them. "Download original
-code" is built in your browser from files the app ships and the code stored on-chain.
+(the wallet, the Chrome Web Store, Firefox Add-ons, GitHub, Telegram, X) open only when you
+click them. "Download original code" is built in your browser from files the app ships and the
+code stored on-chain.
 
 **Built-in safeguards**
 
@@ -177,7 +181,8 @@ code" is built in your browser from files the app ships and the code stored on-c
 
 - **`rustcore.massa` is the only official address of RustCore and its Launchpad.** A copy on
   any other address could ask you to sign something else — check the address before connecting
-  your wallet. (`wrustcore.massa` is RustCore Wallet.)
+  your wallet. (`wrustcore.massa` is RustCore Wallet; its browser extension is listed only on the
+  Chrome Web Store and Firefox Add-ons.)
 - **Anyone can launch or import anything.** A token named after a famous project may be a copy:
   check the address, the **Verified** badge and whether the code is **Imported** or
   **Mutable**. A mutable or imported contract can be changed by its owner.

@@ -6,6 +6,7 @@ export const LINKS = {
   wallet: 'https://wrustcore.massa.network',
   walletChrome:
     'https://chromewebstore.google.com/detail/rustcore-wallet/djhcnkifdfjcbbfibopdhfkepiilhabf',
+  walletFirefox: 'https://addons.mozilla.org/en-US/firefox/addon/rustcore-wallet/',
   walletReleases: 'https://github.com/RustCoreMassa/rust-core-wallet/releases',
   walletSource: 'https://github.com/RustCoreMassa/rust-core-wallet',
   appSource: 'https://github.com/RustCoreMassa/rust-core',

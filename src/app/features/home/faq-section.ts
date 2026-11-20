@@ -79,9 +79,13 @@ import { NetworkStore } from '../../core/network/network-store';
           <p>
             <strong>rustcore.massa</strong> is RustCore's address — this app, with the Launchpad and
             every tool to come — and <strong>wrustcore.massa</strong> is the wallet's. The browser
-            extension's only official listing is
+            extension's only official listings are
             <a [href]="links.walletChrome" target="_blank" rel="noopener noreferrer"
               >this one on the Chrome Web Store</a
+            >
+            and
+            <a [href]="links.walletFirefox" target="_blank" rel="noopener noreferrer"
+              >this one on Firefox Add-ons</a
             >.
             @if (launchpadAddress(); as address) {
               The Launchpad contract on {{ networkLabel() }} is <code>{{ address }}</code

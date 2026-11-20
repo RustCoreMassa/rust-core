@@ -10,6 +10,7 @@ import { WalletStore } from './wallet-store';
 
 const ALICE = 'AU1alice';
 const BOB = 'AU1bob';
+const CAROL = 'AU1carol';
 
 interface FakeWalletOptions {
   accounts?: string[];
@@ -22,6 +23,8 @@ interface FakeWalletOptions {
   disconnectListener?: boolean;
   /** RustCore Wallet names its accounts by their address. */
   nameIsAddress?: boolean;
+  /** Only RustCore Wallet tells when the accounts shared with the site change. */
+  sharedListener?: boolean;
 }
 
 /** Just what WalletStore uses of wallet-provider's Wallet. */
@@ -29,7 +32,8 @@ function fakeWallet(id: WalletId, options: FakeWalletOptions = {}) {
   let accountListener: ((address: string) => void) | null = null;
   let networkListener: ((network: Network) => void) | null = null;
   let disconnectListener: (() => void) | null = null;
-  const accounts = options.accounts ?? [ALICE, BOB];
+  let sharedListener: ((addresses: string[]) => void) | null = null;
+  let accounts = options.accounts ?? [ALICE, BOB];
   const wallet = {
     name: () => id,
     connect: vi.fn(async () => options.connects ?? true),
@@ -60,6 +64,12 @@ function fakeWallet(id: WalletId, options: FakeWalletOptions = {}) {
       networkListener = cb;
       return { unsubscribe: () => (networkListener = null) };
     },
+    ...(options.sharedListener && {
+      listenAccountsChanges: (cb: (addresses: string[]) => void) => {
+        sharedListener = cb;
+        return { unsubscribe: () => (sharedListener = null) };
+      },
+    }),
     ...(options.disconnectListener && {
       listenDisconnect: (cb: () => void) => {
         disconnectListener = cb;
@@ -74,6 +84,11 @@ function fakeWallet(id: WalletId, options: FakeWalletOptions = {}) {
     switchNetwork: (chainId: bigint) =>
       networkListener?.({ name: 'x', chainId, minimalFee: 0n } as Network),
     disconnectInWallet: () => disconnectListener?.(),
+    /** The user changes the accounts shared with the site (the one in use first). */
+    share: (addresses: string[]) => {
+      accounts = addresses;
+      sharedListener?.(addresses);
+    },
   };
 }
 
@@ -164,6 +179,41 @@ describe('WalletStore', () => {
     fake.disconnectInWallet();
     await vi.waitFor(() => expect(wallets.connected()).toBe(false));
     expect(wallets.signer()).toBeNull();
+  });
+
+  it('follows the accounts shared with the site, keeping the selected one while shared', async () => {
+    const fake = fakeWallet('RUSTCORE', { sharedListener: true, nameIsAddress: true });
+    const { wallets } = setup([fake.wallet]);
+    await wallets.connect('RUSTCORE');
+    wallets.selectAccount(BOB);
+
+    fake.share([CAROL, BOB, ALICE]);
+    await vi.waitFor(() => expect(wallets.accounts()).toHaveLength(3));
+    expect(wallets.address()).toBe(BOB);
+
+    fake.share([ALICE, CAROL]); // BOB taken away: the wallet's account in use
+    await vi.waitFor(() => expect(wallets.accounts()).toHaveLength(2));
+    expect(wallets.address()).toBe(ALICE);
+    expect(wallets.signer()?.address).toBe(ALICE);
+
+    await wallets.disconnect();
+    fake.share([CAROL]); // listeners are gone
+    await new Promise((r) => setTimeout(r));
+    expect(wallets.accounts()).toEqual([]);
+  });
+
+  it('drops shared accounts that arrive after a disconnect', async () => {
+    const fake = fakeWallet('RUSTCORE', { sharedListener: true });
+    const { wallets } = setup([fake.wallet]);
+    await wallets.connect('RUSTCORE');
+    let answer!: (providers: Provider[]) => void;
+    fake.mock.accounts.mockImplementationOnce(() => new Promise((r) => (answer = r)));
+    fake.share([CAROL]);
+    await wallets.disconnect();
+    answer([{ address: CAROL, accountName: CAROL } as Provider]);
+    await new Promise((r) => setTimeout(r));
+    expect(wallets.accounts()).toEqual([]);
+    expect(wallets.address()).toBeNull();
   });
 
   it('connects to wallets that cannot report account switches', async () => {

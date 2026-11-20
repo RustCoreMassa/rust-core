@@ -13,7 +13,7 @@ interface Rule {
 /** Most specific first. */
 const RULES: readonly Rule[] = [
   {
-    test: /user (rejected|denied|cancel)|rejected by user|request rejected/i,
+    test: /user (rejected|denied|cancel)|rejected by (the )?user|request rejected/i,
     message: 'The request was rejected in your wallet.',
   },
   {

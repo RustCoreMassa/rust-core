@@ -20,6 +20,15 @@ export interface Milestone {
 export const MILESTONES: readonly Milestone[] = [
   {
     date: 'Nov 2026',
+    product: 'Wallet',
+    title: 'RustCore Wallet on Firefox Add-ons',
+    text:
+      'The browser extension is public on Firefox Add-ons too, for Firefox on computers and on ' +
+      'Android, and it keeps itself up to date. Firefox shows what it exchanges with Massa’s ' +
+      'network before you install it.',
+  },
+  {
+    date: 'Nov 2026',
     product: 'RustCore',
     title: 'RustCore 1.10 — Fair launch',
     major: { icon: 'token', label: 'Fair launch' },
@@ -222,7 +231,7 @@ export const ROADMAP: readonly RoadmapTrack[] = [
       done('Presale whitelist & vesting (contract v1.8.0)'),
       done('Contract v1.8.0 on mainnet'),
       next('Token payments on the marketplace'),
-      next('Connection with RustCore Wallet'),
+      done('Connection with RustCore Wallet'),
       next('Independent security audit'),
     ],
   },
@@ -265,7 +274,8 @@ export const ROADMAP: readonly RoadmapTrack[] = [
       done('Per-site permissions, several wallets per dApp'),
       done('In Massa’s wallet library'),
       done('Live on the Chrome Web Store'),
-      next('Edge & Firefox Add-ons'),
+      done('Live on Firefox Add-ons, desktop & Android'),
+      next('Edge Add-ons'),
     ],
   },
   {

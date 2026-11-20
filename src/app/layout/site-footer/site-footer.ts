@@ -61,6 +61,9 @@ import { LINKS } from '../../core/links';
             <a [href]="links.walletChrome" target="_blank" rel="noopener noreferrer"
               >Wallet for Chrome</a
             >
+            <a [href]="links.walletFirefox" target="_blank" rel="noopener noreferrer"
+              >Wallet for Firefox</a
+            >
             <a routerLink="/" fragment="roadmap">Roadmap</a>
             <a routerLink="/" fragment="faq">FAQ</a>
             <a [href]="links.appReleases" target="_blank" rel="noopener noreferrer">Releases</a>

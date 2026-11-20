@@ -179,10 +179,10 @@ export class WalletStore {
   }
 
   /**
-   * Follows account and network switches made in the wallet, and the site being disconnected
-   * there (RustCore Wallet only). wallet-provider 3.3 throws "not yet implemented" for account
-   * changes in Massa Station and MetaMask: those wallets still work, the account is then picked
-   * in the app's wallet menu.
+   * Follows account and network switches made in the wallet and, in RustCore Wallet only, the
+   * accounts shared with the site changing and the site being disconnected there.
+   * wallet-provider 3.3 throws "not yet implemented" for account changes in Massa Station and
+   * MetaMask: those wallets still work, the account is then picked in the app's wallet menu.
    */
   private listen(wallet: Wallet, attempt: number): void {
     const accounts = subscribe(() =>
@@ -196,6 +196,22 @@ export class WalletStore {
         this.selectAccount(address);
       }),
     );
+    // The selected account stays while it's still shared; else the wallet's own (listed first).
+    const shared = subscribe(() =>
+      wallet.listenAccountsChanges?.(async () => {
+        if (attempt !== this.attempt) return;
+        try {
+          const providers = await wallet.accounts();
+          if (attempt !== this.attempt || !providers.length) return;
+          const current = this._address();
+          this.providers = providers;
+          this._accounts.set(providers.map(toAccount));
+          if (!providers.some((p) => p.address === current)) this.setAddress(providers[0].address);
+        } catch (err) {
+          console.error('[wallet accounts]', err);
+        }
+      }),
+    );
     const network = subscribe(() =>
       wallet.listenNetworkChanges((info) => {
         if (attempt === this.attempt) this._walletChainId.set(info.chainId);
@@ -206,7 +222,7 @@ export class WalletStore {
         if (attempt === this.attempt) void this.disconnect();
       }),
     );
-    this.listeners = [accounts, network, disconnect].filter((l) => !!l);
+    this.listeners = [accounts, shared, network, disconnect].filter((l) => !!l);
   }
 
   private stopListening(): void {

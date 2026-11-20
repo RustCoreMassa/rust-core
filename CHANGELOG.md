@@ -9,6 +9,22 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+### Added
+
+- **Connect with RustCore Wallet**: the browser extension is found and connects like the other
+  wallets (Massa's wallet library `@massalabs/wallet-provider` 3.3.2-dev.20261102084703, the
+  first version that knows it, pinned exactly). The app follows the accounts the user shares
+  with the site in the wallet, and disconnects when the site is disconnected there; a request
+  refused in the wallet reads "The request was rejected in your wallet.". Without the
+  extension, "Install" opens its listing for the browser in use: Firefox Add-ons in Firefox, the
+  Chrome Web Store elsewhere.
+
+### Changed
+
+- RustCore Wallet's browser extension is public on **Firefox Add-ons** (desktop and Android):
+  the home page's wallet section ("Add to Firefox"), FAQ (the extension's official listings),
+  roadmap and what shipped, the footer and the README link to it next to the Chrome Web Store.
+
 ## [1.10.0] — 2026-11-17
 
 Works with the Launchpad contract **v1.8.0**, live on mainnet; no Launchpad change. New: the

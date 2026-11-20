@@ -13,6 +13,10 @@ describe('toUserMessage', () => {
     expect(toUserMessage(new Error('User rejected the request'))).toBe(
       'The request was rejected in your wallet.',
     );
+    // wallet-provider's UserRejectionError (RustCore Wallet, MetaMask)
+    expect(toUserMessage(new Error('The operation callSC was rejected by the user.'))).toBe(
+      'The request was rejected in your wallet.',
+    );
     expect(toUserMessage(new Error('TypeError: Failed to fetch'))).toBe(
       "Couldn't reach the Massa network. Check your connection and try again.",
     );

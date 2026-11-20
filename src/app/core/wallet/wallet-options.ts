@@ -1,5 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import type { Wallet } from '@massalabs/wallet-provider';
+import { LINKS } from '../links';
 
 /** wallet-provider's WalletName values. */
 export type WalletId = 'RUSTCORE' | 'BEARBY' | 'MASSA WALLET' | 'METAMASK';
@@ -10,9 +11,18 @@ export interface WalletOption {
   readonly installUrl: string;
 }
 
+/**
+ * RustCore Wallet's extension in this browser's store: Firefox Add-ons in Firefox (desktop and
+ * Android), the Chrome Web Store anywhere else. Sites connect to the extension, not to the web
+ * wallet.
+ */
+export function rustCoreInstallUrl(userAgent = globalThis.navigator?.userAgent ?? ''): string {
+  return /\bFirefox\//.test(userAgent) ? LINKS.walletFirefox : LINKS.walletChrome;
+}
+
 /** The wallets @massalabs/wallet-provider can talk to. */
 export const WALLET_OPTIONS: readonly WalletOption[] = [
-  { id: 'RUSTCORE', label: 'RustCore Wallet', installUrl: 'https://wrustcore.massa.network' },
+  { id: 'RUSTCORE', label: 'RustCore Wallet', installUrl: rustCoreInstallUrl() },
   { id: 'BEARBY', label: 'Bearby', installUrl: 'https://bearby.io' },
   { id: 'MASSA WALLET', label: 'Massa Station', installUrl: 'https://station.massa.net/' },
   {
