@@ -1,4 +1,5 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
+import { Listing, Sale } from '../launchpad/records';
 import { NetworkStore } from '../network/network-store';
 import { NETWORKS, NetworkId } from '../network/networks';
 
@@ -84,8 +85,30 @@ interface RawNft {
 }
 
 interface RawListing {
+  id: number;
+  collectionId: number;
+  collection: string;
   tokenId: string;
+  seller: string;
   price: string;
+  createdAt: string;
+  expiresAt: string | null;
+  feeBps: number;
+  royaltyBps: number | null;
+  royaltyReceiver: string;
+}
+
+interface RawSale {
+  id: number;
+  listingId: number;
+  collectionId: number;
+  tokenId: string;
+  seller: string;
+  buyer: string;
+  price: string;
+  royalty: string;
+  fee: string;
+  soldAt: string;
 }
 
 interface Page<T> {
@@ -169,7 +192,7 @@ export class IndexerApi {
    * seller holds the NFT, not expired; the approval isn't indexed), by token id.
    */
   async validListingPrices(collection: string): Promise<Map<bigint, bigint>> {
-    const listings = await this.pages<RawListing>('/listings', {
+    const listings = await this.pages<Pick<RawListing, 'tokenId' | 'price'>>('/listings', {
       collection,
       validOnly: 'true',
       sort: 'price_asc',
@@ -180,6 +203,20 @@ export class IndexerApi {
       if (!prices.has(id)) prices.set(id, BigInt(l.price));
     }
     return prices;
+  }
+
+  /**
+   * Every listing that can still be bought as far as the API knows (the seller holds the NFT,
+   * not expired; the approval isn't indexed), newest first.
+   */
+  async validListings(): Promise<Listing[]> {
+    return (await this.pages<RawListing>('/listings', { validOnly: 'true' })).map(listing);
+  }
+
+  /** Every sale of one NFT, newest first. */
+  async nftSales(collection: string, tokenId: bigint): Promise<Sale[]> {
+    const query = { collection, tokenId: tokenId.toString() };
+    return (await this.pages<RawSale>('/sales', query)).map(sale);
   }
 
   /** Every NFT the address holds in the registered collections. */
@@ -260,6 +297,38 @@ function nft(raw: RawNft): IndexedNft {
     owner: raw.owner,
     listingId: raw.listingId === null || raw.listingId === undefined ? null : BigInt(raw.listingId),
     price: optionalBigint(raw.price),
+  };
+}
+
+/** A listing as the chain gives it: times in ms since the epoch, 0 = never expires. */
+function listing(raw: RawListing): Listing {
+  return {
+    id: BigInt(raw.id),
+    collectionId: BigInt(raw.collectionId),
+    collection: raw.collection,
+    tokenId: BigInt(raw.tokenId),
+    seller: raw.seller,
+    price: BigInt(raw.price),
+    createdAt: Date.parse(raw.createdAt),
+    expiresAt: raw.expiresAt ? Date.parse(raw.expiresAt) : 0,
+    feeBps: raw.feeBps,
+    royaltyBps: raw.royaltyBps ?? null,
+    royaltyReceiver: raw.royaltyReceiver,
+  };
+}
+
+function sale(raw: RawSale): Sale {
+  return {
+    id: BigInt(raw.id),
+    listingId: BigInt(raw.listingId),
+    collectionId: BigInt(raw.collectionId),
+    tokenId: BigInt(raw.tokenId),
+    seller: raw.seller,
+    buyer: raw.buyer,
+    price: BigInt(raw.price),
+    royalty: BigInt(raw.royalty),
+    soldAt: Date.parse(raw.soldAt),
+    fee: BigInt(raw.fee),
   };
 }
 

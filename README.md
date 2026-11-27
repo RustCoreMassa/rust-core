@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.10.1" src="https://img.shields.io/badge/version-1.10.1-brightgreen" />
+  <img alt="Version 1.10.2" src="https://img.shields.io/badge/version-1.10.2-brightgreen" />
   <img alt="Network: Massa" src="https://img.shields.io/badge/network-Massa-red" />
   <img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" />
 </p>
@@ -36,7 +36,7 @@ four principles:
 - **No backend, no database.** Everything the app shows is read straight from the blockchain:
   one public Launchpad smart contract (the registry, the marketplace, the presales) and the
   contracts it launched. There is no RustCore server to go down, censor or leak data. Large
-  collections (500 NFTs and more) are read faster through the read-only
+  collections (500 NFTs and more) and the marketplace are read faster through the read-only
   [RustCore API](#public-api), a cache of the chain — and from the chain again whenever it is
   down or behind.
 - **Everything is verifiable.** Launches use versioned templates whose code is published here
@@ -46,7 +46,7 @@ four principles:
   The Launchpad's own code can only change after a **72-hour public delay**, and its admin can
   never touch presale funds — only the fees collected.
 
-> **Version 1.10.1** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.8.0** is live
+> **Version 1.10.2** ([what's new](CHANGELOG.md)). The Launchpad contract **v1.8.0** is live
 > on Massa **mainnet** at `AS1LbJFfhZpq8DehV7Uw5XQxCyfXtwgUUoiZSTsHcyhEGB7RPWyP`, upgraded in
 > place (v1.0.0 → v1.3.1 on 2026-10-17, → v1.4.0 on 2026-10-27, → v1.8.0 with presale
 > whitelists, vesting and presale tokens taken back by their owner on 2026-11-08), each time
@@ -153,7 +153,7 @@ the Launchpad's development.
 | The DeWeb gateway you open RustCore from | Delivers the app itself. Some gateways add their own "hosted on chain" label to the page; the app's security policy blocks its script, so it stays hidden. |
 | `mainnet.massa.net` / `buildnet.massa.net` | Massa's public nodes: every read (Dusa's pools included), and the transactions you sign. |
 | Your wallet | Only after you click **Connect wallet**: the RustCore Wallet / Bearby / MetaMask extensions inside your browser, and Massa Station's local server (`station.massa`, `localhost:8080`). Nothing connects on its own. |
-| `api.rustcoremassa.com` | The read-only RustCore API (mainnet): `/status`, the holders and listing prices of collections of 500 NFTs and more, and the NFTs your address holds (My NFTs). Public chain data only, no cookies; like any web server, it sees your IP address. The app falls back to the chain if it doesn't answer. |
+| `api.rustcoremassa.com` | The read-only RustCore API (mainnet): `/status`, the holders and listing prices of collections of 500 NFTs and more, the marketplace's listings, an NFT's older sales, and the NFTs your address holds (My NFTs). Public chain data only, no cookies; like any web server, it sees your IP address. The app falls back to the chain if it doesn't answer. |
 | `ipfs.io` | Public IPFS gateway for `ipfs://` images and NFT metadata. |
 | The `https://` addresses project owners chose | Their logos, banners, NFT metadata and images. Requested without a referrer or cookies. |
 

@@ -50,9 +50,11 @@ export function localGatewayOf(url: string): string | null {
  * `host` as the URL parser gives it (lowercase, IPv4 normalized, IPv6 in brackets).
  */
 export function isPrivateHost(host: string): boolean {
-  if (host === 'localhost' || /\.(localhost|local|internal|massa)$/.test(host)) return true;
-  if (host.startsWith('[')) return true; // IPv6 literals: no public content uses them
-  const ip = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(host);
+  // A trailing dot names the same host (`localhost.`, `deweb.massa.`); the parser keeps it.
+  const name = host.replace(/\.+$/, '');
+  if (name === 'localhost' || /\.(localhost|local|internal|massa)$/.test(name)) return true;
+  if (name.startsWith('[')) return true; // IPv6 literals: no public content uses them
+  const ip = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(name);
   if (!ip) return false;
   const [a, b] = [Number(ip[1]), Number(ip[2])];
   return (

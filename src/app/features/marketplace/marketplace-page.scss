@@ -25,6 +25,15 @@
   font-size: 14px;
 }
 
+.source-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+
+  a {
+    color: var(--white);
+  }
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

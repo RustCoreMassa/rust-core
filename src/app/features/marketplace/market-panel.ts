@@ -18,6 +18,7 @@ import { HolderDiscountStore } from '../../core/launchpad/holder-discount';
 import { LaunchpadReader } from '../../core/launchpad/launchpad-reader';
 import { listingCanRevive } from '../../core/launchpad/listing-state';
 import { APPROVE_COINS, LIST_COINS, buyCoins, saleSplit } from '../../core/launchpad/market-cost';
+import { NftSales } from '../../core/launchpad/nft-sales';
 import { Listing, Project, Sale } from '../../core/launchpad/records';
 import { Transactions } from '../../core/launchpad/transactions';
 import { toUserMessage } from '../../core/utils/user-error';
@@ -49,6 +50,7 @@ type Busy = 'approve' | 'list' | 'price' | 'cancel' | 'buy' | null;
 export class MarketPanel {
   private readonly launchpad = inject(LaunchpadReader);
   private readonly collections = inject(CollectionReader);
+  private readonly nftSales = inject(NftSales);
   private readonly transactions = inject(Transactions);
   private readonly discount = inject(HolderDiscountStore);
   protected readonly wallet = inject(WalletStore);
@@ -242,8 +244,8 @@ export class MarketPanel {
       if (run !== this.run) return;
       this.problem.set(problem);
       this.listing.set(listing);
-      const sales = await this.launchpad.sales(project.id);
-      if (run === this.run) this.sales.set(sales.items.filter((s) => s.tokenId === tokenId));
+      const sales = await this.nftSales.history(project, tokenId);
+      if (run === this.run) this.sales.set(sales);
       if (this.marketFeeBps() === null) {
         const config = await this.launchpad.config();
         if (run === this.run) this.marketFeeBps.set(config.marketFeeBps);

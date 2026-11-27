@@ -152,6 +152,114 @@ describe('IndexerApi', () => {
     expect(asked[0].searchParams.get('collection')).toBe(COLLECTION);
   });
 
+  it('reads the valid listings as the chain gives them', async () => {
+    const { api, asked } = setup(() =>
+      json({
+        items: [
+          {
+            id: 12,
+            collectionId: 3,
+            collection: COLLECTION,
+            tokenId: '7',
+            seller: OWNER,
+            price: '2500000000',
+            createdAt: '2026-11-02T16:04:30.470Z',
+            expiresAt: null,
+            feeBps: 70,
+            royaltyBps: 500,
+            royaltyReceiver: OWNER,
+            sellerHolds: true,
+            expired: false,
+          },
+          {
+            id: 4,
+            collectionId: 3,
+            collection: COLLECTION,
+            tokenId: '1',
+            seller: OWNER,
+            price: '1000000000',
+            createdAt: '2026-10-19T09:59:29Z',
+            expiresAt: '2027-01-01T00:00:00Z',
+            feeBps: 100,
+            royaltyBps: null,
+            royaltyReceiver: '',
+            sellerHolds: true,
+            expired: false,
+          },
+        ],
+        nextCursor: null,
+      }),
+    );
+    expect(await api.validListings()).toEqual([
+      {
+        id: 12n,
+        collectionId: 3n,
+        collection: COLLECTION,
+        tokenId: 7n,
+        seller: OWNER,
+        price: 2_500_000_000n,
+        createdAt: Date.UTC(2026, 10, 2, 16, 4, 30, 470),
+        expiresAt: 0,
+        feeBps: 70,
+        royaltyBps: 500,
+        royaltyReceiver: OWNER,
+      },
+      {
+        id: 4n,
+        collectionId: 3n,
+        collection: COLLECTION,
+        tokenId: 1n,
+        seller: OWNER,
+        price: 1_000_000_000n,
+        createdAt: Date.UTC(2026, 9, 19, 9, 59, 29),
+        expiresAt: Date.UTC(2027, 0, 1),
+        feeBps: 100,
+        royaltyBps: null,
+        royaltyReceiver: '',
+      },
+    ]);
+    expect(asked[0].href).toBe(`${BASE}/listings?validOnly=true&limit=200`);
+  });
+
+  it('reads the sales of one NFT', async () => {
+    const buyer = 'AU12BqZEQ6sByhRLyEuf0YbQmKF6Ckmwd8hkQRzA3LrkuCtiRL8zU';
+    const { api, asked } = setup(() =>
+      json({
+        items: [
+          {
+            id: 9,
+            listingId: 12,
+            collectionId: 3,
+            collection: COLLECTION,
+            tokenId: '7',
+            seller: OWNER,
+            buyer,
+            price: '2500000000',
+            royalty: '125000000',
+            fee: '17500000',
+            soldAt: '2026-11-03T08:00:00Z',
+          },
+        ],
+        nextCursor: null,
+      }),
+    );
+    expect(await api.nftSales(COLLECTION, 7n)).toEqual([
+      {
+        id: 9n,
+        listingId: 12n,
+        collectionId: 3n,
+        tokenId: 7n,
+        seller: OWNER,
+        buyer,
+        price: 2_500_000_000n,
+        royalty: 125_000_000n,
+        soldAt: Date.UTC(2026, 10, 3, 8),
+        fee: 17_500_000n,
+      },
+    ]);
+    expect(asked[0].href).toBe(`${BASE}/sales?collection=${COLLECTION}&tokenId=7&limit=200`);
+  });
+
   it('gives null stats for a collection it doesn’t index, and throws other errors', async () => {
     const problem = (status: number, detail: string) =>
       json({ type: 'about:blank', title: 'x', status, detail }, { status });

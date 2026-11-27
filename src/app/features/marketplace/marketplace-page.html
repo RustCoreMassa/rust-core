@@ -73,6 +73,22 @@
       </div>
     }
 
+    @if (source(); as from) {
+      @if (from.kind === 'api') {
+        <p class="muted source-note">
+          From the <a routerLink="/api">RustCore API</a>
+          @if (from.syncedAt) {
+            (synced {{ from.syncedAt | date: 'HH:mm' }})
+          }
+          — new listings and sales show up within about two minutes; each NFT is checked on chain
+          before you buy.
+          <button type="button" class="link-button" (click)="readFromChain()">
+            Read from the chain
+          </button>
+        </p>
+      }
+    }
+
     @if (listings() === null) {
       <div class="grid">
         @for (row of [1, 2, 3, 4]; track row) {

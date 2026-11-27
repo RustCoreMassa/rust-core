@@ -9,6 +9,35 @@ Launchpad contract version it works with.
 
 ## [Unreleased]
 
+## [1.10.2] — 2026-11-27
+
+Works with the Launchpad contract **v1.8.0** and the Fair Launch contract **v1.0.0**, both live on
+mainnet; no contract change. Fixes from the 2026-11-05 audit (findings #4, #5, #7 and #8).
+
+### Changed
+
+- The marketplace reads its listings from the RustCore API when it is up: one paged request
+  however many NFTs are for sale, instead of reading every listing and checking each one on
+  chain (audit #4). A note says where they came from, with "Read from the chain" for a fresh
+  read; new listings and sales show up there within about two minutes. The approval isn't
+  indexed, so a listing whose seller withdrew it may still show: the NFT's page checks the
+  listing on chain before anyone buys. The app reads the chain as before when the API is down.
+
+### Fixed
+
+- An NFT's sales history shows all its sales, not only those among its collection's 50 newest
+  (audit #5): the newest come from the chain, older ones from the RustCore API, or from the
+  chain page after page (up to 1,000 sales) when the API is down.
+
+### Security
+
+- Links to a local or `.massa` host written with a trailing dot (`https://localhost./`,
+  `https://deweb.massa./`) are refused like those without it (audit #7).
+- Names, symbols, descriptions and NFT metadata lose every invisible formatting character
+  before display: zero-width joiners and non-joiners, the soft hyphen, word joiners, invisible
+  operators, Hangul fillers, tags and variation selectors, besides the bidi controls already
+  removed (audit #8). The invisible parts of emoji (👩🏽‍💻, ❤️, 🏳️‍🌈) stay.
+
 ## [1.10.1] — 2026-11-20
 
 Works with the Launchpad contract **v1.8.0** and the Fair Launch contract **v1.0.0**, both live on
@@ -452,6 +481,7 @@ raised, marketplace 1% of each sale. Not independently audited yet.
   one-step admin transfer, and upgrade storage paid from escrow. The app launches only from
   templates whose source it ships, checked by hash.
 
+[1.10.2]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.10.2
 [1.10.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.10.1
 [1.10.0]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.10.0
 [1.9.1]: https://github.com/RustCoreMassa/rust-core/releases/tag/v1.9.1

@@ -76,8 +76,18 @@ describe('isPrivateHost', () => {
       '224.0.0.1',
     ])
       expect(isPrivateHost(host), host).toBe(true);
-    for (const host of ['example.com', '100.128.0.1', '11.0.0.1', 'massa.net'])
+    for (const host of ['example.com', '100.128.0.1', '11.0.0.1', 'massa.net', 'example.com.'])
       expect(isPrivateHost(host), host).toBe(false);
+  });
+
+  it('sees through a trailing dot', () => {
+    for (const host of ['localhost.', 'localhost..', 'a.localhost.', 'x.massa.', 'printer.local.'])
+      expect(isPrivateHost(host), host).toBe(true);
+  });
+
+  it('refuses https links to such hosts', () => {
+    for (const url of ['https://localhost./a.png', 'https://deweb.massa./logo.png'])
+      expect(httpUrl(url), url).toBe('');
   });
 });
 
